@@ -1,5 +1,14 @@
 # Visual and Animation Pass
 
+> **HISTORICAL.** This records the visual pass made *before* the two large
+> sessions of 2026-07-28. Several things it describes have since been replaced:
+> the candle's melt was rebuilt entirely (it described a flood that turned out to
+> read as crumpled paper), the audience-view door was rewritten onto a hinge
+> spring, and the shade veil now governs how much of any face is legible at all.
+> Read it for the reasoning behind decisions that survived — the die striking
+> where the ring was, wax pouring where you tip it, the projection contract — and
+> read `docs/CONTINUITY.md` and `docs/NEXT_SESSION.md` for what is true now.
+
 This pass responds to the six visual concerns raised after the campaign build:
 
 1. the candle melt and flame appeared off-centre;

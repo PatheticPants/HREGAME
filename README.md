@@ -51,13 +51,16 @@ only one that proves the loop actually connects end to end.
 godot --path . --resolution 1600x900 --scene res://tests/qa_capture.tscn
 ```
 
-writes annotated PNGs to `.tools/shot_*.png`: the desk at rest, the candle
-carried to two positions, molten and pouring wax, the hot pool before pressing,
-a centred versus an off-rim strike at close crop, books in the rack, a note on
-the wax tablet, the glass held over both an incoming pendant seal and your own
-work, and the candle at fresh / half / guttering / out. Deliberately **not**
-headless — Godot cannot render 2D lights with the dummy driver, and lighting is
-what these shots exist to check.
+writes 43 annotated PNGs to `.tools/shot_*.png`. Deliberately **not** headless —
+Godot cannot render 2D lights with the dummy driver, and lighting is what these
+exist to check.
+
+They are the fastest way to find out that something is wrong, and two of the
+worst defects found so far were invisible in code review and obvious in a frame:
+wax that drew on top of the entire room, and a candle whose melt was painted
+lighter than the brass it sits in. **Capture the object in the state you are
+worried about, not in isolation** — the seal had no frame in which anything was
+on top of it, which is exactly why nothing caught it.
 
 ## Review agents
 
@@ -89,7 +92,7 @@ independently name the same defect, it is real.
 python tools/make_placeholder_audio.py
 ```
 
-regenerates the 25 placeholder sounds. Deterministic, so it will not churn the
+regenerates the 36 placeholder sounds. Deterministic, so it will not churn the
 repo. Standard library only.
 
 ---
@@ -501,9 +504,16 @@ The repository lives at `github.com/PatheticPants/HREGAME`, on `main`.
 
 ## Not built, on purpose
 
-No settings menu, no save system, no tutorial overlay, no score screen, no extra
-case document types, and no fourth case. The onboarding that exists is the
-movable memorandum R.V. left on the desk. The Register and the separate
-soundness/favour/craft judgements are deliberately present because this day
-depends on them; the economy and the remaining verification types still have a
-place in the schema and nothing more.
+No settings menu, no save system, no tutorial overlay, no score screen, and no
+floating UI of any kind. The onboarding that exists is the movable memorandum
+R.V. left on the desk, plus a practice leaf that binds nobody and teaches the
+press and the flame before anything is at stake.
+
+Three verification types remain unwritten — genealogy, palaeography,
+jurisdiction — and each is one `Check` subclass plus its independent mirror in
+`tools/verify_content.py`. Favour is stored on every ruling and read by nothing.
+And the Kalendar of the Dead does not yet decide a case, which means a player who
+consults it twice can correctly conclude it never will.
+
+`docs/CONTINUITY.md` keeps the current list of what is known-broken and
+deliberately unfixed. `docs/NEXT_SESSION.md` is the standing brief.

@@ -2,9 +2,13 @@
 
 For whoever picks this up next — a fresh session, or a returning one.
 
-Read `README.md` first for how the game works and `docs/HANDOFF_CODEX.md` for the
-design rationale. This file is only the things that are **not inferable from the
-code** and the traps that have already cost time.
+**If you are starting a new session, read `docs/NEXT_SESSION.md` first.** It has
+the owner's standing priorities, what to build next and why, and how to work with
+the subagents. This file is the reference underneath it: the things that are
+**not inferable from the code**, and the traps that have already cost time.
+
+`README.md` is how the game works. `docs/HANDOFF_CODEX.md` is the design
+rationale.
 
 ---
 
@@ -23,7 +27,7 @@ python tools/verify_content.py
 | suite | checks |
 |---|---|
 | rules | 81 |
-| presentation | 170 |
+| presentation | 172 |
 | the day (full loop) | 73 |
 | content + encoding | PASS |
 
@@ -59,7 +63,15 @@ could not be read.
 
 If you change anything visual, capture it. If you add a subsystem, add a shot for
 it — the door and the petitioner had none, which is why their two worst defects
-survived so long.
+survived so long, and the wax had no frame in which anything was ON TOP of it,
+which is why it spent months drawing over the entire room.
+
+**Capture the object in the state you are worried about, not in isolation.** Every
+frame of the seal showed the seal alone, so "is the wax actually on the
+parchment" was never a question any frame could answer. Every frame of the candle
+was desk-wide, where it is ninety pixels and no change to it is visible; the 4x
+series (36-41) was added specifically because the owner could see it was wrong
+and the harness could not.
 
 ---
 
@@ -97,6 +109,18 @@ mistake here — use `desk.surface.to_local(...)`.
 
 **`String.capitalize()` title-cases every word and splits snake_case.** Use
 `Lex.sentence()` for prose.
+
+**`z_index` breaks the desk's stacking rule, silently and permanently.** Draw
+order on this desk is child order in `surface`, full stop — except that any
+CanvasItem with a higher `z_index` draws above ALL lower-z siblings whatever the
+tree says, and `z_as_relative` is on by default so a child's z is added to its
+parent's. The poured wax carried `z_index = 1` for months and therefore floated
+above every other paper on the desk once struck, while the spoon that poured it
+(z=4 while held, 0 once set down) slid underneath it. If you find yourself
+reaching for `z_index` to get something above something else, you almost
+certainly want child order instead. The legitimate uses are transient and
+self-cancelling: a ring while it is in the hand or in the wax, a falling bead,
+the lens.
 
 **Identity in the necrology is matched on `person_id`, never on name.** Two men
 are called Hugo Wend. The cost is that a typo does not error — the man is simply
@@ -170,7 +194,20 @@ spending it, and should say so out loud rather than discovering it in a playtest
 
 The four investigative verbs are: read it, put the glass on it, look it up in a
 book, and **hold it up to the flame**. The last is the newest and is the only one
-that is not a lookup.
+that is not a lookup. It answers on every sheet — a sound skin transmits evenly
+with its laid lines and follicles coming up, a scraped one shows a bright patch
+with the removed words feathering back — because a verb that sometimes does
+nothing is a verb the player concludes is broken.
+
+**The candle carries over.** What is left of Tuesday's is what Thursday is given,
+floored at 45%. `Candle.carry_forward()` -> `Desk.last_candle_remaining` ->
+`SessionController.day_seconds()`. The Tuesday ledger says so before the
+consequence lands, because a scarcity you only discover by having lost it is a
+trap rather than a decision.
+
+**Humour is budgeted at six to eight dry beats a working day**, with a written
+forbidden list — see the conventions above. The register is flat declarative,
+past tense, joke in a subordinate clause, always carrying information.
 
 ---
 
