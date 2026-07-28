@@ -91,11 +91,18 @@ func _process(delta: float) -> void:
 	# does. Raw progress is still linear; everything that reads _open_amount now
 	# gets it through a curve.
 	#
-	# ease(x, 0.42) is ease-OUT going forward: the cover swings up off the desk
-	# quickly and slows as it lays flat. Run in reverse for closing it becomes
-	# ease-in — a slow lean, then it drops shut — which is also what a book does.
+	# It used to be ease(_open_t, 0.42). That is ease-OUT, which begins at about
+	# 2.4x average speed — right for something released under tension, wrong for
+	# a board that starts flat on the desk with nothing moving it yet. The board
+	# has mass and begins AT REST, so it wants a curve that starts at zero speed
+	# and ends at zero speed, and smoothstep is exactly that.
+	#
+	# (The rulebook used to justify avoiding this curve by claiming ease(x, 0.4)
+	# has an infinite derivative at zero and snaps on the first frame. It does
+	# not — measured, it covers 4% of the distance in the first frame. The reason
+	# to change it here is the physics, not the phantom snap.)
 	_open_t = move_toward(_open_t, 1.0 if is_open else 0.0, delta * 4.2)
-	_open_amount = ease(_open_t, 0.42)
+	_open_amount = smoothstep(0.0, 1.0, _open_t)
 	_update_hit_size()
 
 	if _turn_dir != 0:
@@ -174,16 +181,13 @@ func mark_review_attention() -> void:
 ## cover colour regardless of where the candle stood — so the biggest things in
 ## the room were the least material. Everything below reads from this.
 func _lit() -> float:
-	return clampf(light_level, 0.0, 1.0) * clampf(light_strength, 0.7, 1.1)
+	return Surface.lit(light_level, light_strength)
 
 
 ## Unit vector toward the flame in the book's own space, so a highlight sits on
 ## the side the light is actually on however the book has been dropped.
 func _toward_light() -> Vector2:
-	var away := (light_position - global_position).rotated(-global_rotation)
-	if away.length() < 1.0:
-		return Vector2(0.4, -1.0)
-	return away.normalized()
+	return Surface.toward(self, light_position)
 
 
 func _draw() -> void:
@@ -200,8 +204,7 @@ func _draw() -> void:
 	# Only the warm tint lives here. The fall into shadow is the shared veil at the
 	# foot of this function, so a board and a charter lying beside each other go
 	# dark together instead of on two different curves.
-	var cover := data.cover_color.lerp(Color(0.98, 0.63, 0.34), glow * 0.30)
-	cover = cover.darkened((1.0 - glow) * 0.18)
+	var cover := Surface.tint(data.cover_color, glow, 0.30, 0.18)
 
 	draw_soft_shadow(full)
 
@@ -211,7 +214,7 @@ func _draw() -> void:
 	# candle is carried past.
 	var rim := full.grow(5.0)
 	var thick := 6.0 * (1.0 - _open_amount * 0.55)
-	draw_rect(Rect2(rim.position - toward * thick, rim.size), cover.darkened(0.66))
+	Surface.extrude(self, rim, toward, cover, thick, 0.66)
 	draw_rect(rim, cover.darkened(0.34))
 	if _open_amount < 0.02:
 		_draw_text_block(full, glow)
@@ -269,15 +272,22 @@ func _draw_closed(r: Rect2, cover: Color, toward: Vector2, glow: float) -> void:
 	_draw_hide(r, cover, glow)
 	_draw_spine(r, cover, toward, glow)
 
-	# BLIND TOOLING. A line stamped into damp leather with a hot iron has a lit
-	# lip and a dark trough, and which is which depends on where the flame is.
-	# One flat outline reads as a printed border; two offset ones read as a groove.
-	var lip := Color(1.0, 0.86, 0.62, 0.20 * glow)
-	var trough := Color(0.0, 0.0, 0.0, 0.30)
+	# BLIND TOOLING, AND IT WAS STAMPED INSIDE OUT.
+	#
+	# A line pressed into damp leather with a hot iron is a GROOVE, and a groove
+	# has two walls: the far one faces back toward the flame and catches it, the
+	# near one faces away and is in shadow. So the lit lip belongs on the side
+	# AWAY from the light and the dark trough toward it.
+	#
+	# This drew them the other way round — lip at +toward, trough at -toward — so
+	# the boards' stamped borders read as RAISED rather than impressed, and swung
+	# the wrong way as the candle was carried past them. SignetRing had the same
+	# vocabulary and had it right; putting the two in one file is what made them
+	# disagree out loud. The convention and the physics now live in Surface, with
+	# an assertion, so the next engraved line cannot pick the other one.
 	for inset in [14.0, 20.0]:
-		var box := r.grow(-inset)
-		draw_rect(Rect2(box.position - toward, box.size), trough, false, 1.5)
-		draw_rect(Rect2(box.position + toward, box.size), lip, false, 1.5)
+		Surface.bevel_rect(self, r.grow(-inset), toward, glow, false,
+			1.5, 1.0, 0.20, 0.30)
 
 	var at := Vector2(r.position.x + MARGIN, r.position.y + r.size.y * 0.34)
 	var w := r.size.x - MARGIN * 2.0
@@ -345,9 +355,7 @@ func _draw_clasp(r: Rect2, toward: Vector2, glow: float) -> void:
 	draw_rect(Rect2(plate.position.x - 16.0, centre.y - 7.0, 18.0, 14.0),
 		Color(0.31, 0.22, 0.14))
 	draw_circle(centre + Vector2(1.0, 0.0), 4.2, Color(0.52, 0.44, 0.26))
-	var spec := centre + toward * 3.4
-	draw_circle(spec, 2.1 + glow * 1.1,
-		Color(1.0, 0.92, 0.70, 0.30 + 0.55 * glow))
+	Surface.specular(self, centre, toward, glow, 3.4, 2.1, 1.1, 0.30, 0.55)
 
 
 func _draw_open(r: Rect2, glow: float) -> void:
@@ -377,24 +385,86 @@ func _draw_open(r: Rect2, glow: float) -> void:
 	_draw_turning_page(r, pw)
 
 
-## The turning leaf. A rectangle whose width sweeps across the gutter, drawn over
-## whichever page it is covering. Crude, but at the speed it moves it reads.
+## THE TURNING LEAF, AND ITS WIDTH WAS INSIDE OUT.
+##
+## A leaf is a rigid page hinged at the spine. Its projected width is
+## `pw * |cos(theta)|` with theta running 0..PI: FULL WIDTH lying flat on the
+## page it starts from, ZERO edge-on above the gutter, full width again as it
+## lands. The shipped version computed `pw * (1 - |2t-1|)`, which is the exact
+## complement of that — zero at the start, full width at the vertical, zero at
+## the end. Measured at pw=200:
+##
+##     t     shipped   rigid leaf
+##     0.0       0.0        200.0    lying flat, should be a whole page
+##     0.5     200.0          0.0    edge-on, should be invisible
+##     1.0       0.0        200.0    landed, should be a whole page
+##
+## So the leaf inflated out of the gutter and deflated back into it. Its own
+## comment called it crude and said "at the speed it moves it reads"; it was not
+## crude, it was backwards, and what it read as was a wipe. Books are open for
+## most of every case and this is the only animation in them.
+##
+## With the geometry right, three cheap things finish it: the leaf shows its
+## VERSO after it passes the vertical, it casts a shadow on whatever it is
+## standing over, and it bows under its own weight instead of staying square.
 func _draw_turning_page(r: Rect2, pw: float) -> void:
 	if _turn_dir == 0:
 		return
 	var t := turn_progress()
-	var from_x := r.position.x + pw
-	var width := pw * (1.0 - absf(2.0 * t - 1.0))
-	var x := from_x if _turn_dir > 0 else from_x - width
-	if _turn_dir > 0 and t > 0.5:
-		x = from_x - width
-	elif _turn_dir < 0 and t > 0.5:
-		x = from_x
-	var leaf := Rect2(x, r.position.y + 6, width, r.size.y - 12)
-	draw_rect(leaf, data.page_color.lightened(0.06))
-	draw_rect(leaf, data.page_color.darkened(0.28), false, 1.0)
-	draw_rect(Rect2(leaf.position, Vector2(minf(10.0, width), leaf.size.y)),
-		Color(0, 0, 0, 0.10))
+	var theta := PI * t
+	var lift := sin(theta)          ## 0 flat, 1 standing straight up
+	# Foreshortening, with a floor. Strictly, a page seen edge-on in a top-down
+	# projection is a line of zero width — but parchment is thick, and a leaf
+	# that disappears completely for a frame or two in the middle of the turn
+	# reads as a dropped frame rather than as a page standing up.
+	var width := maxf(pw * absf(cos(theta)), 2.5)
+	var gutter := r.position.x + pw
+	var top := r.position.y + 6.0
+	var h := r.size.y - 12.0
+
+	# Which side of the gutter the leaf is over. It crosses at the vertical, so a
+	# forward turn is on the right until halfway and on the left after it.
+	var on_right := (_turn_dir > 0) != (t > 0.5)
+	var dir := 1.0 if on_right else -1.0
+
+	# A leaf standing off the page shades what it is standing over, hardest when
+	# it is upright — which is also the moment the leaf itself has no width, so
+	# without this the middle of every turn is a page that vanishes.
+	var shadow_w := width + 30.0 * lift
+	draw_rect(Rect2(gutter - (0.0 if on_right else shadow_w) + 6.0 * lift * dir,
+		top + 5.0 * lift, shadow_w, h),
+		Color(0.0, 0.0, 0.0, 0.13 + 0.20 * lift))
+
+	# Recto until it goes over the top, verso after. The swap at the vertical is
+	# the single clearest cue that the thing rotated rather than slid sideways.
+	var glow := _lit()
+	var face := data.page_color.lightened(0.06) if t <= 0.5 \
+		else data.page_color.darkened(0.11)
+	face = Surface.tint(face, glow, 0.22, 0.26)
+
+	# Bowed, not square. Parchment under its own weight curves away from the
+	# spine, and the straight-edged version is most of why this read as a wipe.
+	var free_x := gutter + width * dir
+	var bow := 11.0 * lift * dir
+	var pts := PackedVector2Array()
+	pts.append(Vector2(gutter, top))
+	pts.append(Vector2(free_x, top))
+	for i in range(1, 8):
+		var v := float(i) / 8.0
+		pts.append(Vector2(free_x + bow * sin(PI * v), top + h * v))
+	pts.append(Vector2(free_x, top + h))
+	pts.append(Vector2(gutter, top + h))
+	draw_colored_polygon(pts, face)
+
+	var edge := PackedVector2Array(pts)
+	edge.append(pts[0])
+	draw_polyline(edge, face.darkened(0.30), 1.0, true)
+
+	# The hinge is in shadow: pages curve down into the spine and the last
+	# few millimetres before the fold never catch the light.
+	var hinge_w := minf(11.0, maxf(width, 1.0))
+	draw_rect(Rect2(gutter - (0.0 if on_right else hinge_w), top, hinge_w, h),
+		Color(0, 0, 0, 0.10 + 0.10 * lift))
 
 
 ## Curled outer corners: the whole affordance for turning pages.

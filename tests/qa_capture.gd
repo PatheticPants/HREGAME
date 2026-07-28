@@ -141,6 +141,7 @@ func _run() -> void:
 	await _paper_over_the_seal()
 	await _show_the_kalendar()
 	await _the_dead_witness()
+	await _a_page_in_the_air()
 	await _show_charter_foot()
 	await _show_the_register()
 	await _show_reviewed_register()
@@ -525,6 +526,69 @@ func _show_the_kalendar() -> void:
 	await _settle(20)
 	_desk._park_in_rack(book, 2)
 	await _settle(20)
+
+
+## A PAGE CAUGHT MID-TURN, WHICH NO FRAME HAS EVER SHOWN.
+##
+## The books are open for most of every case and the page turn is the only
+## animation in them, and for the life of the project its geometry was inverted:
+## the leaf's projected width was zero when the page should have been lying flat
+## and a full page wide when it should have been edge-on over the gutter, so it
+## inflated out of the spine and deflated back into it. Nothing caught it because
+## the harness had 46 frames and not one of them was taken while a page was
+## moving.
+##
+## Three frames across the turn, because a single one cannot show a curve. Read
+## them in order: wide and flat on the right, thin and standing at the gutter,
+## wide and flat on the left. If the middle frame is the WIDEST of the three,
+## the bug is back.
+func _a_page_in_the_air() -> void:
+	var camera := _main.get_node("camera") as Camera2D
+	var book: ReferenceBook = null
+	for b in _desk.books:
+		if b.data != null and b.data.spread_count() > 2:
+			book = b
+			break
+	if book == null:
+		return
+
+	_desk.ledge.release(book)
+	book.unstow()
+	_desk.bring_to_front(book)
+	var where := Vector2(-40.0, 120.0)
+	book.solver.place(where, 0.0)
+	book.position = where
+	book.is_open = true
+	book.spread = 0
+	await _move_candle(where + Vector2(40.0, -110.0))
+	await _settle(40)
+
+	camera.zoom = Vector2(1.6, 1.6)
+	camera.position = book.global_position
+	# Drive the turn by hand rather than clicking, so the three frames land at
+	# known points on the curve instead of wherever the frame timer happened to
+	# fall. _turn is the raw -1..1 progress; turn_progress() eases it.
+	# Freeze the book. Its _process advances _turn toward the target and commits
+	# the spread when it arrives, so without this the three frames land wherever
+	# the frame timer happened to fall AND the book turns the page underneath
+	# them — which is exactly what the first attempt at this capture did.
+	book.set_process(false)
+	book._turn_dir = 1
+	for shot in [[0.16, "47_page_lifting"], [0.5, "48_page_upright"],
+			[0.84, "49_page_landing"]]:
+		book._turn = shot[0]
+		book.queue_redraw()
+		await _settle(2)
+		await _shot(String(shot[1]))
+	book._turn = 0.0
+	book._turn_dir = 0
+	book.set_process(true)
+	book.is_open = false
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	await _settle(16)
+	_desk._park_in_rack(book, 3)
+	await _settle(16)
 
 
 ## THE ONE FACT THAT DECIDES A CASE, ON BOTH THE DOCUMENTS THAT CARRY IT.

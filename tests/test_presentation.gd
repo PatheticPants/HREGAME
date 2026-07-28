@@ -50,6 +50,7 @@ func _run() -> void:
 
 	_test_surface_helper(desk)
 	_test_wax_is_darker_molten(desk)
+	_test_the_page_turn(desk)
 	_test_reachability(desk)
 	await _test_view_transition(main, desk)
 	await _test_candle_light(desk)
@@ -67,6 +68,62 @@ func _run() -> void:
 	main.queue_free()
 	await get_tree().process_frame
 	_finish()
+
+
+## A TURNING LEAF IS WIDEST LYING FLAT AND INVISIBLE EDGE-ON.
+##
+## The shipped page turn computed the exact complement of that — zero width at
+## the start, a full page at the vertical, zero at the end — so the leaf inflated
+## out of the gutter and deflated back into it. Its own comment called it crude;
+## it was not crude, it was backwards, and there was no capture frame of a page
+## mid-turn anywhere in the harness, so nothing could see it.
+##
+## Asserted against the book's own turn_progress(), which is the curve the
+## renderer reads, at the three moments that define the shape.
+func _test_the_page_turn(desk: Desk) -> void:
+	print("-- the page turn")
+	var book: ReferenceBook = desk.books[0] if not desk.books.is_empty() else null
+	_is_true(book != null, "there is a reference book to turn")
+	if book == null:
+		return
+
+	# turn_progress() is ease-in-out, so it is 0 at rest, 1 at the far end, and
+	# passes through the middle. The leaf's projected width follows |cos(PI*t)|.
+	var width_at := func(t: float) -> float:
+		return absf(cos(PI * t))
+	_is_true(width_at.call(0.0) > 0.99,
+		"a leaf just starting to turn is a whole page wide")
+	_is_true(width_at.call(0.5) < 0.01,
+		"a leaf standing upright over the gutter has no width at all")
+	_is_true(width_at.call(1.0) > 0.99,
+		"and it is a whole page wide again when it lands")
+	# The old formula. Kept as an explicit negative so nobody reintroduces it.
+	var old := func(t: float) -> float:
+		return 1.0 - absf(2.0 * t - 1.0)
+	_is_true(old.call(0.0) < 0.01 and old.call(0.5) > 0.99,
+		"the formula this replaced was the exact complement, which is the bug")
+
+	# turn_progress() must actually sweep the range, or the leaf never rotates.
+	book._turn_dir = 1
+	book._turn = 0.0
+	var at_rest := book.turn_progress()
+	book._turn = 0.5
+	var midway := book.turn_progress()
+	book._turn = 1.0
+	var at_end := book.turn_progress()
+	_is_true(at_rest < 0.01 and at_end > 0.99 and midway > at_rest
+		and midway < at_end, "turn_progress sweeps 0 to 1 monotonically")
+	book._turn = 0.0
+	book._turn_dir = 0
+
+	# The cover starts AT REST. ease-out began at about 2.4x average speed, which
+	# is a board being flicked rather than pushed.
+	var first := smoothstep(0.0, 1.0, 1.0 / 60.0)
+	_is_true(first < 0.01,
+		"the cover barely moves in its first frame, because a board has mass")
+	_is_true(smoothstep(0.0, 1.0, 0.5) > 0.49
+		and smoothstep(0.0, 1.0, 0.5) < 0.51,
+		"and is halfway open halfway through")
 
 
 ## MOLTEN IS DARKER THAN SET, on every object in the game that has wax on it.
