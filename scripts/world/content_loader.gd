@@ -28,6 +28,7 @@ static func load_all() -> LoreData:
 	var lore := LoreData.new()
 	_load_world(lore)
 	_load_matrices(lore)
+	_load_necrology(lore)
 	_load_books(lore)
 	_load_register_seed(lore)
 	_load_cases(lore)
@@ -108,6 +109,60 @@ static func _load_matrices(lore: LoreData) -> void:
 		m.broken_year = _i(raw, "broken_year", -1)
 		m.note = _s(raw, "note")
 		lore.matrices.append(m)
+
+
+## The rolls of the dead returned to this Chancery by the houses that keep them.
+##
+## Loaded separately from the books because it is world FACT, not a reference
+## page: the rules read it headlessly, and the physical Kalendar on the desk is
+## generated from it the way the Register book is generated from the ruling
+## history. One source, so the book on the desk cannot drift from the law.
+static func _load_necrology(lore: LoreData) -> void:
+	var d = _read_json(DIR_WORLD + "necrology.json", lore.errors)
+	if d == null:
+		return
+	var n := Necrology.new()
+	var book = d.get("book", {})
+	if book is Dictionary:
+		n.title = _s(book, "title", "The Kalendar of the Dead")
+		n.subtitle = _s(book, "subtitle")
+		n.cover_color = _color(book, "cover_color", Color(0.165, 0.184, 0.161))
+		n.page_color = _color(book, "page_color", Color(0.894, 0.863, 0.761))
+		n.front_matter = _s(book, "front_matter")
+		n.marginalia = _s(book, "marginalia")
+
+	var rolls: Array[ObitRoll] = []
+	for raw in _arr(d, "rolls"):
+		var r := ObitRoll.new()
+		r.id = _sn(raw, "id")
+		r.hand = _s(raw, "hand")
+		r.covers = _s(raw, "covers")
+		r.polity_id = _sn(raw, "polity_id")
+		r.reckoning = Lex.dating_from_string(_s(raw, "reckoning", "accession"))
+		r.written_up_to_emperor = _sn(raw, "written_up_to_emperor")
+		r.written_up_to_regnal_year = _i(raw, "written_up_to_regnal_year")
+		r.note = _s(raw, "note")
+		r.marginalia = _s(raw, "marginalia")
+		var entries: Array[Obit] = []
+		for eraw in _arr(raw, "entries"):
+			var o := Obit.new()
+			o.person_id = _sn(eraw, "person_id")
+			o.name = _s(eraw, "name")
+			o.title = _s(eraw, "title")
+			o.died_emperor = _sn(eraw, "died_emperor")
+			o.died_regnal_year = _i(eraw, "died_regnal_year")
+			o.note = _s(eraw, "note")
+			if o.person_id == &"":
+				lore.errors.append("necrology roll '%s': an entry has no person_id"
+					% r.id)
+			entries.append(o)
+		r.entries = entries
+		rolls.append(r)
+	n.rolls = rolls
+
+	for raw in _arr(d, "silent"):
+		n.silences[_sn(raw, "polity_id")] = _s(raw, "reason")
+	lore.necrology = n
 
 
 static func _load_books(lore: LoreData) -> void:
@@ -340,7 +395,11 @@ static func _build_document(raw: Variant, path: String, lore: LoreData) -> Docum
 				w.died_regnal_year = _i(wraw, "died_regnal_year")
 				w.died_dating_style = Lex.dating_from_string(
 					_s(wraw, "died_dating_style", "accession"))
-				w.note = _s(wraw, "note")
+				w.person_id = _sn(wraw, "person_id")
+				w.house = _sn(wraw, "house")
+				# Accept either spelling so existing case files keep loading.
+				# The underscore is the honest one: nothing renders this.
+				w._note = _s(wraw, "_note", _s(wraw, "note"))
 				ws.append(w)
 			ch.witnesses = ws
 			var sraw = raw.get("seal", null)

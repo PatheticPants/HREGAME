@@ -51,8 +51,8 @@
       "subject_id": "kesselholt_wood",
       "claimant_id": "imperial_demesne",
       "witnesses": [
-        { "name": "Liutger von Ahr", "title": "vice-chancellor" },
-        { "name": "Matthias Erken", "title": "bailiff in the Nether March" }
+        { "name": "Liutger von Ahr", "person_id": "liutger_von_ahr", "house": "aachen_verd", "title": "vice-chancellor" },
+        { "name": "Matthias Erken", "person_id": "matthias_erken", "house": "nether_march", "title": "bailiff in the Nether March" }
       ],
       "seal": {
         "id": "seal_kesselholt_writ",

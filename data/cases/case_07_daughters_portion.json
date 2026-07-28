@@ -51,8 +51,8 @@
       "claimant_id": "ott_household",
       "supersedes_prior_instrument": true,
       "witnesses": [
-        { "name": "Aldebrand Stoss", "title": "of the lesser council" },
-        { "name": "Gerhoh Lamp", "title": "sworn measurer" }
+        { "name": "Aldebrand Stoss", "person_id": "aldebrand_stoss", "house": "marchfeld", "title": "of the lesser council" },
+        { "name": "Gerhoh Lamp", "person_id": "gerhoh_lamp", "house": "marchfeld", "title": "sworn measurer" }
       ],
       "seal": {
         "id": "seal_daughters_portion",

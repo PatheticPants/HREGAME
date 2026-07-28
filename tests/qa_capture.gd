@@ -135,6 +135,7 @@ func _run() -> void:
 		await _settle(8)
 		await _shot("08_strike_centre_close")
 
+	await _show_the_kalendar()
 	await _show_charter_foot()
 	await _show_the_register()
 	await _show_reviewed_register()
@@ -312,6 +313,37 @@ func _inspect_pendant_seal() -> void:
 	_desk.lens.solver.place(Vector2(700, 250), deg_to_rad(-14.0))
 	_desk.lens.position = Vector2(700, 250)
 	await _settle(12)
+
+
+## The Kalendar of the Dead, open at a house's roll. Everything WitnessCheck can
+## convict on has to be legible here or the ledger is quoting evidence that was
+## never on the desk, so this frame is a contract test with pixels.
+func _show_the_kalendar() -> void:
+	if _desk.kalendar_book == null:
+		return
+	var camera := _main.get_node("camera") as Camera2D
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	var book := _desk.kalendar_book
+	_desk.ledge.release(book)
+	book.unstow()
+	_desk.bring_to_front(book)
+	var at := Vector2(-120.0, 150.0)
+	book.solver.place(at, deg_to_rad(-1.5))
+	book.position = at
+	book.is_open = true
+	# The head of a roll: coverage, reckoning, and how far it is written up.
+	book.spread = 1
+	await _move_candle(Vector2(60.0, -10.0))
+	await _settle(50)
+	await _shot("31_kalendar_of_the_dead")
+	book.spread = 2
+	await _settle(30)
+	await _shot("32_kalendar_a_roll")
+	book.is_open = false
+	await _settle(20)
+	_desk._park_in_rack(book, 2)
+	await _settle(20)
 
 
 ## The one thing this capture set never showed: a person in the room.

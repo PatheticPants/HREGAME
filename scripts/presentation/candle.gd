@@ -77,6 +77,10 @@ var _spent := false
 var _warned := false
 var _engagement_pulse := 0.0
 var _engaged := false
+## 1 while the day's clock is stopped. Damps the flicker bands and the flame's
+## own wander toward nothing, so a still flame means still time.
+var _rested := 1.0
+var _rest_amount := 1.0
 var _wax_seed := 0
 var _low_noise := FastNoiseLite.new()
 var _mid_noise := FastNoiseLite.new()
@@ -227,6 +231,8 @@ func reset_day() -> void:
 	_warned = false
 	_engaged = false
 	_engagement_pulse = 0.0
+	_rested = 1.0
+	_rest_amount = 1.0
 
 
 ## How much of its original output survives. Deliberately not linear: a candle
@@ -254,8 +260,17 @@ func _process(delta: float) -> void:
 	# last stretch of the day is visibly, audibly unsteady without a single
 	# number appearing anywhere on screen.
 	var unrest := 1.0 + smoothstep(GUTTERING_FROM, 1.0, burn) * 3.2
-	_flicker = clampf(0.90 + low * 0.085 + mid * 0.045 - gutter * 0.42 * unrest,
-		0.30, 1.10)
+	# A STILL FLAME IS A STOPPED CLOCK.
+	#
+	# Eased rather than switched, over about three quarters of a second, so the
+	# room visibly settles when the last ruling is made and visibly comes back to
+	# life on the first thing the player touches. Never fully frozen: a flame that
+	# stops dead reads as a paused game rather than as a quiet one.
+	_rest_amount = move_toward(_rest_amount, _rested, delta * 1.4)
+	var live := lerpf(1.0, 0.22, _rest_amount)
+
+	_flicker = clampf(0.90 + (low * 0.085 + mid * 0.045
+		- gutter * 0.42 * unrest) * live, 0.30, 1.10)
 	_flicker = minf(1.22, _flicker + _engagement_pulse * 0.22)
 	if _spent:
 		_flicker = 0.0
@@ -264,8 +279,8 @@ func _process(delta: float) -> void:
 	# wick as it stretches. Every shadow on the desk is cast from this point, so
 	# this wander is what makes the whole room breathe.
 	_flame_drift = Vector2(low * 3.6 + mid * 1.6,
-		-absf(mid) * 1.1 - gutter * 2.4 + high * 0.8
-		- _engagement_pulse * 4.5)
+		-absf(mid) * 1.1 - gutter * 2.4 + high * 0.8) * live \
+		- Vector2(0.0, _engagement_pulse * 4.5)
 
 	_update_light_nodes()
 	queue_redraw()
@@ -339,7 +354,20 @@ func light_intensity() -> float:
 	return _flicker
 
 
+## The clock has stopped: nobody is at the desk, or the ruling is made.
+##
+## The flame steadies. That is the whole cue and it needs no words: every shadow
+## on this desk swims because the flame wanders, so a flame that stands still
+## stops the room breathing, and the player learns "a still flame is my time not
+## being spent" from the first transition without being told.
+func mark_work_rested() -> void:
+	_engaged = false
+	_rested = 1.0
+	queue_redraw()
+
+
 func mark_work_engaged() -> void:
+	_rested = 0.0
 	_engaged = true
 	_engagement_pulse = 1.0
 	# Let the ordinary pickup transient clear first so this singular cue is not
@@ -379,12 +407,19 @@ func _draw() -> void:
 	draw_soft_shadow(Rect2(-Vector2(53, 47), Vector2(106, 94)), 1.0)
 	draw_texture_rect(CANDLE_TEXTURE, rect, false)
 	_draw_spent_wax()
-	if _engaged:
+	if _engaged or _rest_amount < 0.98:
 		# The first bead remains in the saucer for the rest of the day. Starting
 		# the clock therefore has a persistent physical trace, not only a flash.
+		# It also reports the clock's CURRENT state: wet and warm while the day is
+		# being spent, matte and cool while it is not.
 		var bead := WICK + Vector2(21.0, 15.0)
+		var wet := 1.0 - _rest_amount
 		draw_circle(bead + Vector2(1.5, 2.0), 5.2, Color(0, 0, 0, 0.30))
-		draw_circle(bead, 4.8, Color(0.94, 0.84, 0.64))
+		draw_circle(bead, 4.8,
+			Color(0.86, 0.80, 0.66).lerp(Color(0.98, 0.87, 0.62), wet))
+		if wet > 0.05:
+			draw_circle(bead + Vector2(-1.3, -1.4), 1.6 + wet * 0.7,
+				Color(1.0, 0.95, 0.80, 0.30 + 0.45 * wet))
 	if not _spent:
 		_draw_flame()
 	else:

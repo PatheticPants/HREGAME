@@ -12,9 +12,14 @@ static func checks() -> Array[Check]:
 	var list: Array[Check] = []
 	list.append(SealCheck.new())
 	list.append(DateCheck.new())
+	# ORDER IS DOCTRINE. VerdictPolicy walks severity rows and returns the first
+	# matching finding in list order, so a dead die stays decisive over a dead
+	# witness (the seal is authenticity; the witness list is formality), and a
+	# broken date stays decisive over the witness arithmetic derived from it.
+	list.append(WitnessCheck.new())
 	list.append(AuthorityCheck.new())
 	list.append(PrecedentCheck.new())
-	# Later: GenealogyCheck, WitnessCheck, PalaeographyCheck, JurisdictionCheck.
+	# Later: GenealogyCheck, PalaeographyCheck, JurisdictionCheck.
 	return list
 
 
@@ -43,4 +48,5 @@ static func adjudicate_case(case_data: CaseData, world: LoreData,
 	ctx.present_year = world.present_year
 	ctx.present_reign = world.present_reign
 	ctx.register = register
+	ctx.necrology = world.necrology
 	return adjudicate(ctx, world.verdict_policy)

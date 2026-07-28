@@ -169,18 +169,9 @@ def date_findings(charter, world, present):
     elif year > max_regnal(reign, style, present):
         out.append((DEFECT, "date_beyond_reign"))
 
-    for w in charter.get("witnesses", []):
-        if not w.get("died_emperor") or not w.get("died_regnal_year"):
-            continue
-        wr = world["reigns"].get(w["died_emperor"])
-        if wr is None:
-            continue
-        died = to_absolute(wr, w["died_regnal_year"],
-                           w.get("died_dating_style", "accession"))
-        if died < absolute:
-            out.append((DEFECT, "witness_dead"))
-        elif died == absolute:
-            out.append((NOTE, "witness_died_that_year"))
+    # Witnesses moved out to necrology_findings(); see scripts/rules/witness_check.gd.
+    # Reading a man's death off the charter that names him meant a forger closed
+    # the check by leaving one line out.
 
     if style != "accession":
         out.append((NOTE, "unusual_reckoning"))
@@ -194,6 +185,95 @@ def date_findings(charter, world, present):
     # could not see it because main() only ever compared the final verdict.
     if not any(sev >= DEFECT for sev, _code in out):
         out.append((CLEAN, "date_sound"))
+    return out
+
+
+# --------------------------------------------------------------- necrology
+
+def necrology_findings(charter, world, necrology, present):
+    """Witness list against the rolls of the dead.
+
+    Deliberately re-derived here rather than shared with the GDScript. The one
+    invariant worth stating twice: absence from a roll NEVER produces a defect.
+    A roll covers one house, stops at one year, and reckons in one style, and
+    three of the seven polities return nothing at all.
+    """
+    out = []
+    if necrology is None:
+        return out
+    reign = world["reigns"].get(charter["date_emperor"])
+    if reign is None:
+        return out
+    style = world["polities"][charter["drawn_by_polity"]].get(
+        "dating_style", "accession")
+    if epoch(reign, style) <= 0 or charter["date_regnal_year"] < 1:
+        return out
+    year = to_absolute(reign, charter["date_regnal_year"], style)
+
+    rolls = necrology.get("rolls", [])
+    dead = 0
+    unverifiable = 0
+    silent = 0
+
+    for w in charter.get("witnesses", []):
+        house = w.get("house") or ""
+        mine = [r for r in rolls if house and r.get("polity_id") == house]
+        found = None
+        found_roll = None
+        for r in mine:
+            for e in r.get("entries", []):
+                if e.get("person_id") and e["person_id"] == w.get("person_id"):
+                    found, found_roll = e, r
+                    break
+            if found:
+                break
+
+        if found is not None:
+            dr = world["reigns"].get(found["died_emperor"])
+            if dr is None:
+                continue
+            reckoning = found_roll.get("reckoning", "accession")
+            if epoch(dr, reckoning) <= 0:
+                continue
+            died = to_absolute(dr, found["died_regnal_year"], reckoning)
+            if died < year:
+                dead += 1
+                out.append((DEFECT, "witness_dead"))
+            elif died == year:
+                out.append((NOTE, "witness_died_that_year"))
+            else:
+                out.append((CLEAN, "witness_alive_by_roll"))
+            # The parchment's own annotation, cross-examined against the roll.
+            if w.get("died_emperor") and w.get("died_regnal_year"):
+                ar = world["reigns"].get(w["died_emperor"])
+                astyle = w.get("died_dating_style", "accession")
+                if ar is not None and epoch(ar, astyle) > 0:
+                    claimed = to_absolute(ar, w["died_regnal_year"], astyle)
+                    if claimed != died:
+                        out.append((DEFECT, "annotation_disagrees"))
+            continue
+
+        covered = False
+        for r in mine:
+            wr = world["reigns"].get(r.get("written_up_to_emperor"))
+            if wr is None:
+                continue
+            edge = to_absolute(wr, r.get("written_up_to_regnal_year", 0),
+                               r.get("reckoning", "accession"))
+            if edge >= year:
+                covered = True
+                break
+        if covered:
+            silent += 1
+        else:
+            unverifiable += 1
+
+    if dead >= 2:
+        out.append((FATAL, "witness_list_impossible"))
+    if unverifiable:
+        out.append((NOTE, "necrology_incomplete"))
+    if silent:
+        out.append((CLEAN, "witness_roll_silent"))
     return out
 
 
@@ -226,6 +306,8 @@ POLICY = [(FATAL, "DENY"), (CONTESTED, "REFER"), (DEFECT, "REFER")]
 def adjudicate(charter, world, matrices, present):
     findings = (seal_findings(charter, world, matrices, present)
                 + date_findings(charter, world, present)
+                + necrology_findings(charter, world, world.get("necrology"),
+                                     present)
                 + authority_findings(charter, world, present))
     for sev, verdict in POLICY:
         for f in findings:
@@ -280,9 +362,11 @@ def main():
         report()
         return
 
+    necrology_raw = load("world", "necrology.json")
     world = {
         "reigns": {r["id"]: r for r in world_raw["reigns"]},
         "polities": {p["id"]: p for p in world_raw["polities"]},
+        "necrology": necrology_raw,
     }
     matrices = matrices_raw["matrices"]
     present = world_raw["present_year"]
@@ -302,6 +386,93 @@ def main():
             fail("matrix '%s': unknown polity '%s'" % (m["id"], m["polity_id"]))
         if m["broken_year"] >= 0 and m["broken_year"] < m["cut_year"]:
             fail("matrix '%s': broken before it was cut" % m["id"])
+
+    # --- necrology
+    #
+    # The rolls are the only source of law that lives outside the packet, so the
+    # ways they can be wrong are different from everything else here: an entry
+    # nobody can identify, a roll for a house that does not exist, a roll that
+    # claims to be written up past the present day, or a polity that is both
+    # silent and returning.
+    if necrology_raw is not None:
+        seen_person = {}
+        silent_ids = {s.get("polity_id") for s in necrology_raw.get("silent", [])}
+        for r in necrology_raw.get("rolls", []):
+            if r.get("polity_id") not in world["polities"]:
+                fail("necrology roll '%s': unknown polity '%s'"
+                     % (r.get("id"), r.get("polity_id")))
+            if r.get("polity_id") in silent_ids:
+                fail("necrology roll '%s': its house is also listed as silent"
+                     % r.get("id"))
+            if r.get("reckoning") not in ("accession", "election"):
+                fail("necrology roll '%s': reckoning must be accession or "
+                     "election, not '%s'" % (r.get("id"), r.get("reckoning")))
+            wr = world["reigns"].get(r.get("written_up_to_emperor"))
+            if wr is None:
+                fail("necrology roll '%s': unknown emperor '%s' in written_up_to"
+                     % (r.get("id"), r.get("written_up_to_emperor")))
+            else:
+                edge = to_absolute(wr, r.get("written_up_to_regnal_year", 0),
+                                   r.get("reckoning", "accession"))
+                if edge > present:
+                    fail("necrology roll '%s': written up to %d, which is after "
+                         "the present year %d" % (r.get("id"), edge, present))
+            for e in r.get("entries", []):
+                pid = e.get("person_id")
+                if not pid:
+                    fail("necrology roll '%s': an entry has no person_id"
+                         % r.get("id"))
+                    continue
+                if pid in seen_person:
+                    fail("necrology: '%s' is entered in two rolls (%s and %s); "
+                         "a man dies once" % (pid, seen_person[pid], r.get("id")))
+                seen_person[pid] = r.get("id")
+                dr = world["reigns"].get(e.get("died_emperor"))
+                if dr is None:
+                    fail("necrology entry '%s': unknown emperor '%s'"
+                         % (pid, e.get("died_emperor")))
+                    continue
+                died = to_absolute(dr, e.get("died_regnal_year", 0),
+                                   r.get("reckoning", "accession"))
+                if died > present:
+                    fail("necrology entry '%s': dies in %d, after the present "
+                         "year %d" % (pid, died, present))
+        # THE SILENT FAILURE THIS FILE EXISTS TO CATCH.
+        #
+        # Identity is matched on person_id and never on name, which is correct —
+        # two men are called Hugo Wend. The cost is that a typo in an id does not
+        # error: the man is simply never found, the roll reports itself silent,
+        # and a witness who is supposed to be caught walks. That happened once
+        # already between the case files and the rolls.
+        #
+        # A name that appears on both sides under two different ids is always a
+        # mistake, and it is the one shape of this bug that can be detected.
+        by_name = {}
+        for r in necrology_raw.get("rolls", []):
+            for e in r.get("entries", []):
+                by_name.setdefault(e.get("name"), set()).add(e.get("person_id"))
+        for case_file in order_raw["order"]:
+            c = load("cases", case_file + ".json")
+            if c is None:
+                continue
+            for doc in c.get("documents", []):
+                for w in doc.get("witnesses", []):
+                    ids = by_name.get(w.get("name"))
+                    if ids and w.get("person_id") not in ids:
+                        fail("case '%s': witness '%s' is person_id '%s', but the "
+                             "rolls know that name as %s — one of them is a typo "
+                             "and the man will never be found"
+                             % (c["id"], w.get("name"), w.get("person_id"),
+                                " or ".join(sorted(ids))))
+
+        for s in necrology_raw.get("silent", []):
+            if s.get("polity_id") not in world["polities"]:
+                fail("necrology silence names unknown polity '%s'"
+                     % s.get("polity_id"))
+            if not s.get("reason"):
+                fail("necrology silence for '%s' gives no reason; the player has "
+                     "to be able to read WHY nothing comes from there"
+                     % s.get("polity_id"))
 
     # --- books
     for book_file in sorted(os.listdir(os.path.join(DATA, "world", "books"))):

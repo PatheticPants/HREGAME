@@ -364,6 +364,27 @@ def view_shift():
     return mix(gain(creak, 0.42), gain(body, 0.26))
 
 
+def door_latch():
+    # The instant acknowledgement that a hand has touched the door: iron lifting
+    # out of its keep. Deliberately small and dry — the swing and the thud are
+    # separate events that land when the leaf actually arrives, and this must not
+    # compete with either.
+    tick = env(sweep(0.06, 2100, 1350, 1.4), 0.002, 0.94, 3.0)
+    body = env(lowpass(highpass(noise(0.05), 1400), 5200), 0.004, 0.92, 2.4)
+    return gain(mix(gain(tick, 0.34), gain(body, 0.26)), 0.62)
+
+
+def door_creak():
+    # Looped while the leaf is actually moving, at a volume that tracks the swing
+    # rate — so a slow door groans and a shoved one does not. Two detuned bands
+    # beating against each other, which is what a dry pin in a dry socket does.
+    n = lowpass(highpass(noise(1.6), 190), 1100)
+    grind = [1.0 + 0.55 * math.sin(2 * math.pi * 23 * i / SAMPLE_RATE)
+             + 0.30 * math.sin(2 * math.pi * 37.5 * i / SAMPLE_RATE)
+             for i in range(len(n))]
+    return gain([x * g for x, g in zip(n, grind)], 0.26)
+
+
 def footfall():
     # One boot on a board floor, heard across a room: a soft low thud with a
     # little grit, and no ring.
@@ -375,6 +396,8 @@ def footfall():
 RECIPES = {
     "view_shift": view_shift,
     "footfall": footfall,
+    "door_latch": door_latch,
+    "door_creak": door_creak,
     "stylus_scratch": stylus_scratch,
     "wax_smooth": wax_smooth,
     "candle_gutter": candle_gutter,

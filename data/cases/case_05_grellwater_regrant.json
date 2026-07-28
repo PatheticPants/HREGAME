@@ -51,8 +51,8 @@
       "subject_id": "grellwater_mill",
       "claimant_id": "emmerich_hove",
       "witnesses": [
-        { "name": "Liutger von Ahr", "title": "vice-chancellor" },
-        { "name": "Rudolf Gern", "title": "master of the household" }
+        { "name": "Liutger von Ahr", "person_id": "liutger_von_ahr", "house": "aachen_verd", "title": "vice-chancellor" },
+        { "name": "Rudolf Gern", "person_id": "rudolf_gern", "house": "aachen_verd", "title": "master of the household" }
       ],
       "seal": {
         "id": "seal_grellwater_regrant",

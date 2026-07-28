@@ -58,9 +58,9 @@
       "claimant_id": "saint_wend_abbey",
 
       "witnesses": [
-        { "name": "Adalbero", "title": "dean of the chapter" },
-        { "name": "Meinhard", "title": "abbot of Saint Wend's-in-the-Wood" },
-        { "name": "Gozwin", "title": "notary of the bishop's chancery" }
+        { "name": "Adalbero", "person_id": "adalbero_dean", "house": "saint_wend", "title": "dean of the chapter" },
+        { "name": "Meinhard", "person_id": "meinhard", "house": "saint_wend", "title": "abbot of Saint Wend's-in-the-Wood" },
+        { "name": "Gozwin", "person_id": "gozwin", "house": "saint_wend", "title": "notary of the bishop's chancery" }
       ],
 
       "seal": {

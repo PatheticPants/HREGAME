@@ -19,6 +19,12 @@ var polities: Dictionary = {}
 ## that a precedent check is an addition rather than a migration.
 var register: Register = null
 
+## The rolls of the dead. Deliberately a source OUTSIDE the packet: everything
+## else a check reads about a charter is written on the charter, which is fine
+## for a seal (a forger cannot manufacture a die that existed) and fatal for a
+## witness list (a forger absolutely can decline to write "obiit").
+var necrology: Necrology = null
+
 var present_year: int = 0
 var present_reign: StringName = &""
 

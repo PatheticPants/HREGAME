@@ -61,7 +61,10 @@ func run(ctx: CheckContext) -> Array[Finding]:
 				Lex.dating_name(style), Lex.ordinal(ch.date_regnal_year),
 				RegnalMath.describe(reign, ch.date_regnal_year, style)], ch.id))
 
-	out.append_array(_witness_findings(ctx, ch, year))
+	# The witness block used to live here, reading each man's death off the
+	# charter's own witness entry. That made the document under suspicion its own
+	# only witness against itself, and omitting one line defeated it. It is now
+	# WitnessCheck, fed by the Kalendar of the Dead, which the forger never had.
 
 	# A chancery that does not count from accession is the single most missable
 	# fact on the parchment, so it is always surfaced as a hint.
@@ -91,28 +94,7 @@ func run(ctx: CheckContext) -> Array[Finding]:
 	return out
 
 
-## The one cross-fact test in this slice: a man cannot witness a document dated
-## after his own death. The fuller witness check — imprisonments, absences,
-## men who were demonstrably three duchies away — is later work, and lands as an
-## additional Check rather than a change here.
-func _witness_findings(ctx: CheckContext, ch: CharterData, year: int) -> Array[Finding]:
-	var out: Array[Finding] = []
-	for w in ch.witnesses:
-		if not w.has_death_record():
-			continue
-		var wr := ctx.reign(w.died_emperor)
-		if wr == null:
-			continue
-		var died := RegnalMath.to_absolute(wr, w.died_regnal_year, w.died_dating_style)
-		if died < year:
-			out.append(Finding.make(&"witness_dead", Lex.Severity.DEFECT,
-				"A dead man has witnessed",
-				"%s is recorded dead in %d. The instrument is dated %d."
-				% [w.display(), died, year], ch.id))
-		elif died == year:
-			out.append(Finding.hint(&"witness_died_that_year",
-				"A witness died that same year",
-				"%s died in %d, the very year of the grant. Not impossible. "
-				% [w.display(), died] + "Worth a second look at the month, if we had one.",
-				ch.id))
-	return out
+## Witnesses are WitnessCheck's business now — see scripts/rules/witness_check.gd
+## and the reasoning in scripts/model/witness.gd. Keeping the two apart is what
+## stops "the date is wrong" and "a man on the list was already dead" from
+## collapsing into one verdict, in the same way AuthorityCheck is kept out of here.

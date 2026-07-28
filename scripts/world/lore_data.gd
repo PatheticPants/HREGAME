@@ -7,6 +7,9 @@ extends RefCounted
 var polities: Dictionary = {}   ## StringName -> Polity
 var reigns: Dictionary = {}     ## StringName -> Reign
 var matrices: Array[SealMatrix] = []
+
+## The rolls of the dead, and a written record of the houses that send none.
+var necrology: Necrology = null
 var books: Dictionary = {}      ## StringName -> BookData
 var cases: Array[CaseData] = []
 var days: Array[DayData] = []

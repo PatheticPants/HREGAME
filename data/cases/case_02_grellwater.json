@@ -60,13 +60,15 @@
       "witnesses": [
         {
           "name": "Eckhard von Melle",
+          "person_id": "eckhard_von_melle",
+          "house": "thurn",
           "title": "marshal of Thurn",
           "died_emperor": "aldric_i",
           "died_regnal_year": 12,
           "died_dating_style": "accession"
         },
-        { "name": "Hugo Wend", "title": "of Grellwater" },
-        { "name": "Berthold Kalp", "title": "miller of the lower weir" }
+        { "name": "Hugo Wend", "person_id": "hugo_wend", "house": "", "title": "of Grellwater" },
+        { "name": "Berthold Kalp", "person_id": "berthold_kalp", "house": "", "title": "miller of the lower weir" }
       ],
 
       "seal": {

@@ -44,6 +44,11 @@ var _speaker := ""
 var _departing := false
 var _arrived := false
 var _step_beat := 0.0
+var _walk_time := 0.0
+
+## Seconds between footfalls. The visible bob and the audible step read from the
+## same number, so a foot lands when you hear it land.
+const STEP_INTERVAL := 0.42
 var _portrait: Texture2D = null
 var _blink_left := 0.0
 var _next_blink := 2.0
@@ -79,6 +84,18 @@ func arrive() -> void:
 
 func depart() -> void:
 	_departing = true
+
+
+## Standing at the mark, done walking. The session waits for this before letting
+## anybody start talking — nobody says their piece mid-stride.
+func has_arrived() -> bool:
+	return _arrived and not _departing
+
+
+## Through the door and gone. The departure beat ends on this rather than on a
+## timer, so the room is never held empty and motionless waiting for a constant.
+func is_offstage() -> bool:
+	return _departing and _present <= 0.02
 
 
 func is_speaking() -> bool:
@@ -134,20 +151,27 @@ func _process(delta: float) -> void:
 		return
 	var was_present := _present
 	_present = move_toward(_present, 0.0 if _departing else 1.0,
-		delta * (1.35 if _departing else 0.9))
+		delta * (1.05 if _departing else 0.9))
 
-	# Footfalls across the room, and a settle when they reach the mark. The
-	# figure used to appear in complete silence — the same missing third phase
-	# the rack had, on the one object in the room that is a person.
-	if not _departing and not _arrived:
+	# FOOTFALLS BOTH WAYS.
+	#
+	# Arrival had steps and departure had none, so a petitioner walked in and then
+	# dissolved. They are crossing the same floor in both directions and the room
+	# is otherwise silent, which makes the missing half conspicuous.
+	var walking := _present > 0.02 and _present < 0.985
+	if walking:
+		_walk_time += delta
 		_step_beat += delta
-		if _step_beat > 0.42 and _present < 0.94:
-			_step_beat = 0.0
+		if _step_beat > STEP_INTERVAL:
+			_step_beat -= STEP_INTERVAL
+			# Quieter the further off they are, in both directions.
 			Audio.play(&"footfall", global_position,
 				-6.0 - (1.0 - _present) * 7.0)
-		if was_present < 1.0 and _present >= 1.0:
-			_arrived = true
-			Audio.play(&"cloth_shift", global_position, -8.0)
+	if not _departing and was_present < 1.0 and _present >= 1.0 and not _arrived:
+		_arrived = true
+		# Arriving is an event: the packet goes down on the desk and the man
+		# stops moving. Without this the walk simply ceased.
+		Audio.play(&"cloth_shift", global_position, -8.0)
 
 	# Idle sway: a slow figure-of-eight, faster and wider the more restless.
 	_sway += delta * (0.6 + data.restlessness * 1.4)
@@ -177,31 +201,44 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if data == null:
 		return
-	var enter := ease(clampf(_present, 0.0, 1.0), 0.4)
-	# APPROACH AND WITHDRAWAL.
+	# ONE DOORWAY, ONE PATH, BOTH DIRECTIONS.
 	#
-	# People used to leave by walking off toward the door and arrive by
-	# materialising upward on the spot — two different physical acts for the same
-	# doorway. Now both traverse the room, and arrival additionally comes toward
-	# the desk *through the perspective*: they start smaller and further off,
-	# nearer the door's side of the room, and grow as they close the distance.
+	# The comment that used to be here claimed arrival and departure both crossed
+	# the room. The numbers said otherwise: arrival travelled 300 units from the
+	# door's side of the room with a perspective shrink, and departure moved 90
+	# left and 58 DOWN — toward the viewer — at full size, and faded. So people
+	# walked in from a door and then sank through the floor in front of it.
 	#
-	# This is the first time the room's depth and a character's motion are the
-	# same system rather than two that happen to share a screen.
+	# There is one door. Leaving is arriving run backwards, and the perspective
+	# applies to both, which is what makes the room have depth rather than have a
+	# picture of depth.
+	#
+	# The curve is a true two-sided smoothstep. `ease(x, 0.4)` has an infinite
+	# derivative at zero, so the figure's on-screen speed was unbounded on the
+	# first frame of the walk — a snap-start into a long decelerating glide.
+	# Now they push off from rest and arrive at rest, like a person.
+	var t := clampf(_present, 0.0, 1.0)
+	var enter := t * t * (3.0 - 2.0 * t)
 	var from_door := Vector2(DOOR_SIDE, -APPROACH_RISE)
-	var offset := Vector2.ZERO
-	if _departing:
-		offset = Vector2(-(1.0 - enter) * 90.0, (1.0 - enter) * 58.0)
-	else:
-		offset = from_door * (1.0 - enter)
-	var alpha := enter
+	var offset := from_door * (1.0 - enter)
 
-	_draw_figure(offset, alpha)
-	if not _current.is_empty():
+	# The bob. Two or three pixels, on the same cadence as the footfall sound, so
+	# the body rises and falls with steps you can hear — and flattens out as they
+	# reach the mark and stand still.
+	if _present > 0.02 and _present < 0.985:
+		offset.y -= absf(sin(_walk_time / STEP_INTERVAL * PI)) * 3.2 \
+			* clampf(1.0 - enter, 0.0, 1.0)
+	var alpha := clampf(enter * 1.35, 0.0, 1.0)
+
+	_draw_figure(offset, alpha, enter)
+	# Nobody talks while walking out. The slip used to hang in the air beside a
+	# departing figure and fade with them, which read as a bug in the dialogue
+	# system rather than as a man leaving.
+	if not _current.is_empty() and not _departing:
 		_draw_speech(offset)
 
 
-func _draw_figure(offset: Vector2, alpha: float) -> void:
+func _draw_figure(offset: Vector2, alpha: float, closeness: float) -> void:
 	var h := data.height
 	var b := data.build
 	var speaking := 0.0 if _current.is_empty() else 1.0
@@ -224,11 +261,10 @@ func _draw_figure(offset: Vector2, alpha: float) -> void:
 	var breath := sin(_sway * 0.82) * (0.0025 + data.restlessness * 0.0015)
 	var turn := _shift * 0.0018 + sin(_sway * 0.57) * 0.0012
 	var body_scale := Vector2(1.0 - breath * 0.45, 1.0 + breath)
-	# Perspective on the approach: smaller at the far end of the walk, full size
-	# at the standing mark. Departure keeps its own established motion.
-	if not _departing:
-		var closeness := ease(clampf(_present, 0.0, 1.0), 0.4)
-		body_scale *= lerpf(APPROACH_DISTANT_SCALE, 1.0, closeness)
+	# Perspective, in BOTH directions. The guard that used to sit here excluded
+	# departure, so a man walked toward the desk growing and then left at full
+	# size — the room had depth on the way in and none on the way out.
+	body_scale *= lerpf(APPROACH_DISTANT_SCALE, 1.0, closeness)
 	draw_set_transform(base + lean, turn, body_scale)
 
 	var portrait_rect := Rect2(Vector2(-target_w * 0.5, -target_h),

@@ -368,6 +368,46 @@ func _test_evidence_is_on_the_desk(desk: Desk) -> void:
 		"every death the rules know about is written on the parchment (%d/%d)"
 		% [renderable, claimed])
 
+	# 1b. THE ROLLS OF THE DEAD.
+	#
+	# WitnessCheck convicts from the Kalendar, not from the parchment, so the
+	# contract now extends to it: every obit the rules can read must appear on
+	# some leaf of the physical book, and no leaf may carry more names than its
+	# board can hold. A roll longer than a page silently losing its tail is
+	# exactly the "the ledger says it was findable" breach this block exists for,
+	# and it happened on the first draft of the pagination.
+	_is_true(desk.kalendar_book != null, "the Kalendar of the Dead is on the desk")
+	var necrology := _lore_data.necrology
+	if desk.kalendar_book != null and necrology != null:
+		var obits := 0
+		var covered := 0
+		for roll in necrology.rolls:
+			obits += roll.entries.size()
+			var reached := {}
+			for page in desk.kalendar_book.data.pages:
+				if page.kind != &"obits" or page.roll_id != roll.id:
+					continue
+				_is_true(page.entry_count <= KalendarBook.ENTRIES_PER_PAGE,
+					"no leaf of %s carries more names than fit on it" % roll.id)
+				for i in range(page.entry_from,
+						mini(roll.entries.size(), page.entry_from + page.entry_count)):
+					reached[i] = true
+			covered += reached.size()
+			# Absence is the whole doctrine, so the reason a house sends nothing
+			# has to be readable too — otherwise `necrology_incomplete` quotes a
+			# sentence that exists only inside the rules.
+		for house in necrology.silences:
+			var found := false
+			for page in desk.kalendar_book.data.pages:
+				if page.kind == &"silence":
+					found = true
+			_is_true(found, "the houses that return nothing have a page of their own")
+			break
+		_is_true(obits > 0, "the rolls actually hold dead men")
+		_is_true(covered == obits,
+			"every obit is on a leaf the player can turn to (%d/%d)"
+			% [covered, obits])
+
 	# 2. The Register. Its seeded entries are the strongest signpost in the game
 	# for referring a contested reckoning, and they used to appear only in the
 	# end-of-day ledger — strictly after every ruling they could have informed.

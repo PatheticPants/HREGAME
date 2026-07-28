@@ -60,14 +60,16 @@
       "witnesses": [
         {
           "name": "Reinmar Vogt",
+          "person_id": "reinmar_vogt",
+          "house": "marchfeld",
           "title": "master cooper of the guild",
           "died_emperor": "kunrad_iv",
           "died_regnal_year": 3,
           "died_dating_style": "accession",
           "note": "Died the same year the charter was drawn. Alarming, and nothing at all."
         },
-        { "name": "Aldebrand Stoss", "title": "of the lesser council" },
-        { "name": "Gerhoh Lamp", "title": "sworn measurer of the city" }
+        { "name": "Aldebrand Stoss", "person_id": "aldebrand_stoss", "house": "marchfeld", "title": "of the lesser council" },
+        { "name": "Gerhoh Lamp", "person_id": "gerhoh_lamp", "house": "marchfeld", "title": "sworn measurer of the city" }
       ],
 
       "seal": {

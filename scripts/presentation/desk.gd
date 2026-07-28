@@ -75,6 +75,9 @@ var desk_note: DocketView
 var ring_stand: RingStand
 var ledge: DeskLedge
 var register_book: ReferenceBook
+var kalendar_book: ReferenceBook
+## The main scene's view controller, if there is one. Null in the test harnesses.
+var view: ViewController
 var docket_tray: DocketTray
 var docket_slips: Array[DocketSlip] = []
 var rings: Array[SignetRing] = []
@@ -124,6 +127,7 @@ func _ready() -> void:
 	_door.name = "audience_door"
 	_door.position = Vector2(-895, -683)
 	_door_home_y = _door.position.y
+	_door.settled.connect(_on_door_settled)
 	add_child(_door)
 
 	petitioner = PetitionerView.new()
@@ -164,6 +168,12 @@ func _ready() -> void:
 	session.name = "session"
 	add_child(session)
 	session.bind(self)
+
+	# The desk does not own the camera and must not: the ViewController is a
+	# sibling in the main scene, and the tests build a desk with no camera at all.
+	# This is a nullable convenience so the session can lift the notary's head
+	# when somebody knocks, and it is checked at every call site.
+	view = get_parent().get_node_or_null("view_controller") as ViewController
 
 	set_process(true)
 	Audio.set_loop(&"room_tone", 1.0)
@@ -229,6 +239,7 @@ func _build_fixtures() -> void:
 	_build_desk_note()
 	_build_book(&"matrix_book", Vector2(-430, 210))
 	_build_book(&"almanac", Vector2(400, 235))
+	_build_kalendar_book()
 	_build_register_book()
 
 	ledger = Ledger.new()
@@ -245,6 +256,27 @@ func _build_desk_note() -> void:
 	surface.add_child(desk_note)
 	desk_note.bind(note, DESK_RECT)
 	desk_note.settle_immediately()
+
+
+## The Kalendar of the Dead. Generated from the same necrology the rules read, so
+## every death WitnessCheck can raise is a page the player can physically open.
+##
+## It starts racked, like the Register. That is now three of four pigeonholes
+## occupied before the first knock — the tablet, the Kalendar and the Register —
+## with the Almanac and the Book of Matrices loose on a desk that already cannot
+## hold two open books and a charter. That squeeze is deliberate and it is the
+## point of the rack existing; it is recorded here so the next person to add a
+## book knows they are spending the last hole.
+func _build_kalendar_book() -> void:
+	if Lore.data.necrology == null:
+		return
+	kalendar_book = ReferenceBook.new()
+	surface.add_child(kalendar_book)
+	kalendar_book.bind(
+		KalendarBook.build(Lore.data.necrology, Lore.data), DESK_RECT)
+	kalendar_book.consulted.connect(_on_book_consulted)
+	books.append(kalendar_book)
+	_park_in_rack(kalendar_book, 2)
 
 
 ## The Register is a book like the other two, but its pages are generated from
@@ -733,9 +765,12 @@ func _process(delta: float) -> void:
 	_cursor = surface.get_local_mouse_position()
 	_cursor_speed = (_cursor - _cursor_prev).length() / maxf(delta, 0.0001)
 	_cursor_prev = _cursor
-	_door_open_amount = move_toward(_door_open_amount, _door_target, delta * 1.9)
 	if _door != null:
-		_door.set_open_amount(_door_open_amount)
+		_door.advance(delta)
+		_door_open_amount = _door.open_amount
+		# The creak tracks the swing the way the melt tracks the flame: a loop
+		# whose volume is the physical rate, silent the instant the leaf stops.
+		Audio.set_loop(&"door_creak", _door.swing_rate())
 
 	if _held != null:
 		_held.move_to(_cursor)
@@ -808,12 +843,37 @@ func is_morning() -> bool:
 	return _ambient_target == MORNING_AMBIENT
 
 
+## Opening and closing are requests. The loud sound belongs to the arrival, which
+## the door itself reports — see AudienceDoor.settled and _on_door_settled. What
+## fires here is only the small immediate acknowledgement that a hand has touched
+## it: a latch lifting, a bolt going home. Input still gets an instant answer;
+## the swing and the thud land when the leaf is actually there.
 func open_door() -> void:
 	_door_target = 1.0
+	if _door != null:
+		_door.swing_to(1.0)
+	Audio.play(&"door_latch", _door_world())
 
 
 func close_door() -> void:
 	_door_target = 0.0
+	if _door != null:
+		_door.swing_to(0.0)
+
+
+## Somebody is on the other side. The leaf jumps against the latch and stays shut.
+func knock_at_door() -> void:
+	if _door != null:
+		_door.knock()
+	Audio.play(&"door_knock", _door_world())
+
+
+func _door_world() -> Vector2:
+	return _door.global_position if _door != null else global_position
+
+
+func _on_door_settled(opening: bool) -> void:
+	Audio.play(&"door_open" if opening else &"door_close", _door_world())
 
 
 ## Freed on a clock rather than on arrival. Damping means a sheet that was

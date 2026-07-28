@@ -34,10 +34,15 @@ Recorded 2026-07-28 after a full read of `data/` and `scripts/rules/`.
    Different places, same year. Players will assume they are one event. Decide
    whether to unify them.
 
-5. **Witness deaths live on the parchment.** `DateCheck._witness_findings` reads
-   `died_*` from the charter's own witness entry, so Eckhard von Melle carries a
-   death record in `case_02` and none in `case_04`. A forger who omits the
-   annotation defeats the check. A world-level necrology would close this.
+5. ~~**Witness deaths live on the parchment.**~~ **CLOSED 2026-07-28** by the
+   Kalendar of the Dead — see [[canon-core-facts]]. Not an open question any more.
 
 6. **Polity headroom.** 7 of 9 used. Two slots remain and should stay unspent
    unless a proposal genuinely cannot be served by an existing polity.
+
+7. **The Kalendar page has no pagination.** `KalendarBook.build` makes exactly one
+   book page per roll and `ReferenceBook._draw_obit_roll` draws entries straight
+   down it. Rolls of 7–8 entries overflow a 316×424 book. This is a rendering gap,
+   not a lore gap, but it collides with the project's hardest convention
+   ("everything findable must be renderable on the desk"), so it must be settled
+   before more names are added to any roll.

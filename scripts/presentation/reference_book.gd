@@ -430,14 +430,25 @@ func _draw_page(r: Rect2, index: int) -> void:
 		at.y += Ink.line(self, at, page.subheading, 11, Ink.FADED)
 	at.y += 5.0
 
+	# On a plate the prose comments on the thing above it, so the body follows the
+	# drawing. On a roll the prose is the house speaking about its own roll, so it
+	# comes before the names — a list with its preamble printed underneath it is
+	# not how anything has ever been bound.
+	var body_leads := page.kind == &"obits" or page.kind == &"silence"
+	if body_leads and not page.body.is_empty():
+		at.y += Ink.block(self, at, page.body, 11, Ink.CHANCERY, w)
+		at.y += 4.0
+
 	match page.kind:
 		&"matrix": at.y += _draw_matrix_plate(at, w, page)
 		&"reigns": at.y += _draw_reign_table(at, w)
 		&"styles": at.y += _draw_style_table(at, w)
 		&"plate": at.y += _draw_polity_plate(at, w, page)
+		&"obits": at.y += _draw_obit_roll(at, w, page)
+		&"silence": at.y += _draw_silences(at, w)
 		_: pass
 
-	if not page.body.is_empty():
+	if not body_leads and not page.body.is_empty():
 		at.y += Ink.block(self, at, page.body, 11, Ink.CHANCERY, w)
 
 	if not page.marginalia.is_empty():
@@ -488,6 +499,78 @@ func _draw_matrix_plate(at: Vector2, w: float, page: BookPage) -> float:
 	y += 4.0
 	if not m.note.is_empty():
 		y += Ink.block(self, at + Vector2(0, y), m.note, 10, Ink.FADED, w)
+	return y
+
+
+## One house's roll of the dead.
+##
+## The coverage statement is set in the SAME weight as the entries, deliberately.
+## Every finding this book supports is a finding about coverage as much as about
+## a man — "the roll is written up to 1219 and this instrument is dated 1221" is
+## the whole reason a witness list can be honestly unverifiable — so the line that
+## states the edge of the roll's knowledge cannot be small print.
+func _draw_obit_roll(at: Vector2, w: float, page: BookPage) -> float:
+	var roll := Lore.obit_roll(page.roll_id)
+	if roll == null:
+		return Ink.line(self, at, "[ no roll returned ]", 11, Ink.RUBRIC)
+	var y := 0.0
+
+	# The reckoning and the edge of the roll's knowledge belong at the HEAD of a
+	# section only — the leaf that carries no names. Repeating them above every
+	# run of entries would eat the page and stop reading as a bound book.
+	if page.entry_count <= 0:
+		# Its own reckoning, stated on its own page. The Saint Wend chapter counts
+		# from election like the rest of the Church, and a clerk who reduces its
+		# obits as an imperial notary would gets a number three years wrong —
+		# which is only fair because this line is here.
+		y += Ink.line(self, at + Vector2(0, y),
+			"reckoned " + Lex.dating_name(roll.reckoning), 10, Ink.RUBRIC)
+		var reign := Lore.data.reign(roll.written_up_to_emperor)
+		if reign != null:
+			y += Ink.line(self, at + Vector2(0, y),
+				"written up to the %s year of %s"
+				% [Lex.ordinal(roll.written_up_to_regnal_year),
+					reign.full_name()], 11, Ink.RUBRIC)
+		y += 4.0
+		Ink.rule(self, at + Vector2(0, y), w, Ink.FADED * Color(1, 1, 1, 0.5))
+		y += 6.0
+
+	# A head leaf carries no names at all. Clamping the count up to one here put a
+	# single stray obit under the coverage statement on every section head.
+	if page.entry_count <= 0:
+		return y
+	var last := mini(roll.entries.size(), page.entry_from + page.entry_count)
+	for i in range(page.entry_from, last):
+		var o := roll.entries[i]
+		y += Ink.line(self, at + Vector2(0, y), o.display(), 11, Ink.CHANCERY)
+		var r := Lore.data.reign(o.died_emperor)
+		# Regnal form, like every other date in the game, so establishing when a
+		# man died still costs a trip to the Almanac. Printing the absolute year
+		# here would hand the player the one piece of arithmetic this is for.
+		y += Ink.line(self, at + Vector2(0, y), "  " + o.obit_line(
+			r.full_name() if r != null else String(o.died_emperor)), 10, Ink.FADED)
+		if not o.note.is_empty():
+			y += Ink.block(self, at + Vector2(0, y), "  " + o.note, 9,
+				Ink.FADED, w)
+		y += 3.0
+	return y
+
+
+## The houses that send nothing, and why. This page is the reason absence is not
+## evidence, and it is generated from the same data the check reads so it cannot
+## quietly stop matching the polity roster.
+func _draw_silences(at: Vector2, w: float) -> float:
+	var n := Lore.data.necrology
+	if n == null:
+		return 0.0
+	var y := 0.0
+	for house in n.silences:
+		var p := Lore.polity(house)
+		y += Ink.line(self, at + Vector2(0, y),
+			p.name if p != null else String(house), 11, Ink.CHANCERY)
+		y += Ink.block(self, at + Vector2(0, y), "  " + String(n.silences[house]),
+			10, Ink.FADED, w)
+		y += 6.0
 	return y
 
 

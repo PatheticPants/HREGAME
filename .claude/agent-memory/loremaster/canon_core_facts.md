@@ -54,6 +54,37 @@ Berthold of Ostmark 1209–. Ulrich of Hallenstein 1202–.
   Aldebrand Stoss, Gerhoh Lamp, Reinmar Vogt (d. 1217), Adalbero, Meinhard,
   Gozwin, Rudolf Gern.
 
+## The Kalendar of the Dead (`data/world/necrology.json`, settled 2026-07-28)
+The Chancery keeps **no necrology of its own** — only a bound book of EXTRACTS
+returned by the houses that do. Title *The Kalendar of the Dead*, subtitle "obits
+returned to this Chancery, and by whom". Deliberately NOT "Book of Obits": that is
+indistinguishable from BOOK OF MATRICES on a cover at desk distance.
+
+Four returning hands, three silences. Every entry is dated in **its own roll's**
+reckoning; `written_up_to_*` is regnal, so finding the edge costs an Almanac trip.
+
+| roll id | hand | reckoning | written up to |
+|---|---|---|---|
+| `chapter_of_saint_wend` | Cathedral Chapter of Saint Wend | **election** | Kunrad IV 6 = 1219 |
+| `chapel_at_thurnstadt` | The Margrave's chapel at Thurnstadt | accession | Kunrad IV 5 = 1219 |
+| `city_book_of_marchfeld` | The city book of Marchfeld | accession | Kunrad IV 7 = 1221 |
+| `chancery_household_book` | The Chancery's own household book | accession | Kunrad IV 7 = 1221 |
+
+Silent: **Ostmark** (partible, four sons, four foundations, no single roll);
+**Hallenstein** (keeps one, will not send it; R.V. wrote to Ulrich four times);
+**Nether March** (no writing at all, extracts burnt at Lenz in '18).
+
+Load-bearing obits: Reinmar Vogt d. Kunrad IV 3 = **1217** (same year as case_01's
+charter — that anomaly must stay); Eckhard von Melle d. Aldric I 12 = **1215**
+(alive for case_02 in 1213 and case_04 in 1210); Dietrich of Thurn d. Aldric I 8 =
+**1211** (cross-checks `thurn_dietrich_ii.broken_year`); Adalbero d. Kunrad IV 5
+**by election** = **1218** (alive for case_03 in 1214 — teaches the election roll).
+
+Rules: matching is on `person_id`, never on name. **Absence from a roll is never
+evidence of life.** Hugo Wend of Grellwater is in no roll at all and is the shipped
+demonstration of that. Never add a roll for a silent polity without retiring a
+silence and its reason.
+
 ## Events
 - **1218** — fire burnt the lower town at Grellwater (destroyed Adelheid's
   original charter). **1218** — the archive at Lenz burnt, taking forty years of

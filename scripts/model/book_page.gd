@@ -8,7 +8,8 @@ extends Resource
 ## a data author having to describe layout. A new page kind is a new branch in
 ## reference_book.gd, not a new book.
 
-@export var kind: StringName = &"text"  ## text | matrix | reigns | styles | plate
+## text | matrix | reigns | styles | plate | obits | silence
+@export var kind: StringName = &"text"
 @export var heading: String = ""
 @export var subheading: String = ""
 @export_multiline var body: String = ""
@@ -18,6 +19,14 @@ extends Resource
 
 ## kind == "plate": a polity's arms and its one distinguishing habit.
 @export var polity_id: StringName = &""
+
+## kind == "obits": which house's death-roll this section reproduces, and which
+## slice of it this leaf carries. A roll longer than a page continues onto the
+## next, because an obit that runs off the bottom of the board is an obit the
+## rules can convict on and the player cannot read.
+@export var roll_id: StringName = &""
+@export var entry_from: int = 0
+@export var entry_count: int = 0
 
 ## Marginalia in a second hand. The previous notary annotated these books, and
 ## not everything he wrote was help.

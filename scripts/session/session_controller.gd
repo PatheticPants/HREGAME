@@ -14,12 +14,29 @@ enum Stage {
 	REACTING, DEPARTING, CLOSING, LEDGER, OVER
 }
 
-const KNOCK_DELAY := 0.7
-const ENTER_DELAY := 1.5
-const SPEAK_DELAY := 0.9
+## THE BEATS BETWEEN CASES.
+##
+## These used to be five fixed constants totalling six seconds per transition, of
+## which about two and a half were an entirely empty, motionless room: the knock
+## landed at 0.7s and the door was not touched until 2.2s; the petitioner was
+## offstage by 0.74s into a 1.8s departure. That gap repeats on every one of the
+## seven matters across both days, so it was the single largest block of dead
+## screen time in the game.
+##
+## Now the door answers the knock immediately (it rattles against its latch), the
+## walk-in begins while it is still swinging, and departure ends when the room is
+## actually empty rather than after an arbitrary pad. Each one also carries a
+## small per-case variance, because a campaign in which every caller is admitted
+## on precisely the same beat is a campaign with a metronome in it.
+const KNOCK_DELAY := 0.55
+const ENTER_DELAY := 0.62
+const SPEAK_DELAY := 0.75
 const REACT_DELAY := 1.1
-const DEPART_DELAY := 1.8
+const DEPART_DELAY := 1.15
 const CLOSE_DELAY := 1.6
+
+## Doorkeepers are not clockwork. +/- this fraction, drawn once per caller.
+const BEAT_VARIANCE := 0.22
 
 ## Seconds of silent work before the petitioner fills the silence, and again.
 const WAIT_FIRST := 52.0
@@ -59,6 +76,12 @@ var _work_time := 0.0
 ## while the desk is used, and reactive speech can happen during WORKING.
 var _work_engaged := false
 var _practice_inspected := false
+## Per-caller multiplier on every arrival and departure beat.
+var _beat := 1.0
+## The head is lifted once per caller, on their knock, and never again — a game
+## that keeps grabbing the camera is a game arguing with the player about where
+## to look.
+var _looked_up_for_case := false
 
 
 func bind(d: Desk) -> void:
@@ -259,7 +282,21 @@ func _start_case(next: CaseData) -> void:
 	_door_closed = true
 	_work_time = 0.0
 	_work_engaged = false
+	_looked_up_for_case = false
+	# One draw per caller, applied to every beat of their arrival and exit, so a
+	# hurried doorkeeper is hurried throughout rather than jittering at random.
+	_beat = randf_range(1.0 - BEAT_VARIANCE, 1.0 + BEAT_VARIANCE)
 	_heard_beats.clear()
+	# THE CLOCK IS STOPPED AND THE FLAME SAYS SO.
+	#
+	# The candle burns only while somebody is at the desk and the player is
+	# deciding — the fairness rule the whole design rests on. There was a fine cue
+	# for the clock STARTING (a flame catch, a delayed tick, a permanent bead of
+	# wax in the saucer) and none whatsoever for it stopping, so the player's
+	# model was "it is always burning", and they hurried through reading they had
+	# been given for free.
+	if desk != null and desk.candle != null:
+		desk.candle.mark_work_rested()
 	_enter(Stage.KNOCK)
 
 
@@ -289,11 +326,30 @@ func _enter(s: int) -> void:
 
 
 func _tick_knock() -> void:
-	if not _knocked and _timer > KNOCK_DELAY:
+	if not _knocked and _timer > KNOCK_DELAY * _beat:
 		_knocked = true
-		Audio.play(&"door_knock")
-	if _timer > KNOCK_DELAY + ENTER_DELAY:
-		Audio.play(&"door_open")
+		# The knock is now a thing that HAPPENS to an object: the leaf jumps
+		# against its latch. It used to be a sound with no consequence anywhere
+		# on screen, followed by a second and a half of nothing.
+		desk.knock_at_door()
+		# AND THE HEAD COMES UP.
+		#
+		# The door sits at global y=-43 and the work camera at y=590, so in the
+		# default view the doorway is entirely off the top of the frame. The
+		# knock, the swing and the walk in — the best-authored motion in the
+		# build — all happened where the player was not looking, and nothing in
+		# the game ever moved the view. The overwhelmingly likely first-time
+		# experience was: a noise somewhere, then papers on the desk.
+		#
+		# A person looks up when somebody knocks. It uses the same spring the
+		# player will later drive themselves, so it teaches the control by
+		# performing it, and it puts the "return to desk" caption on screen at
+		# the exact moment it becomes useful. It is not forced a second time —
+		# _on_case_work_engaged puts the head back down and it stays down.
+		if not _looked_up_for_case and desk.view != null:
+			_looked_up_for_case = true
+			desk.view.look_up()
+	if _timer > (KNOCK_DELAY + ENTER_DELAY) * _beat:
 		desk.open_door()
 		_door_closed = false
 		desk.petitioner.bind(_current.petitioner)
@@ -303,12 +359,16 @@ func _tick_knock() -> void:
 
 
 func _tick_entering() -> void:
-	if _timer < SPEAK_DELAY:
-		return
-	if not _door_closed:
+	if not _door_closed and _timer > SPEAK_DELAY * 0.5:
+		# The door shuts behind them while they are still crossing the room,
+		# which is what happens, rather than after they have finished walking.
 		_door_closed = true
 		desk.close_door()
-		Audio.play(&"door_close")
+	# Nobody starts talking mid-stride. Speech used to begin on a flat timer that
+	# could fire while the figure was still halfway across the floor, so the walk
+	# and the first line fought each other for the player's attention.
+	if _timer < SPEAK_DELAY or not desk.petitioner.has_arrived():
+		return
 	var lines := _current.lines_for(&"arrival", register)
 	var texts: Array[String] = []
 	for l in lines:
@@ -329,22 +389,27 @@ func _tick_speaking() -> void:
 
 
 func _tick_reacting() -> void:
-	if desk.petitioner.is_speaking() or _timer < REACT_DELAY:
+	if desk.petitioner.is_speaking() or _timer < REACT_DELAY * _beat:
 		return
 	desk.open_door()
 	_door_closed = false
-	Audio.play(&"door_open")
 	desk.petitioner.depart()
 	desk.sweep_packet_away()
 	_enter(Stage.DEPARTING)
 
 
 func _tick_departing() -> void:
-	if not _door_closed and _timer > DEPART_DELAY * 0.5:
+	# Shut it behind them, once they are actually through it.
+	if not _door_closed and desk.petitioner.is_offstage():
 		_door_closed = true
 		desk.close_door()
-		Audio.play(&"door_close")
-	if _timer > DEPART_DELAY:
+	# END WHEN THE ROOM IS EMPTY, NOT ON A TIMER.
+	#
+	# The petitioner used to be offstage after about three quarters of a second
+	# of an eighteen-hundred-millisecond wait, so every case ended with a second
+	# of a motionless empty room before the next case's own silent knock delay.
+	# Now the beat is over when the two things that were moving have stopped.
+	if desk.petitioner.is_offstage() and _door_closed and _timer > DEPART_DELAY * _beat:
 		desk.petitioner.clear()
 		_advance_case()
 
@@ -392,6 +457,12 @@ func _on_case_work_engaged(_who: Draggable) -> void:
 		return
 	if not _work_engaged and desk.candle != null:
 		desk.candle.mark_work_engaged()
+	# Hand to the packet means the reading has started, so put the head back down
+	# to the work. Only ever from the lift this controller performed itself: a
+	# player who chose to look up is not overruled.
+	if _looked_up_for_case and desk.view != null:
+		_looked_up_for_case = false
+		desk.view.look_down()
 	_work_engaged = true
 	# "Doing anything resets the silence" applies to handling paper too, not only
 	# to the few actions that happen to have an authored investigation beat.

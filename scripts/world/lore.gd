@@ -40,6 +40,12 @@ func matrix(id: StringName) -> SealMatrix:
 	return data.matrix(id) if data else null
 
 
+func obit_roll(id: StringName) -> ObitRoll:
+	if data == null or data.necrology == null:
+		return null
+	return data.necrology.roll(id)
+
+
 func book(id: StringName) -> BookData:
 	return data.book(id) if data else null
 

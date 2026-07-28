@@ -39,6 +39,12 @@ const EVENTS := {
 	&"door_knock":    {"gain": -4.0, "pitch": 1.00, "jitter": 0.03},
 	&"door_open":     {"gain": -8.0, "pitch": 1.00, "jitter": 0.05},
 	&"door_close":    {"gain": -6.0, "pitch": 1.00, "jitter": 0.05},
+	# The door in three parts: the latch answers the hand at once, the creak
+	# tracks the swing continuously, and door_open/door_close land on the frame
+	# the leaf actually arrives. One event used to carry all three jobs and
+	# arrived half a second before any of them had happened.
+	&"door_latch":    {"gain": -13.0, "pitch": 1.00, "jitter": 0.09},
+	&"door_creak":    {"gain": -20.0, "pitch": 1.00, "jitter": 0.04, "loop": true},
 	&"cloth_shift":   {"gain": -16.0, "pitch": 1.00, "jitter": 0.14},
 	&"quill_scratch": {"gain": -11.0, "pitch": 1.00, "jitter": 0.10},
 	&"ledger_thud":   {"gain": -4.0, "pitch": 1.00, "jitter": 0.04},

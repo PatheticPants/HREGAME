@@ -28,6 +28,7 @@ func _initialize() -> void:
 	_test_legend_matching()
 	_test_cases(lore)
 	_test_policy()
+	_test_witnesses(lore)
 	_test_plural_authority(lore)
 	_test_precedent(lore)
 	_test_campaign_data(lore)
@@ -163,6 +164,100 @@ func _test_policy() -> void:
 	var empty: Array[Finding] = []
 	_eq(p.decide(empty)["verdict"], Lex.Verdict.CONFIRM,
 		"an empty packet confirms rather than crashing")
+
+
+## THE HOLE, AND THE FOUR WAYS IT COULD REOPEN.
+##
+## Witness deaths used to be read off the charter's own witness list, so the one
+## document under suspicion was the only source for the fact that would have
+## condemned it. Omit the annotation and the check was defeated. These assertions
+## exist so that can never quietly become true again — every one of them fails if
+## somebody moves the death back onto the parchment, and the first one fails
+## loudest, because it is the forgery itself.
+func _test_witnesses(lore: LoreData) -> void:
+	_section("the rolls of the dead")
+	_is_true(lore.necrology != null and not lore.necrology.rolls.is_empty(),
+		"the Chancery holds obit rolls returned by other houses")
+	if lore.necrology == null:
+		return
+
+	var thurn := _first_roll_of(lore, &"thurn")
+	_is_true(thurn != null, "the Margrave's chapel returns its dead")
+	if thurn == null:
+		return
+
+	# 1. A charter that names a man the roll knows to be dead, and says NOTHING
+	#    about it, is still caught. This is the whole point.
+	var dead := thurn.entries[0]
+	for e in thurn.entries:
+		if e.person_id == &"dietrich_of_thurn":
+			dead = e
+	var forged := _packet_witnessed(lore, &"thurn", dead.person_id, "Dietrich",
+		&"aldric_i", 14, &"")
+	var a := Adjudicator.adjudicate(forged)
+	_is_true(a.codes().has(&"witness_dead"),
+		"a forger who omits the obiit is caught by the roll anyway")
+
+	# 2. Silence is never evidence of life. A man no roll covers must produce a
+	#    NOTE at worst — never a defect, and never prose asserting he lived.
+	var stranger := _packet_witnessed(lore, &"", &"nobody_at_all", "A Stranger",
+		&"aldric_i", 14, &"")
+	var b := Adjudicator.adjudicate(stranger)
+	_is_true(not b.codes().has(&"witness_dead"),
+		"a man in nobody's roll is not thereby dead")
+	var worst := Lex.Severity.CLEAN
+	for f in b.findings:
+		if f.code.begins_with("witness") or f.code.begins_with("necrology"):
+			worst = maxi(worst, f.severity)
+	_is_true(worst <= Lex.Severity.NOTE,
+		"and an unverifiable witness list is never worse than a note")
+
+	# 3. A roll that stops short of the charter cannot speak about it either.
+	_is_true(b.codes().has(&"necrology_incomplete"),
+		"the ledger says WHICH roll fell short rather than only that one did")
+
+	# 4. The annotation on the parchment is cross-examined, not believed. This
+	#    closes the hole from the other side: against a forger who writes an
+	#    obiit that suits him rather than leaving it off.
+	var lied := _packet_witnessed(lore, &"thurn", dead.person_id, "Dietrich",
+		&"aldric_i", 14, &"kunrad_iv", 6)
+	var c := Adjudicator.adjudicate(lied)
+	_is_true(c.codes().has(&"annotation_disagrees"),
+		"an obiit that disagrees with the roll is itself a finding")
+
+
+func _first_roll_of(lore: LoreData, polity: StringName) -> ObitRoll:
+	for r in lore.necrology.rolls:
+		if r.polity_id == polity:
+			return r
+	return null
+
+
+## A minimal one-witness packet, built in code so these assertions do not depend
+## on any shipped case continuing to have the shape they need.
+func _packet_witnessed(lore: LoreData, house: StringName, person: StringName,
+		who: String, emperor: StringName, regnal: int,
+		annotated: StringName, annotated_year := 0) -> CheckContext:
+	var w := Witness.new()
+	w.name = who
+	w.person_id = person
+	w.house = house
+	w.died_emperor = annotated
+	w.died_regnal_year = annotated_year
+	var ch := CharterData.new()
+	ch.id = &"test_charter"
+	ch.date_emperor = emperor
+	ch.date_regnal_year = regnal
+	ch.drawn_by_polity = &"thurn"
+	ch.witnesses = [w]
+	var ctx := CheckContext.new()
+	ctx.documents = [ch]
+	ctx.matrices = lore.matrices
+	ctx.reigns = lore.reigns
+	ctx.polities = lore.polities
+	ctx.present_year = lore.present_year
+	ctx.necrology = lore.necrology
+	return ctx
 
 
 func _test_plural_authority(lore: LoreData) -> void:

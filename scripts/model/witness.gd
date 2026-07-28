@@ -3,24 +3,53 @@ extends Resource
 
 ## A name on the charter's witness list.
 ##
-## The witness *check* (cross-referencing against deaths, imprisonments, absences)
-## is not in this slice. What is here is the one fact the date check needs: if a
-## witness is recorded dead, a charter he attests cannot postdate him. The field
-## exists now so the fuller check later is an addition, not a migration.
+## EVERYTHING IN HERE IS THE PARCHMENT'S CLAIM ABOUT A MAN, NOT A FACT ABOUT HIM.
+##
+## That distinction used to not exist, and it was the hole under the whole witness
+## check: the death annotation was read straight off the charter's own witness
+## entry and treated as truth, so the single document under suspicion was also
+## the only source for the fact that would have condemned it. Omitting one line
+## defeated the check completely — and the game shipped with the hole live, since
+## Eckhard von Melle carries a death record on the Grellwater charter and none at
+## all on the second Thurn lion.
+##
+## Death now comes from the Kalendar of the Dead, which the forger never had in
+## his hands. What survives here is what a witness list actually is: a name, a
+## style, and — sometimes — a later chancery hand's note that the man is gone.
+## WitnessCheck cross-examines that note against the roll rather than believing
+## it, so annotating falsely is now as detectable as annotating not at all.
 
 @export var name: String = ""
 @export var title: String = ""
 
-## Regnal death date, if known: emperor id plus year. Empty emperor = unknown,
-## which is the normal case and must never be treated as suspicious.
+## Stable identity, matched against the rolls. Never matched by name: two men are
+## called Hugo Wend, and a check that convicts on a string comparison will one day
+## convict the wrong one. Empty means the office has not identified him, which is
+## ordinary and must never be treated as suspicious.
+@export var person_id: StringName = &""
+
+## Which house the charter says he belonged to, and therefore which roll would
+## have recorded him. FORGER-CONTROLLED, like every other word on the parchment.
+## The rules may use it only to WEAKEN certainty — to explain why a man cannot be
+## looked up — never to convict. Defaulting it to the charter's own polity would
+## simply move the hole rather than close it.
+@export var house: StringName = &""
+
+## Regnal death date as the PARCHMENT gives it, if it gives one at all. Empty
+## emperor = no annotation, which is the normal case. Retained because a
+## restoration copied from a genuine exemplar carries the exemplar's annotations,
+## and because an annotation that disagrees with the roll is itself a finding.
 @export var died_emperor: StringName = &""
 @export var died_regnal_year: int = 0
 
-## Which chancery's reckoning the death date was recorded in. Deaths recorded by
-## a church register and by an imperial one do not mean the same number.
+## Which chancery's reckoning the annotation was written in. Deaths recorded by a
+## church register and by an imperial one do not mean the same number.
 @export var died_dating_style: int = Lex.Dating.ACCESSION
 
-@export var note: String = ""
+## Authoring commentary. Deliberately underscored: it is a note to whoever edits
+## the case file, and nothing in the game renders it. It read as content for a
+## long time because it was named as though it were.
+@export var _note: String = ""
 
 
 func has_death_record() -> bool:

@@ -50,8 +50,8 @@
       "subject_id": "vech_meadow",
       "claimant_id": "gero_kalt",
       "witnesses": [
-        { "name": "Eckhard von Melle", "title": "marshal of Thurn" },
-        { "name": "Hugo Wend", "title": "of Grellwater" }
+        { "name": "Eckhard von Melle", "person_id": "eckhard_von_melle", "house": "thurn", "title": "marshal of Thurn" },
+        { "name": "Hugo Wend", "person_id": "hugo_wend", "house": "", "title": "of Grellwater" }
       ],
       "seal": {
         "id": "seal_second_lion",
