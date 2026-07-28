@@ -722,10 +722,37 @@ func _draw_wick(flame: Vector2) -> void:
 			Color(0.07, 0.055, 0.05))
 
 
+## How far the column of flame is bent over by the draught. Zero is straight up,
+## positive leans to the player's right, and it tracks the same drift that moves
+## every shadow in the room.
+##
+## This is a named function rather than the inline expression it used to be,
+## because the inline expression was `atan2(lean.x, -8.0)` — and atan2 takes (y,
+## x), so a NEGATIVE second argument returns an angle near pi. The flame was
+## therefore drawn rotated through 147 to 180 degrees in every frame the candle
+## was ever lit: the authored apex at local (0,-10) landed at y = +8.4 to +10.0,
+## the blue base that belongs against the wick sat at the TOP, and the tip
+## pointed down into the wax. An 8-unit lever arm was clearly the intent; the
+## sign was not.
+##
+## It survived four rounds of judging the candle from capture frames, because at
+## ship scale the flame is about nine pixels by thirteen and an upside-down
+## teardrop still reads as "a flame is there". The 4x series is what made it
+## visible, and the assertion in the presentation suite is what keeps it visible.
+func flame_lean() -> float:
+	var lean := _flame_drift - Vector2(0, absf(_flame_drift.y) * 0.35)
+	return atan2(lean.x, 8.0)
+
+
+## The authored outline of the luminous body, apex first. Shared with the test,
+## so the assertion is about the shape that actually gets drawn rather than about
+## a copy of it that can drift.
+const FLAME_APEX := Vector2(0.0, -10.0)
+
+
 func _draw_flame() -> void:
 	var flame := flame_local()
 	_draw_wick(flame)
-	var lean := _flame_drift - Vector2(0, absf(_flame_drift.y) * 0.35)
 	# A wick sitting in a pool of its own wax carries a smaller, meaner flame.
 	var pulse := lerpf(0.84, 1.10, _flicker) * lerpf(0.58, 1.0, _output())
 
@@ -734,7 +761,7 @@ func _draw_flame() -> void:
 	# visible concentric rings.
 	draw_circle(flame, 11.0 * pulse,
 		Color(1.0, 0.44, 0.11, 0.035 + _flicker * 0.016))
-	draw_set_transform(flame, atan2(lean.x, -8.0),
+	draw_set_transform(flame, flame_lean(),
 		Vector2.ONE * lerpf(0.55, 1.0, _output()))
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(-5.4, 3.6),

@@ -233,6 +233,38 @@ func _test_candle_light(desk: Desk) -> void:
 	_is_true(bounce != null and not bounce.shadow_enabled,
 		"the candle owns a broad low-energy bounce light")
 
+	# THE FLAME POINTS UP.
+	#
+	# It did not. `atan2(lean.x, -8.0)` — atan2 takes (y, x), so a negative second
+	# argument returns an angle near pi — rotated the whole luminous body through
+	# 147 to 180 degrees in every frame the candle was ever lit, putting the tip
+	# in the wax and the blue base, which belongs against the wick, at the top.
+	# Nothing caught it for the life of the project, including four rounds of
+	# judging this exact object from capture frames, because at ship scale the
+	# flame is nine pixels by thirteen and an upside-down teardrop still reads as
+	# "a flame is there".
+	#
+	# So the assertion is not about the angle, which can be wrong in a way that
+	# looks reasonable. It is about where the drawn apex ENDS UP, across the whole
+	# range of drift the flicker can produce.
+	var lowest_tip := -INF
+	var saved_drift := desk.candle._flame_drift
+	for lx in [-6.0, -3.0, -0.5, 0.0, 0.5, 3.0, 6.0]:
+		desk.candle._flame_drift = Vector2(lx, 0.0)
+		lowest_tip = maxf(lowest_tip,
+			Candle.FLAME_APEX.rotated(desk.candle.flame_lean()).y)
+	_is_true(lowest_tip < -6.0,
+		"the flame's tip stays well above its own wick at every lean")
+	# And it leans WITH the draught rather than against it, which the sign error
+	# also reversed.
+	desk.candle._flame_drift = Vector2(5.0, 0.0)
+	var tip_right := Candle.FLAME_APEX.rotated(desk.candle.flame_lean()).x
+	desk.candle._flame_drift = Vector2(-5.0, 0.0)
+	var tip_left := Candle.FLAME_APEX.rotated(desk.candle.flame_lean()).x
+	_is_true(tip_right > 1.0 and tip_left < -1.0,
+		"the flame leans the way the draught is blowing")
+	desk.candle._flame_drift = saved_drift
+
 	var first_flame := desk.candle.flame_world()
 	var first_energy := key.energy if key != null else 0.0
 	for i in 24:
