@@ -361,6 +361,7 @@ static func _load_days(lore: LoreData) -> void:
 			opening.requires_case = _sn(opening_raw, "requires_case")
 			opening.requires_verdict = Lex.verdict_from_string(
 				_s(opening_raw, "requires_verdict"))
+			opening.after_case = _sn(opening_raw, "after_case")
 			var document_raw = opening_raw.get("document", null)
 			if document_raw is Dictionary:
 				opening.document = _build_document(document_raw,

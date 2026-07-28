@@ -1,36 +1,46 @@
 ---
 name: project-campaign-state
-description: Hand and Seal — what persists across days today, which persistence channels exist, and which stored state is inert (as of 2026-07-28).
+description: Hand and Seal — what persists across days today, which persistence channels exist, and which stored state is inert (re-verified against source 2026-07-28).
 metadata:
   type: project
 ---
 
-As of 2026-07-28 the campaign is 7 cases across 2 authored days (`data/days/day_01.json`,
-`day_02.json`), one `Register` carried in `SessionController`, no save system.
+Re-verified against source on 2026-07-28. 8 cases, 2 authored days (`data/days/day_01.json`,
+`day_02.json`, manifest `_order.json`), one `Register` held in `SessionController`, no save
+system. Six Checks fire; `GenealogyCheck`, `PalaeographyCheck`, `JurisdictionCheck` unwritten.
 
-**Three working Register-to-play channels exist.** These are the whole campaign machinery today:
-1. `PrecedentCheck` (rules layer) — reads `ctx.register` by `subject_id` / `claimant_id`.
-2. `DialogueLine.requires_case` / `requires_verdict` — petitioners quote your ruling back.
-3. `DayOpeningDocument.matches(register)` and `DayCaseSlot.resolve(...)` — conditional
-   morning letters and conditional/fallback docket slots.
+**Four working Register-to-play channels exist.** These are the whole campaign machinery today:
+1. `PrecedentCheck` — reads `ctx.register` via `Register.latest_for_subject()`.
+2. `DialogueLine.requires_case` / `requires_verdict` / `requires_soundness` / `priority`.
+3. `DayOpeningDocument.matches(register)` — conditional morning letters.
+4. `DayCaseSlot.resolve()` — `requires_ruled` + `fallback_case_id`.
 
-**Favour is stored and inert.** `CaseOutcome.favor` -> `RulingRecord.favor` -> one prose
-sentence in `SessionController._ledger_summary()`. `Register.favor_totals()` is written and
-never called. Nothing in the game reads favour to change access, price, risk or availability.
-This is the single largest violation of "state must return as play" in the build.
+**Favour is stored and completely inert.** `CaseOutcome.favor` -> `RulingRecord.favor` -> one
+prose sentence in `SessionController._ledger_summary()`. `Register.favor_totals()` is written
+and never called anywhere. Keys in use: `imperial`, `church`, `custom`. Largest built-but-unused
+system in the game.
 
 **Craft is also inert beyond the ledger line.** `ImpressionRecord` is stored per ruling and
 never consulted again.
 
-**The economy exists only as a planted seam**, not as code: `data/world/register_seed.json`
-has R.V.'s entry "Fee for the writing, two marks, received of the party." There is no purse,
-no coin object, no tariff.
+Four load-bearing facts that constrain any campaign design:
+- **`Register.latest_for_subject()` and `entries_for_day()` filter out `foreign_hand`**, so
+  R.V.'s three seeded rulings are structurally unreachable by `PrecedentCheck`. The seed
+  entries also carry **no `subject_id`**. Making the predecessor's precedent contestable needs
+  both a seed edit and a deliberate second accessor.
+- **`Necrology.silences` is a Dictionary rendered as a real `kind == "silence"` page** by
+  `KalendarBook.build`, placed second, before any roll. Adding or removing a roll therefore has
+  a correct, self-documenting, non-evidential in-world representation for free, and
+  `WitnessCheck` degrades to honest ignorance automatically.
+- **`Adjudicator.adjudicate_case` sets `ctx.necrology = world.necrology`** — the rules layer and
+  the Kalendar book read the same object, so one filter changes both.
+- **Exactly one pigeonhole is free (ledge slot 0).** Tablet=1, Kalendar=2, Register=3. Spending
+  it is a real and final cost; `desk.gd:276-281` records this on purpose.
 
-**Why:** the vertical slice deliberately shipped the columns without their consequences; the
-README's "Not built, on purpose" section says the economy and remaining verification types
-have "a place in the schema and nothing more."
+**The economy exists only as a planted seam**, not as code: `register_seed.json` has R.V.'s
+"Fee for the writing, two marks, received of the party." No purse, no coin, no tariff.
 
-**How to apply:** any campaign proposal should be judged first on whether it converts one of
-these dead stores (favour, craft, fee) into access/price/risk, before it proposes a new
-verification type. Adding a Check subclass is the cheapest new work in this codebase and is
-therefore rarely the highest-value work. See [[project-campaign-open-questions]].
+**How to apply:** judge any campaign proposal first on whether it converts one of the dead
+stores (favour, craft, fee) into access, price, throughput or risk, before it proposes a new
+verification type. A new `Check` subclass is the cheapest work in this codebase and therefore
+rarely the highest-value work. See [[campaign-open-questions]], [[campaign-invariants]].

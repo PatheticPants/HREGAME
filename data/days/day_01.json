@@ -19,5 +19,34 @@
       "_note": "The knife. Placed last on Tuesday deliberately: the player has just been handed a case where two laws disagree and told that referring is the only honest answer, and then one more man comes in with a packet where every check they have been taught comes back clean. It is the day's sting in the tail and it sets up Thursday.",
       "case_id": "case_08_mill_on_the_aue"
     }
+  ],
+  "opening_documents": [
+    {
+      "_note": "THE HOOK, AND IT IS A SEED RATHER THAN A PLOT. Arrives after the first matter, so the player has ruled exactly once and has just learned that an anomaly is not a crime. Nothing is asked of them and nothing can be answered: there is no reply mechanic and the steward never comes back. What it does is make the previous holder of this desk a QUESTION, using only books already in the room. Follow it and you find: R.V.'s hand in the margin of every volume; his note in the Kalendar saying two hands held this desk before him and both are on that page; the Chancery's own household roll, which enters Odo Fenne and Isenbard Kliff as notaries at the third desk and does not enter him; and, if you reduce the years against the Almanac, eleven years that overlap Kliff's eight by six. Two written records that cannot both be true, found with three books and the same arithmetic the game already teaches. NO ANSWER EXISTS IN THE BUILD. Do not add one without deciding what it costs.",
+      "after_case": "case_01_kufergasse",
+      "document": {
+        "kind": "letter",
+        "id": "letter_steward_query",
+        "title": "Query from the Steward of the House",
+        "size": [
+          352,
+          300
+        ],
+        "tint": "#d3c6a6",
+        "start_offset": [
+          402,
+          150
+        ],
+        "start_angle_deg": -5.0,
+        "takes_seal": false,
+        "sender": "Meinwerk, steward of the house",
+        "recipient": "The third desk, second floor",
+        "body": "The household book wants a date for the third desk.\n\nI enter a man on the day his bed is stripped and not before. The bed under the stair was stripped in the week after Michaelmas. I have the mattress and the stool and no note of the day itself from anybody who was in the house, and the office will not pay a mason until the book is closed.\n\nIf the third desk holds any paper in the former hand that carries a date, the steward's book would be glad of it.",
+        "closing": "The page is ruled and the line is presently blank.",
+        "endorsements": [
+          "HOUSEHOLD"
+        ]
+      }
+    }
   ]
 }

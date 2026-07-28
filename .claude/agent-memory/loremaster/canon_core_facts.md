@@ -85,6 +85,29 @@ evidence of life.** Hugo Wend of Grellwater is in no roll at all and is the ship
 demonstration of that. Never add a roll for a silent polity without retiring a
 silence and its reason.
 
+## The two prior notaries of the third desk (`necrology.json`, household book)
+- **Odo Fenne**, notary at the third desk, d. Aldric I 5 = **1208**. The household
+  book gives him **no note at all** where comparable entries get one.
+- **Isenbard Kliff**, notary at the third desk, d. Kunrad IV 2 = **1216**. "Eight
+  years at the desk" = 1208–1216, so he took it the year Fenne died. "Died in the
+  lodging under the stair, of the winter cough."
+- **R.V. is not in this book**, which "enters a man on the day the bed is
+  stripped". See [[canon-open-questions]] 9 and 10 — the hand-count is contradictory
+  and unresolved.
+
+## Judgement columns — actual state (verified 2026-07-28)
+Soundness is counted per day. **Favour is not fully inert**:
+`SessionController._ledger_summary()` recomputes it inline per day and prints prose
+("… is pleased with the Chancery. Markedly."). `Register.favor_totals()` — the
+*cross-day* accumulation — is what is never called. Craft grades are collected by
+`Register.impression_grades()` and have no consequence.
+
+## Already planted and completely unused
+`matrices.json` `imperial_chancery.note`: the Chancery's own die is "kept in the
+iron press on the second floor and signed out by name. **The book of names is kept
+in the same press.**" Nothing reads it. It is the only route in the game by which a
+forgery could be traced to a person.
+
 ## Events
 - **1218** — fire burnt the lower town at Grellwater (destroyed Adelheid's
   original charter). **1218** — the archive at Lenz burnt, taking forty years of

@@ -1,11 +1,11 @@
 ---
 name: case-authoring-traps
-description: Non-obvious constraints when authoring data/cases/*.json for Hand and Seal - spoiler-safe titles, mandatory portrait_path, day-relative dialogue, docket text budget, and no shell to run the verifier.
+description: Non-obvious constraints when authoring data/ content for Hand and Seal - spoiler-safe titles, mandatory portrait_path, day-relative dialogue, sheet text budgets (docket AND letter), no shell, and where canon actually lives.
 metadata:
   type: project
 ---
 
-Things that cost real time to discover while writing and auditing cases, none of
+Things that cost real time to discover while writing and auditing content, none of
 which is visible from the case files alone.
 
 **1. A case title is a spoiler surface.** `scripts/presentation/docket_slip.gd`
@@ -24,9 +24,9 @@ that the path resolves and that it ends in `_bust.png` for every case.
 **How to apply:** always point at an existing bust in `art/petitioners/` and flag
 the face reuse in `_design` and in the report.
 
-**3. This agent context has had no Bash/shell tool.** Observed 2026-07-28: only
-Read, Write, Edit, Grep, Glob were available, so `python tools/verify_content.py`
-could not be executed.
+**3. This agent context has had no Bash/shell tool.** Observed 2026-07-28, twice
+in separate runs: only Read, Write, Edit, Grep, Glob were available, so
+`python tools/verify_content.py` could not be executed.
 **Why:** the brief asks for the verifier output, and silently skipping it would be
 the worst possible failure for a content-correctness tool.
 **How to apply:** check for a shell first. If there is none, hand-simulate
@@ -48,17 +48,40 @@ predecessor may be ruled minutes earlier on the same day.
 and never "this morning". Check both directions: can this case slip later, and
 can the case it cites slip later?
 
-**5. A docket slip is 330x235 and has a hard text budget.** `DocketView` flows
-title/name/style/claim_summary/received_note downward and then pins
-`doorkeeper_note` with `maxf(...)` only — there is no `minf` clamp to the foot,
-and `Sheet` does not clip, so overrun is painted onto the desk. Shipped
-`claim_summary` values sit at 100-180 characters; 300 pushes the footer off the
-parchment. `tests/test_presentation.gd` measures this ONLY for
-`Lore.data.desk_note`, not for case dockets.
+**5. Sheets flow text downward and NOTHING clips it. This applies to letters as
+well as dockets.** `DocketView` flows title/name/style/claim_summary/received_note
+and then pins `doorkeeper_note` with `maxf(...)` only — no `minf` clamp to the
+foot, and `Sheet` does not clip, so overrun is painted onto the desk. `LetterView`
+is the same shape: label, title, sender, recipient, body, closing, all flowing,
+with the endorsement wax circles drawn at a FIXED `r.end.y - MARGIN - 22`, so a
+long body runs straight through them. Shipped `claim_summary` values sit at
+100-180 characters; shipped letter bodies at ~330 characters in a 360x455 sheet.
+`tests/test_presentation.gd` measures this ONLY for `Lore.data.desk_note`.
 **Why:** the same overrun already destroyed the desk memorandum once, which is
 why that sheet is 400x585 and has a `_geometry_note`.
-**How to apply:** keep `claim_summary` under ~180 characters, or say the docket
-needs to grow. Office knowledge that a puzzle depends on does not belong in a
-sentence that may not render.
+**How to apply:** keep `claim_summary` under ~180 characters and a letter `body`
+under ~350 at 360x455, or say the sheet needs to grow. Ask for a capture frame
+before believing any new sheet fits.
 
-Related: [[user-role]].
+**6. `docs/lore/` DOES NOT EXIST**, though briefs keep instructing you to read it.
+Canon lives in `data/world/world.json` (reigns, polities, the desk memorandum),
+`data/world/necrology.json`, `data/world/matrices.json`,
+`data/world/register_seed.json` (the predecessor R.V.), `data/world/books/*.json`,
+and `docs/CONTINUITY.md` for the conventions.
+**How to apply:** do not report a missing-canon blocker; read those files instead.
+
+**7. `DayData.opening_documents` is a full, mostly unused authoring surface.**
+It accepts any document `kind` the loader knows — `letter`, `docket` AND
+`charter` — and `Desk._make_document_view` builds a real view for each. A charter
+laid as a day document renders its body, its erasures and its backlit nap
+normally, but it gets NO `SealTag` (that code lives only in `lay_out_packet`) and
+it cannot be sealed (`PressController.target_sheet` is bound only to the case
+charter). `ContentLoader._validate` only walks `lore.cases`, so day documents are
+not validated for known emperor/polity.
+**How to apply:** a returned, recalled or exemplified instrument can be put on the
+desk as pure evidence with zero code. Set `takes_seal: false` explicitly, keep the
+`size` identical to the original if you want its `erasures` (which are fractions
+of the sheet's own size) to land in the same place, and explain the missing wax
+in prose because there is no way to render a detached seal or a cancellation slash.
+
+Related: [[user-role]], [[owner-loop-direction]].

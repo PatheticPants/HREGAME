@@ -439,6 +439,37 @@ func lay_out_day_documents(documents: Array[DocumentData]) -> void:
 		Audio.play(&"paper_drop", node.global_position, -5.0)
 
 
+## SOMETHING ARRIVES THAT IS NOT A PETITIONER.
+##
+## Everything that ever reached this desk came through the door as a person with
+## a packet, or was already lying on it when the shutter opened. So the office
+## contained exactly one kind of event, repeated seven times across two days.
+##
+## This is the other kind: a knock that does not open, and a slip left on the
+## corner of the desk while the next man is still in the passage. It reuses the
+## door's rattle — written for the petitioners' knock and used for nothing else
+## — because a clerk putting his head round a door and not coming in is exactly
+## what that motion already looks like.
+##
+## Additive, unlike lay_out_day_documents which clears the day's papers first:
+## an arrival joins what is already on the desk rather than replacing it.
+func deliver_day_document(doc: DocumentData) -> void:
+	if doc == null:
+		return
+	var node := _make_document_view(doc)
+	if node == null:
+		return
+	surface.add_child(node)
+	node.bind(doc, DESK_RECT)
+	node.settle_immediately()
+	day_papers.append(node)
+	bring_to_front(node)
+	if _door != null:
+		_door.knock()
+	Audio.play(&"door_knock", node.global_position, -7.0)
+	Audio.play(&"paper_drop", node.global_position, -3.0)
+
+
 ## Day 2's queue is furniture, not a menu. Each case is a physical slip at the
 ## far lip and begins only when it is dragged into the hearing notch.
 func show_docket_tray(day_cases: Array[CaseData]) -> void:

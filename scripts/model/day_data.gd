@@ -26,9 +26,27 @@ func resolve_cases(lore: LoreData, register: Register) -> Array[CaseData]:
 	return out
 
 
+## What is on the desk when the shutter opens.
 func resolve_opening_documents(register: Register) -> Array[DocumentData]:
 	var out: Array[DocumentData] = []
 	for conditional in opening_documents:
-		if conditional.matches(register) and conditional.document != null:
+		if conditional.arrives_at_dawn() and conditional.matches(register) \
+				and conditional.document != null:
+			out.append(conditional.document)
+	return out
+
+
+## What arrives DURING the day, once a named matter is off the desk.
+##
+## The conditions are the same ones the dawn documents use — so an arrival can
+## depend on what you did to an earlier case, on a different day, exactly as the
+## Thursday letters already do. What is new is only the timing.
+func resolve_arrivals(register: Register, after: StringName) -> Array[DocumentData]:
+	var out: Array[DocumentData] = []
+	if after == &"":
+		return out
+	for conditional in opening_documents:
+		if conditional.after_case == after and conditional.matches(register) \
+				and conditional.document != null:
 			out.append(conditional.document)
 	return out

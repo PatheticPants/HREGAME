@@ -158,6 +158,7 @@ func _run() -> void:
 	await _show_the_kalendar()
 	await _the_dead_witness()
 	await _a_page_in_the_air()
+	await _the_office_interrupts()
 	await _show_charter_foot()
 	await _show_the_register()
 	await _show_reviewed_register()
@@ -542,6 +543,42 @@ func _show_the_kalendar() -> void:
 	await _settle(20)
 	_desk._park_in_rack(book, 2)
 	await _settle(20)
+
+
+## THE OFFICE INTERRUPTING, WHICH IS THE ONLY EVENT IN THIS GAME THAT IS NOT A
+## PETITIONER.
+##
+## The steward's query arrives on Tuesday after the first matter, in the gap
+## between callers. It asks for a date the office does not have, for a man whose
+## bed has been stripped, and it is the thread that makes the previous holder of
+## this desk a question rather than a signature in the margins.
+##
+## Framed with the candle brought to it, because a slip that lands in the dark
+## end of the desk is a slip nobody reads.
+func _the_office_interrupts() -> void:
+	var camera := _main.get_node("camera") as Camera2D
+	var day := Lore.data.day_by_id(&"day_01")
+	if day == null:
+		return
+	var arriving := day.resolve_arrivals(_desk.session.register,
+		&"case_01_kufergasse")
+	if arriving.is_empty():
+		push_error("No mid-day arrival is authored for case_01. "
+			+ "The office has stopped interrupting.")
+		return
+	for doc in arriving:
+		_desk.deliver_day_document(doc)
+	await _settle(30)
+	var slip: Draggable = _desk.day_papers[_desk.day_papers.size() - 1]
+	await _move_candle(_desk.surface.to_local(slip.global_position)
+		+ Vector2(-150.0, 40.0))
+	camera.zoom = Vector2(1.9, 1.9)
+	camera.position = slip.global_position
+	await _settle(30)
+	await _shot("51_the_steward_asks_for_a_date")
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	await _settle(12)
 
 
 ## A PAGE CAUGHT MID-TURN, WHICH NO FRAME HAS EVER SHOWN.

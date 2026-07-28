@@ -9,6 +9,27 @@ metadata:
 already all over the shipped content and it is the campaign's strongest existing
 narrative seam.
 
+**Verify quotes against the file, not against summaries.** Briefs in circulation
+quote the Kalendar household-book marginalia as "The office records what a man was
+and never what happened to him." The shipped line in `necrology.json` is
+different and much more load-bearing: "The office records what a man **wrote and
+what he was paid for the writing**, and nothing whatever about the mornings in
+between." It names payment, which ties that marginalia directly to the fee clause.
+
+Full inventory, ~21 notes in his own hand plus one third-person mention:
+3 blocks in `world.json` `desk_note`; 4 marginalia in `almanac.json` (pp. 1, 3, 4,
+6); 6 in `matrix_book.json` (2 of them — Marchfeld die, Wend chapter — unsigned);
+5 in `necrology.json` (book + all four rolls); 3 `register_seed.json` entries; and
+the Hallenstein silence reason, which speaks of him in the third person.
+
+**The through-line the shipped text already draws:** three anecdotes and all three
+are defeats where he was procedurally right — referred the Ford at Lenz and was
+told he had wasted the Bishop's morning; refused a list for a dead witness and was
+asked whom the man had defrauded; wrote to Ulrich of Hallenstein four times for one
+dismissive reply. He states twice that procedure is not truth. Then, once, he took
+a fee. He is not a caught villain; he is a man who stopped believing the rules paid
+and left a complete set of instructions for following them anyway.
+
 Where his voice appears:
 - `world.json` `desk_note` — the memorandum "TO THE THIRD HAND," including the
   line that separates procedure from truth.

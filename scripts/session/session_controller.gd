@@ -69,6 +69,9 @@ var _knocked := false
 var _door_closed := true
 var _current: CaseData = null
 var _adjudication: Adjudication = null
+## The matter just ruled, held only until the office has had its chance to
+## react to it. See _deliver_arrivals.
+var _last_ruled: StringName = &""
 var _heard_beats: Dictionary = {}
 var _work_time := 0.0
 ## False until the player first puts a hand to evidence, a reference, or a tool.
@@ -269,7 +272,27 @@ func _end_day_by_candle() -> void:
 	_enter(Stage.CLOSING)
 
 
+## The office answering back, between one caller and the next.
+##
+## Conditions are the same ones the dawn documents already use — a named earlier
+## case and, optionally, the verdict you gave it — so an arrival can depend on
+## what you did five minutes ago or on what you did two days ago. Only the
+## timing is new.
+##
+## Deliberately fired here, after the petitioner has left rather than the instant
+## the wax sets: a clerk does not walk in over somebody else's hearing, and the
+## beat between callers was the emptiest stretch of the day.
+func _deliver_arrivals() -> void:
+	if current_day == null or desk == null or _last_ruled == &"":
+		return
+	var arriving := current_day.resolve_arrivals(register, _last_ruled)
+	_last_ruled = &""
+	for doc in arriving:
+		desk.deliver_day_document(doc)
+
+
 func _advance_case() -> void:
+	_deliver_arrivals()
 	if remaining_cases.is_empty():
 		# Finished on the notary's own terms. He puts his own candle out, which
 		# is a different ending from having it put out for him.
@@ -523,6 +546,9 @@ func _on_impression_finished(verdict: int, record: ImpressionRecord) -> void:
 	if stage != Stage.WORKING or _current == null:
 		return
 	desk.press.enabled = false
+	# Remembered so the office can react to THIS matter once the man who brought
+	# it has gone. See _deliver_arrivals.
+	_last_ruled = _current.id
 
 	_adjudication = Adjudicator.adjudicate_case(_current, Lore.data, register)
 	var outcome := _current.outcome_for(verdict)

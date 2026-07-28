@@ -50,6 +50,33 @@ Recorded 2026-07-28 after a full read of `data/` and `scripts/rules/`.
    every obit in every roll lands on a leaf the player can turn to, and it will
    fail if a roll grows past what its leaves hold.
 
+9. **R.V.'s eleven years do not fit the household book. HARD ARITHMETIC
+   CONTRADICTION, found 2026-07-28.** `necrology.json` `chancery_household_book`
+   contains *Odo Fenne*, "notary at the third desk", d. Aldric I 5 = **1208**, and
+   *Isenbard Kliff*, "notary at the third desk", d. Kunrad IV 2 = **1216**, noted
+   "Eight years at the desk" = **1208–1216**. Clean handover. But the same file's
+   `book.marginalia` has R.V.: "In eleven years at this desk…", and present year is
+   1221, so R.V. is at the desk from **c. 1210** — six years inside Kliff's tenure.
+   Either the eleven is wrong or R.V. was never the appointed notary.
+
+10. **"TO THE THIRD HAND" vs. "Two hands held this desk before me."**
+   `world.json` `desk_note.petitioner_name` addresses the player as the third hand;
+   `necrology.json` `chancery_household_book.marginalia` has R.V. counting two
+   hands before himself. Sequentially that is Fenne(1), Kliff(2), R.V.(3),
+   player(**4**). One of the two strings is wrong. **Standing proposal (NOT canon):
+   R.V. was never an appointed hand** — Kliff's clerk from c.1210, doing the work
+   unappointed for five years after Kliff died in 1216. Resolves both 9 and 10 with
+   zero data edits, explains why he is absent from a book that "enters a man on the
+   day the bed is stripped", and explains why he signs with initials.
+
+11. **Grell- string collision.** `Grellwater` (town/mill, Thurn), `Grellenbach`
+   (ford, in the Kesselholt bounds, and where `volkmar_ise` drowned). Plus a second
+   ford at **Lenz**. The game's whole skill is telling near-identical strings apart.
+
+12. **`prior_` prefix collision in `register_seed.json`.** Used to mean "earlier
+   ruling" (`prior_ohlen`, `prior_lenz`, `prior_kirchwald`) while `prior_ohlen`'s
+   petitioner is literally "the Prior of Ohlen".
+
 8. **`Volkmar` is now spent on a padding name.** `necrology.json` gives
    `volkmar_ise`, deacon of the Nether Fen, to the Saint Wend roll. The standing
    proposal for open question 2 was to name the missing post-1211 Margrave of
