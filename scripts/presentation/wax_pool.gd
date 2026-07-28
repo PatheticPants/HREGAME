@@ -518,6 +518,44 @@ func _draw_stamp() -> void:
 func _draw_overlay() -> void:
 	if peel > 0.001 and radius > 0.5:
 		_draw_peel_string(_wax_colour())
+	_draw_shade()
+
+
+## THE SEAL GOES INTO SHADOW WITH THE PAGE IT IS ON.
+##
+## docs/GRAPHICS.md is explicit that the veil covers the FINISHED FACE of
+## anything with readable content — substrate, ink, rubric and seal together —
+## and lists four objects that were missed on the first pass, each of which was
+## a hole in the claim that the candle controls what can be read. This was the
+## fifth, and it is the one the game is named after.
+##
+## The reason it slipped is structural rather than an oversight. The pool is a
+## CHILD of the sheet, and children draw after their parent, so the sheet's own
+## veil is laid down and then the pool draws straight over the top of it. A
+## sealed charter carried to the dark end of the desk went properly grey
+## everywhere except the seal, which stayed at full strength — so the one part
+## of the document that records an irreversible decision was also the one part
+## the candle had no authority over.
+##
+## It inherits the host's alpha rather than computing its own, for the same
+## reason it inherits light_position and light_level: a board and a charter lying
+## beside each other have to go dark together, and a seal has to go dark with the
+## page it is stuck to.
+func shade_alpha() -> float:
+	var host := get_parent() as Draggable
+	return host.shade_alpha() if host != null else 0.0
+
+
+func _draw_shade() -> void:
+	if radius <= 0.5:
+		return
+	var a := shade_alpha()
+	if a <= 0.01:
+		return
+	var points := _outline()
+	if points.size() < 3:
+		return
+	_overlay.draw_colored_polygon(points, Color(Draggable.SHADE_COLOR, a))
 
 
 ## A thread of wax follows the ring up, thins, and snaps near the end of the

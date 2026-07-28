@@ -136,6 +136,8 @@ func _run() -> void:
 		await _settle(8)
 		await _shot("08_strike_centre_close")
 
+	# Before the docket is laid across it, or the frame shows a covered seal.
+	await _seal_out_of_the_light()
 	await _paper_over_the_seal()
 	await _show_the_kalendar()
 	await _show_charter_foot()
@@ -460,6 +462,34 @@ func _paper_over_the_seal() -> void:
 	camera.position = wax + Vector2(-10, -10)
 	await _settle(30)
 	await _shot("43_paper_laid_over_the_seal")
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	await _settle(12)
+
+
+## THE SAME SEAL, WITH THE CANDLE TAKEN AWAY.
+##
+## Shot 43's twin, and the frame that had to exist for the veil. Every previous
+## frame of a struck seal was lit — either the candle had been carried to it on
+## purpose, or the strike had just happened under the flame — so "does the seal
+## go into shadow with its page" was a question no capture could answer, and the
+## answer for the whole life of the project was no. The pool is a CHILD of the
+## sheet and children draw after their parent, so the sheet's veil went down and
+## the wax drew over the top of it.
+##
+## Read this against 43: the parchment and the seal must fall into the dark
+## TOGETHER. A grey page carrying a seal at full strength is the bug back.
+func _seal_out_of_the_light() -> void:
+	var camera := _main.get_node("camera") as Camera2D
+	if _desk.press.pool == null or not is_instance_valid(_desk.press.pool):
+		return
+	var wax := _desk.press.pool.global_position
+	# The far corner of the desk, as far from the seal as the room allows.
+	await _move_candle(Vector2(Desk.DESK_RECT.position.x + 70.0, -170.0))
+	camera.zoom = Vector2(2.6, 2.6)
+	camera.position = wax + Vector2(-10, -10)
+	await _settle(30)
+	await _shot("44_seal_out_of_the_light")
 	camera.zoom = Vector2.ONE
 	camera.position = Vector2(960, 590)
 	await _settle(12)

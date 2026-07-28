@@ -103,6 +103,42 @@ func _test_wax_is_darker_molten(desk: Desk) -> void:
 		"and by a margin a player can actually see")
 	pool.queue_free()
 
+	# THE SEAL GOES DARK WITH THE PAGE IT IS ON.
+	#
+	# The pool is a CHILD of the sheet, and children draw after their parent, so
+	# the sheet's own veil went down and the pool drew straight over it. A sealed
+	# charter carried to the dark end of the desk went grey everywhere except the
+	# seal. docs/GRAPHICS.md lists four objects missed on the veil's first pass;
+	# this was the fifth and it is the one the game is named after.
+	var host := desk.current_charter
+	if host != null:
+		var seal := WaxPool.new()
+		host.add_child(seal)
+		seal.setup(feel, Color(0.60, 0.13, 0.16), 77)
+		seal.radius = 40.0
+		var saved_level := host.light_level
+		var saved_day := host.ambient_daylight
+		host.ambient_daylight = false
+		host.light_level = 1.0
+		var lit_seal := seal.shade_alpha()
+		host.light_level = 0.0
+		var dark_seal := seal.shade_alpha()
+		_is_true(dark_seal > lit_seal,
+			"a seal out of the light takes more veil than one under the flame")
+		_is_true(is_equal_approx(dark_seal, host.shade_alpha()),
+			"and exactly as much as the parchment it is stuck to")
+		# Never quite opaque, for the same reason no page is: a seal you cannot
+		# see at all is a document you cannot find.
+		_is_true(dark_seal < 1.0, "the seal is never fully blacked out")
+		# Cold morning is uniform and directional, so nothing is in shadow
+		# relative to anything else and the ledger is read after the candle dies.
+		host.ambient_daylight = true
+		_is_true(seal.shade_alpha() <= 0.0,
+			"and takes no veil at all once the day has turned to morning")
+		host.ambient_daylight = saved_day
+		host.light_level = saved_level
+		seal.queue_free()
+
 	var spoon := desk.wax_spoon
 	_is_true(spoon != null, "the desk has a wax spoon")
 	if spoon == null:
