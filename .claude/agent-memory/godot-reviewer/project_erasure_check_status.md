@@ -1,36 +1,27 @@
 ---
 name: project-erasure-check-status
-description: As of commit af5dd24 (2026-07-28), ErasureCheck/Rasura ships with no case content using "erasures" and no test_rules.gd/test_presentation.gd coverage — check whether this got closed in later commits before re-flagging.
+description: RESOLVED as of commit 01588ea (2026-07-28) — ErasureCheck/Rasura now has shipped case content (case_08) and test_rules.gd coverage. Previously flagged as content/test gap; do not re-flag without new evidence.
 metadata:
   type: project
 ---
 
-`af5dd24` ("Rasura: a fourth investigative verb...") added `scripts/model/erasure.gd`,
-`scripts/rules/erasure_check.gd` (runs FIRST, ahead of SealCheck — decisive
-over it), `Sheet._draw_erasures`/backlight rendering, and a Python mirror in
-`tools/verify_content.py`. At that commit:
+Updated 2026-07-28. Previously (as of `af5dd24`) `ErasureCheck` shipped with no
+case content and no test coverage — see the old version of this note. As of
+`01588ea` that gap is closed:
 
-- No file under `data/cases/*.json` contains an `"erasures"` array — the
-  mechanic cannot be encountered by a player in the shipped two-day campaign.
-- Neither `tests/test_rules.gd` nor `tests/test_presentation.gd` exercises
-  `ErasureCheck` (no `_test_erasures`-style function, unlike `_test_witnesses`
-  which was added alongside the Kalendar in the prior commit `7c5ecb0`).
-- `docs/CONTINUITY.md:130` claims "Checks that fire on shipped content:
-  `ErasureCheck`, SealCheck, ..." — false at this commit for ErasureCheck.
+- `data/cases/case_08_mill_on_the_aue.json` uses an `erasures` array and drives
+  a DENY verdict via `erasure_dispositive` (confirmed via
+  `python tools/verify_content.py` output: "PASS case_08_mill_on_the_aue ...
+  fatal:erasure_dispositive, note:erasure_innocent").
+- `tests/test_rules.gd` has `_test_erasures()` (line ~294) exercising a clean
+  packet, a forged one, an honestly-tidied one, and an illegible one.
 
-Uncommitted work-in-progress observed during the review (not part of
-`af5dd24`) was already adding an erasure to the practice leaf in
-`data/world/world.json` and a `qa_capture.gd` screenshot beat for it — so this
-may already be in flight. `qa_capture.gd` is screenshot-only and does not
-count as pass/fail coverage; a `_test_erasures` in `test_rules.gd` is still
-the missing piece even if content gets wired up.
+**Why:** This was tracked because the project's own doctrine ("every new Check
+must be written twice", "everything the ledger says findable must be
+renderable") was being violated in spirit. That is no longer the case.
 
-**Why:** The project's own stated doctrine (`docs/CONTINUITY.md`) is "every
-new Check must be written twice" and "everything the ledger says was findable
-must have been renderable on the desk" — a check with zero content and zero
-test coverage violates the spirit of both without technically breaking either
-rule as literally stated.
-
-**How to apply:** On the next review touching `scripts/rules/erasure_check.gd`
-or `data/cases/`, check whether a case now uses `erasures` and whether
-`test_rules.gd` has erasure assertions before re-raising this finding.
+**How to apply:** Do not re-raise "ErasureCheck has no content/tests" as a
+finding unless you've re-checked `data/cases/*.json` and `tests/test_rules.gd`
+and found the coverage has regressed. See [[project-zindex-latent-cases]] for
+an unrelated but similarly-shaped issue found in the same session this was
+closed out.

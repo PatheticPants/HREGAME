@@ -48,6 +48,7 @@ func _run() -> void:
 	for i in 48:
 		await get_tree().process_frame
 
+	_test_surface_helper(desk)
 	_test_reachability(desk)
 	await _test_view_transition(main, desk)
 	await _test_candle_light(desk)
@@ -65,6 +66,86 @@ func _run() -> void:
 	main.queue_free()
 	await get_tree().process_frame
 	_finish()
+
+
+## The shared material helper. Nothing is migrated onto it yet, so these are
+## assertions about the vocabulary itself rather than about any object's look.
+##
+## The one that matters is the cut-line orientation. The two files this was
+## extracted from disagreed about which wall of a groove is lit, and nothing
+## anywhere could have told them apart — a stamped border drawn inside out still
+## renders, still moves with the candle, and simply reads as raised when it
+## should read as impressed. This pins the convention down so the next object to
+## grow an engraved line cannot quietly pick the other one.
+func _test_surface_helper(desk: Desk) -> void:
+	print("-- the surface helper")
+	var sheet := desk.current_charter
+	_is_true(sheet != null, "a charter is on the desk to light")
+	if sheet == null:
+		return
+
+	# Direction is in the OBJECT'S space, not the world's. Papers on this desk are
+	# dropped at an angle, and a highlight that ignores that sits on the wrong
+	# edge of every sheet that is not square to the room.
+	sheet.rotation = deg_to_rad(35.0)
+	var flame_left := sheet.global_position + Vector2(-300.0, 0.0)
+	var t_local := Surface.toward(sheet, flame_left)
+	var t_world := (flame_left - sheet.global_position).normalized()
+	_is_true(absf(t_local.length() - 1.0) < 0.001,
+		"toward() is a unit vector")
+	_is_true(t_local.distance_to(t_world) > 0.3,
+		"toward() is in the node's own space, not the world's")
+	_is_true(absf(t_local.angle_to(t_world.rotated(-sheet.global_rotation)))
+		< 0.001, "toward() is exactly the world direction rotated into local")
+
+	# The fallback, which both original call sites got wrong by leaving it
+	# unnormalised — an object with the flame directly on top of it drew its
+	# highlights 4-8% further out than every other object in the room.
+	var on_top := Surface.toward(sheet, sheet.global_position)
+	_is_true(absf(on_top.length() - 1.0) < 0.001,
+		"the flame-overhead fallback is normalised")
+	sheet.rotation = 0.0
+
+	# THE CUT LINE. A groove's lit wall faces back toward the flame, so it is
+	# displaced AWAY from it; the shaded wall is displaced toward it. Getting this
+	# backwards is invisible to every other test in this project.
+	var toward := Vector2(1.0, 0.0)
+	_is_true(Surface.lip_offset(toward).x < 0.0,
+		"an engraved line's lit lip sits away from the flame")
+	_is_true(Surface.trough_offset(toward).x > 0.0,
+		"an engraved line's dark trough sits toward the flame")
+	_is_true(Surface.lip_offset(toward).dot(Surface.trough_offset(toward)) < 0.0,
+		"the two walls of a cut line are on opposite sides")
+
+	# A boss standing proud of the surface is the exact inverse, and bevel_rect
+	# is the only thing that knows it.
+	var lit_far := Surface.lip_color(0.0)
+	var lit_near := Surface.lip_color(1.0)
+	_is_true(lit_far.a < 0.001 and lit_near.a > lit_far.a,
+		"a groove has no highlight at all with the flame away")
+	_is_true(Surface.trough_color().a > 0.0,
+		"a groove's trough stays dark regardless of the flame")
+
+	# The lit product. Three call sites already agreed on this formula and two
+	# more had drifted off it; this is the one they agreed on.
+	_is_true(is_equal_approx(Surface.lit(0.5, 1.0), 0.5),
+		"lit() is level x flicker")
+	_is_true(Surface.lit(2.0, 1.0) <= 1.0 + 0.0001,
+		"lit() clamps an over-bright level")
+	_is_true(Surface.lit(1.0, 0.0) > 0.6,
+		"lit() floors the flicker so the room never pumps to black")
+	_is_true(Surface.lit(1.0, 9.0) <= Surface.FLICKER_CEIL + 0.0001,
+		"lit() ceilings the flicker so a gust cannot blow out the desk")
+
+	# Warm near, grey away — and they are two separate moves. A surface that only
+	# lerps gets bright but never cools, which is how a material reads as painted.
+	var slate := Color(0.4, 0.4, 0.42)
+	var near_flame := Surface.tint(slate, 1.0)
+	var far_flame := Surface.tint(slate, 0.0)
+	_is_true(near_flame.r > slate.r and near_flame.b < near_flame.r,
+		"tint() warms toward the flame")
+	_is_true(far_flame.v < slate.v,
+		"tint() darkens away from it, rather than merely failing to warm")
 
 
 func _test_reachability(desk: Desk) -> void:
