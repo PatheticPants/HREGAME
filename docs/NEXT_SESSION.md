@@ -32,7 +32,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 90, presentation 270, session 76, content PASS**. Run the rules
+Green is **rules 90, presentation 280, session 76, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 
@@ -138,6 +138,12 @@ people plan around it before you notice it.
 
 ### Build next, in order
 
+0. **The thread has a shape now — keep it inert.** `after_case` and
+   `after_investigation` on `DayOpeningDocument` are the two delivery channels;
+   both are data. The R.V. thread uses one of each and still answers nothing.
+   Anything new that pulls on it should add a FACT and not a CONCLUSION, and
+   nobody in the office may notice the eleven-years-against-eight arithmetic on
+   the player's behalf.
 1. **`Register.standing(authority)`** — call the already-written, never-called
    `favor_totals()` (`register.gd:96`), band it coarsely, and widen
    `DayOpeningDocument` with `requires_standing` / `requires_burnt_out` /

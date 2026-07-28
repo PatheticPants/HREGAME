@@ -29,7 +29,7 @@ python tools/verify_content.py
 | suite | checks |
 |---|---|
 | rules | 90 |
-| presentation | 270 |
+| presentation | 280 |
 | the day (full loop) | 76 |
 | content + encoding | PASS |
 
