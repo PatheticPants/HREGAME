@@ -3,9 +3,11 @@
 For whoever picks this up next — a fresh session, or a returning one.
 
 **If you are starting a new session, read `docs/NEXT_SESSION.md` first.** It has
-the owner's standing priorities, what to build next and why, and how to work with
-the subagents. This file is the reference underneath it: the things that are
-**not inferable from the code**, and the traps that have already cost time.
+the owner's standing priorities, a phased plan of attack, and what changed in the
+reviewers. **`docs/GRAPHICS.md` is the rulebook for anything that draws** — the
+light model, what a material owes, the animation rules, and the workflow. This
+file is the reference underneath both: the things **not inferable from the code**,
+and the traps that have already cost time.
 
 `README.md` is how the game works. `docs/HANDOFF_CODEX.md` is the design
 rationale.
@@ -213,8 +215,8 @@ past tense, joke in a subordinate clause, always carrying information.
 
 ## The subagents
 
-Ten, in `.claude/agents/`. **They load at session start** — a newly added one is
-not callable until the next session.
+Eleven, in `.claude/agents/`. **They load at session start** — a newly added one
+is not callable until the next session.
 
 | | |
 |---|---|
@@ -228,13 +230,20 @@ not callable until the next session.
 | `difficulty-curator` | teaching order and difficulty curve |
 | `player-advocate` | cold first-time-player walkthroughs |
 | `sound-director` | sonic language, feedback hierarchy |
+| `render-critic` | read-only; materials, lighting, depth, silhouette, pixel-art coherence |
+
+`render-critic` is required to open capture frames and describe what it sees
+before asserting anything, and every read-only reviewer now has to separate what
+it **confirmed** from what it **inferred** — nine of sixteen findings in one
+session did not survive an adversarial check.
 
 They are the main lever for a large task: each one starts with a cold context, so
 the heavy reading happens in *their* window rather than the main one. Use them
 before the main context fills, not after.
 
-`feel-critic`, `rules-auditor` and `design-prosecutor` are deliberately
-adversarial. Do not soften their prompts — their value is that they disagree.
+`feel-critic`, `render-critic`, `rules-auditor` and `design-prosecutor` are
+deliberately adversarial. Do not soften their prompts — their value is that they
+disagree.
 
 Running all ten at once against a cold read of the codebase is worth doing before
 a large pass. The signal is **convergence**: when four agents with no shared

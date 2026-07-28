@@ -1,0 +1,223 @@
+# Graphics, lighting and animation — the standing rules
+
+The reference document for how this game is allowed to look, and how to work on
+it. Read before touching anything that draws.
+
+`docs/CONTINUITY.md` is the traps. `docs/NEXT_SESSION.md` is what to build next.
+This is the *how*.
+
+---
+
+## The one sentence
+
+**Pixel-art anchored, lit by one carried flame, and every surface has to tell you
+what it is made of.** Not photoreal. Not smooth. Not decorated.
+
+---
+
+## 1. Look at the pixels. Always.
+
+Every serious visual defect found in this project so far was invisible in code
+review and obvious in a frame:
+
+| Defect | How long it survived | What found it |
+|---|---|---|
+| Ink never darkened, so the candle changed the colour of the desk but not what could be **read** | since the light rig was written | a screenshot |
+| The wax drew on top of the entire room | months | the owner, playing |
+| The candle's melt painted lighter than the brass it sits in | since it was written | the owner, and then a 4× capture |
+| A round spoon casting a rectangular shadow | months | a screenshot |
+| Verdict ring names at ~9 effective pixels, brown on brown | since the ring stand was written | a screenshot |
+
+```bash
+.tools/godot-4.6.3/Godot_v4.6.3-stable_win64_console.exe --path . --resolution 1600x900 --scene res://tests/qa_capture.tscn
+```
+
+43 frames into `.tools/shot_*.png` (gitignored). Deliberately **not** headless —
+Godot cannot render 2D lights with the dummy driver.
+
+**Three rules about captures, each of which was learned the hard way:**
+
+1. **Capture the object in the state you are worried about, not in isolation.**
+   Every frame of the seal showed the seal alone, so "is the wax actually *on*
+   the parchment" was a question no frame could answer. Shot 43 exists now
+   because of that.
+2. **Capture at a size where the thing can be seen.** The candle was only ever
+   framed desk-wide, where it is ninety pixels and no change to it is legible.
+   The 4× series (36–41) was added only after the owner said it looked flat.
+3. **If you add a subsystem, add a shot for it.** The door and the petitioner had
+   none, which is why their two worst defects survived so long.
+
+---
+
+## 2. The light model
+
+One carried flame. Three `PointLight2D`s sharing one flicker value — a tight
+core, a shadow-casting key, a wide dim bounce — over a low, slightly blue
+`CanvasModulate` ambient. Falloff is a **generated inverse-square curve**, not a
+painted radial; a linear gradient reads as a flat disc with a visible rim and no
+amount of energy tuning fixes it.
+
+Every object is fed three values per frame by `Desk._update_lighting`:
+
+- `light_position` — where the flame is, in world space
+- `light_strength` — the shared flicker, so the whole desk pulses together
+- `light_level` — how much of the flame reaches **this** object, on the same
+  inverse-square curve the renderer uses
+
+**Use all three.** An object that reads only `light_level` gets brighter and
+darker but never gains a direction. An object that reads none of them is a
+sticker. The most common failure in this codebase has been drawing a fixed
+colour and calling it a material.
+
+### The shade veil
+
+`Draggable.shade_alpha()` / `draw_shade()`. One translucent cold veil over the
+**finished face** of anything with readable content — substrate, ink, rubric and
+seal together — because that is what a page out of the light actually does.
+
+It exists because the substrate used to warm and cool with the flame while the
+writing did not, so a charter across the desk from the only light in the room was
+exactly as legible as one under the wick. That quietly cost the game its central
+claim.
+
+- It goes **last**, above `_draw_face`, so a new document type cannot forget it.
+- It switches **off** under `ambient_daylight` — cold morning is uniform and
+  directional, so nothing is in shadow relative to anything else, and the ledger
+  is read after the candle dies.
+- It is never quite opaque. A sheet you cannot see at all is a lost sheet, and
+  digging for a buried charter has to stay a mechanic rather than a chore.
+
+Anything with a readable face needs it. Four objects were missed on the first
+pass (pendant seal, docket slips, wax tablet, ledger) and each one was a hole in
+the claim that the candle controls what can be read.
+
+---
+
+## 3. Materials
+
+**A material is at minimum: a base that responds to `light_level`, a lit edge and
+a dark edge derived from `light_position`, and something that only appears when
+the flame is near.** Below that it is a coloured rectangle.
+
+What each surface owes:
+
+| Surface | Must have |
+|---|---|
+| Parchment | warm amber near the flame, grey away; deckled edge; laid lines; contact shadow; follicles when backlit |
+| Leather boards | board thickness on the side turned from the flame; raised spine cords; blind tooling with a lit lip and dark trough; gilt that is only bright when the flame is near |
+| Brass / bronze / iron | a **moving** specular that tracks the flame; three metals far enough apart to tell at a glance in a dark room |
+| Wax | irregular smoothed silhouette (`WaxShape`), never a polygon; a raised rim; a gloss that moves; **molten is darker than set** |
+| Oak | grain; a dished hollow with a lit far wall and shaded near wall |
+| Blackened wax (tablet) | pale boxwood showing through the scratch, with a dark lip on the thrown side |
+
+### Two physics facts that were both wrong in shipped code
+
+- **Molten wax is DARKER than set wax.** Set wax is pale because it is full of
+  microcrystals that scatter light; melted, it goes clear and you see the shaded
+  bottom of the cup. Drawing liquid brighter than solid turns a candle into a
+  poached egg — and that is precisely why it read as flat, because there was no
+  dark anywhere on it.
+- **A flame has a dark cone.** Directly above the wick sits unburnt vapour that
+  has not reached oxygen yet, and it is darker than the luminous sheath around
+  it. Without it a flame is a bright lozenge with no inside.
+
+### Cheap techniques that are already proven here
+
+- **Banded rects for a gradient.** Eight strips read as smooth falloff at this
+  size and cost eight `draw_rect`s instead of a shader. See `Sheet._draw_light_gradient`.
+- **Stacked offset rects for a blur.** `Draggable.draw_soft_shadow`, layer count
+  is a tuning knob rather than a magic number.
+- **Two offset passes for an engraved line.** A lit lip and a dark trough, offset
+  along `toward_light`. One flat outline reads as printed; two read as cut.
+- **Three nested silhouettes for wax.** `WaxShape.draw_body`.
+- **A seeded speckle generated once.** Grain, scuffs, follicles. Generate in
+  `_ready` or `bind`, never in `_draw` — a surface whose pores move between
+  frames is not a surface. This rule has been broken three times.
+
+---
+
+## 4. Animation
+
+**Three phases and a settle, or it is a lerp wearing a costume.**
+
+Every physical action needs a distinguishable start, middle and end, and the
+**end is an event**. The press resists, gives, seats and peels. The rack arms,
+slides and lands. The door shoves, swings, arrives and rocks.
+
+- **Nothing moves linearly.** Springs where there is mass, eased curves where
+  there is not.
+- **The event is the arrival, not the request.** Both door sounds used to fire on
+  the frame the target was set, half a second before the leaf had moved — so the
+  thud of it shutting played while it stood wide open. Emit on arrival.
+- **Beware `ease(x, 0.4)`.** Its derivative is infinite at zero, so anything using
+  it as a motion curve snaps on the first frame and then glides. Use a two-sided
+  smoothstep `t*t*(3-2t)` for anything that starts and stops.
+- **Check your zeta.** A spring at ζ=0.86 overshoots by 0.47%, which after
+  clamping is a tenth of a pixel — a comment claiming a spring where there is
+  none. ζ≈0.6–0.8 gives an overshoot you can actually see.
+- **Variance.** Anything that repeats must vary. Per-caller timing, per-press
+  rotation, per-pour opacity.
+- **Motion at rest.** When the player does nothing, something must still move:
+  the flame wanders, dust drifts, a bead swells on the candle's lip, the
+  petitioner breathes and shifts.
+- **A verb must answer every time it is used.** Holding a *sound* charter to the
+  flame returned nothing, so the player learned the gesture was broken rather
+  than that the parchment was clean. "Nothing here" is a result and must be drawn.
+
+---
+
+## 5. Hard constraints
+
+- **Diegetic only.** No HUD, no floating UI, no screen-space anything. Exactly
+  one screen-space element exists (`view_hint.gd`) and each of its two captions
+  retires when the player has actually visited the plane it describes.
+- **`z_index` breaks the desk's stacking rule.** Draw order is child order in
+  `surface`, full stop — except that a higher `z_index` draws above *all* lower-z
+  siblings whatever the tree says, and `z_as_relative` is on by default. If you
+  are reaching for `z_index` to get one thing above another, you want child
+  order. Legitimate uses are transient and self-cancelling: a ring while in the
+  hand or in the wax, a falling bead, the lens.
+- **`scripts/rules/` never touches a node, a signal or the scene tree.**
+- **The authored raster plates are the style anchor.** `art/` is hand-made pixel
+  work; procedural drawing extends it and must never paint over it. The candle's
+  melt did exactly that for months and obliterated the best-looking object on the
+  desk.
+- **`gl_compatibility`, not Forward+.** Runs on anything, starts fast, avoids
+  Metal/MoltenVK differences between the two dev machines.
+
+---
+
+## 6. Performance, which is now a blocker
+
+`Draggable._process` calls `queue_redraw()` **unconditionally, twice per object,
+every frame**, with no dirty flag. So do `Desk`, `WaxPool` (four child
+CanvasItems) and `ReferenceBook` (which regenerates a seeded wax outline per
+frame per open plate).
+
+Nothing renders slowly today. It is the first thing to fix if anything ever does,
+and it is a **hard precondition for per-object materials or shaders** — attaching
+either on top of ~20 idle objects redrawing twice a frame is where this finally
+gets slow.
+
+The project has **zero `.gdshader` files and zero `CanvasItemMaterial`s.**
+`gl_compatibility` supports canvas shaders; a single cheap one for parchment
+translucency or wax subsurface would replace a lot of banded-rect faking. Confirm
+the available feature set with `godot-reviewer` before committing to it.
+
+---
+
+## 7. The workflow that works
+
+1. **Run the four suites.** Know that green is green before you start.
+2. **Capture, and open the frames.** Form your opinion from pixels.
+3. **Fan out the reviewers cold**, in parallel, before a large pass. The signal
+   worth acting on is **convergence** — several agents sharing no context naming
+   the same defect.
+4. **Adversarially verify anything you are about to act on.** Nine of sixteen
+   review claims in one session were wrong on inspection. The one that was most
+   right rendered a frame and measured the ink bands.
+5. **Change one thing. Re-capture. Compare.** The candle took four iterations and
+   each one was judged from a frame, including the one where I had the wax
+   physics backwards.
+6. **Add the assertion that would have caught it**, then commit with a message
+   that says what was wrong and why the fix is the right *shape*.

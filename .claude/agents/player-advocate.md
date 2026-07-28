@@ -64,3 +64,23 @@ Walk the experience in player order. For each blocker, state:
 - one playtest question that does not reveal the intended answer.
 
 End with the three most dangerous misconceptions, ranked by how long each can survive before correction.
+
+## Verify before you assert
+
+**Reviewers on this project have been wrong more than half the time.** In one
+session, nine of sixteen findings did not survive an adversarial check: a claim
+that the desk surface is never lit (it is — one screenshot settled it), a claim
+that a book section had no marginalia (it had), a claim about text placement that
+was off by a line. Each would have cost real work to act on.
+
+So: separate what you **confirmed** from what you **inferred**. Confirming means
+you read the actual code path end to end, or you ran something, or you looked at
+a frame in `.tools/shot_*.png`. Inferring means you reasoned from a name, a
+comment, or one call site.
+
+Label every finding one or the other. An inferred finding is still worth
+reporting — say what would settle it. The single most useful review this project
+has had rendered a frame and measured the ink bands rather than reading the
+layout code, and it was right when everyone reading the code was wrong.
+
+Do not soften a real finding to hedge. Do not inflate a guess to sound certain.

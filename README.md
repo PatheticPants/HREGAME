@@ -64,7 +64,7 @@ on top of it, which is exactly why nothing caught it.
 
 ## Review agents
 
-`.claude/agents/` holds ten subagent definitions. They load when Claude Code
+`.claude/agents/` holds eleven subagent definitions. They load when Claude Code
 starts, so a newly added one is not callable until the next session.
 
 | | |
@@ -79,14 +79,19 @@ starts, so a newly added one is not callable until the next session.
 | `difficulty-curator` | teaching order, and which axis each case spikes. |
 | `player-advocate` | cold first-time-player walkthroughs. |
 | `sound-director` | the sonic language, and what sound tells you that nothing else does. |
+| `render-critic` | read-only. Materials, lighting, depth, silhouette, pixel-art coherence. Must open capture frames before asserting anything. |
 
-`feel-critic`, `rules-auditor` and `design-prosecutor` are deliberately
-adversarial and their prompts should stay that way — their value is that they
-disagree with you.
+`feel-critic`, `render-critic`, `rules-auditor` and `design-prosecutor` are
+deliberately adversarial and their prompts should stay that way — their value is
+that they disagree with you.
 
-Running all ten at once against a cold read is worth doing before a large pass.
+Running them all at once against a cold read is worth doing before a large pass.
 The signal is **convergence**: when several agents that share no context
-independently name the same defect, it is real.
+independently name the same defect, it is real. Every read-only reviewer is
+required to separate what it *confirmed* from what it *inferred*, because nine of
+sixteen findings in one session did not survive an adversarial check.
+
+`docs/GRAPHICS.md` is the standing rulebook for anything that draws.
 
 ```bash
 python tools/make_placeholder_audio.py
