@@ -161,6 +161,36 @@ func _test_wax_is_darker_molten(desk: Desk) -> void:
 	spoon.temperature = saved_temp
 	spoon.wax_remaining = saved_left
 
+	# THE BRASS CATCHES THE FLAME WHEREVER THE FLAME IS.
+	#
+	# The spoon read none of the three lighting values. Its rim highlight was a
+	# fixed arc from PI*1.04 to PI*1.82 — an assumption that light comes from the
+	# upper left, in a game whose premise is that the light is wherever you put
+	# it. The object you hold ABOVE the candle was lit identically with the
+	# candle underneath it and with the candle at the far end of the desk.
+	var saved_light := spoon.light_position
+	var from_left := spoon.global_position + Vector2(-400.0, 0.0)
+	var from_right := spoon.global_position + Vector2(400.0, 0.0)
+	spoon.light_position = from_left
+	var left_dir := spoon.brass_light_direction()
+	spoon.light_position = from_right
+	var right_dir := spoon.brass_light_direction()
+	_is_true(left_dir.dot(right_dir) < -0.5,
+		"the spoon's highlight swings to the opposite side of the bowl "
+		+ "when the candle crosses it")
+	_is_true(absf(left_dir.length() - 1.0) < 0.001,
+		"and stays a unit direction while it does")
+	# It must be in the BOWL's frame, not the spoon's, or the highlight rides the
+	# handle as it tips instead of staying with the candle.
+	spoon.tilt = 1.0
+	var tipped := spoon.brass_light_direction()
+	spoon.tilt = 0.0
+	var flat := spoon.brass_light_direction()
+	_is_true(tipped.distance_to(flat) > 0.01,
+		"and is taken in the bowl's own frame, so tipping the spoon does not "
+		+ "carry the highlight round with the handle")
+	spoon.light_position = saved_light
+
 
 ## The shared material helper. Nothing is migrated onto it yet, so these are
 ## assertions about the vocabulary itself rather than about any object's look.

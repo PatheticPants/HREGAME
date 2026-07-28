@@ -134,8 +134,13 @@ func _draw() -> void:
 	draw_soft_shadow(Rect2(-84.0, -6.0, 116.0, 12.0))
 	# Rotate about the bowl, which the player holds over the work. The handle
 	# rises into the hand while the pouring lip stays spatially stable.
+	# The brass is drawn inside a frame rotated about the bowl, so the direction
+	# to the flame has to be rotated into that frame as well or the highlight
+	# would spin with the handle instead of staying with the candle. WaxPool does
+	# the same thing to its struck device for the same reason.
 	draw_set_transform(BOWL_CENTER, angle, Vector2.ONE)
-	_draw_brass()
+	_draw_brass(brass_light_direction(),
+		Surface.lit(light_level, light_strength))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# Metal rolls; liquid stays level. The solid tablet follows the bowl at first,
@@ -156,15 +161,48 @@ func _draw() -> void:
 		_draw_heat_shimmer(feel)
 
 
-func _draw_brass() -> void:
-	var brass_dark := Color(0.25, 0.18, 0.075)
-	var brass := Color(0.52, 0.39, 0.14)
-	var brass_light := Color(0.78, 0.62, 0.25)
+## Unit direction to the flame, rotated into the frame the brass is drawn in.
+##
+## The bowl's artwork is drawn inside draw_set_transform(BOWL_CENTER, angle),
+## so a direction computed in the spoon's object space is one rotation short —
+## and the highlight would follow the HANDLE as it tips rather than staying with
+## the candle, which is the same trap WaxPool handles when it rotates the flame
+## direction into the struck die's frame.
+##
+## Named so the suite can assert that the highlight actually travels, rather
+## than re-deriving the arithmetic and asserting against its own copy of it.
+func brass_light_direction() -> Vector2:
+	return Surface.toward(self, light_position).rotated(-tilt_angle(Lore.wax_feel()))
 
-	# Handle. Three strokes create a rounded, tarnished strip with a bright edge.
+
+## THE ONE METAL OBJECT THE PLAYER HOLDS DIRECTLY IN THE FLAME.
+##
+## It read none of the three lighting values. Three hardcoded browns, and a rim
+## highlight pinned to a fixed arc from PI*1.04 to PI*1.82 — an assumption that
+## the light comes from the upper left, in a game whose entire premise is that
+## the light is somewhere you carried it. So the object held ABOVE the candle to
+## melt wax was lit identically whether the candle was under it or at the far end
+## of the desk, and shot_44 shows it plainly: a room deep in shadow with the
+## spoon still at full brightness in the middle of it.
+##
+## docs/GRAPHICS.md's material table asks metal for "a MOVING specular that
+## tracks the flame" and for three metals far enough apart to tell at a glance in
+## a dark room. This is the first object migrated onto Surface, and it is a good
+## first one precisely because it is held in the light rather than lying in it.
+func _draw_brass(toward: Vector2, lit: float) -> void:
+	# Brass near a flame goes orange-hot; away from it, a dull tarnished olive.
+	var brass_dark := Surface.tint(Color(0.25, 0.18, 0.075), lit, 0.20, 0.34)
+	var brass := Surface.tint(Color(0.52, 0.39, 0.14), lit, 0.28, 0.36)
+	var brass_light := Surface.tint(Color(0.78, 0.62, 0.25), lit, 0.36, 0.30)
+
+	# Handle. Three strokes create a rounded, tarnished strip with a bright edge
+	# — and the bright edge now slides from one side of the shaft to the other as
+	# the candle passes it, which is the cheapest possible cue that the thing is
+	# round rather than a painted strip.
+	var edge := clampf(toward.y * 3.0, -2.4, 2.4)
 	draw_line(Vector2(-138, 2), Vector2(-24, 2), brass_dark, 12.0, true)
 	draw_line(Vector2(-138, 0), Vector2(-22, 0), brass, 8.0, true)
-	draw_line(Vector2(-136, -2), Vector2(-24, -2), brass_light, 2.0, true)
+	draw_line(Vector2(-136, edge), Vector2(-24, edge), brass_light, 2.0, true)
 	draw_circle(Vector2(-138, 0), 8.0, brass_dark)
 	draw_circle(Vector2(-138, -1), 5.0, brass)
 	draw_circle(Vector2(-138, -2), 1.8, Color(0.08, 0.06, 0.03))
@@ -177,8 +215,17 @@ func _draw_brass() -> void:
 	draw_colored_polygon(_ellipse(Vector2(-1, -2),
 		Vector2(35, 26), 28), brass)
 	draw_colored_polygon(inner, Color(0.34, 0.235, 0.085))
-	draw_arc(Vector2(-2, -3), 29.0, PI * 1.04, PI * 1.82,
+
+	# The lit arc of the rim, centred on whichever side the flame is actually on.
+	# Same 140-degree span the fixed version used; it now travels all the way
+	# round the bowl as the candle is carried past.
+	var face := toward.angle()
+	draw_arc(toward * 3.6, 29.0, face - PI * 0.39, face + PI * 0.39,
 		20, brass_light, 2.8)
+
+	# And a hot spot on the rim itself, which is the term that says "polished
+	# metal" rather than "brown ellipse". It is only there while the flame is.
+	Surface.specular(self, toward * 30.0, toward, lit, 0.0, 2.2, 2.6, 0.06, 0.62)
 
 
 ## The liquid in the bowl.
@@ -193,10 +240,15 @@ func _draw_brass() -> void:
 ##
 ## Named rather than inline so the suite can assert on the colour that is
 ## actually drawn rather than on a second copy of the arithmetic.
+## It also takes the room's light, like the brass around it. Lighting the metal
+## and not the material sitting in it left a dim tarnished bowl carrying a
+## bright red disc, which reads as a decal on a photograph. Warm gain is kept
+## low: wax is not glossy enough to go orange, it just stops being visible.
 func molten_colour() -> Color:
 	var hot := clampf(temperature, 0.0, 1.0)
 	var remaining := clampf(wax_remaining, 0.0, 1.0)
-	return WAX_COLOR.darkened(hot * 0.16).darkened((1.0 - remaining) * 0.20)
+	var base := WAX_COLOR.darkened(hot * 0.16).darkened((1.0 - remaining) * 0.20)
+	return Surface.tint(base, Surface.lit(light_level, light_strength), 0.16, 0.34)
 
 
 ## The solid tablet, which is the PALE one: pigmented beeswax and resin, full of
