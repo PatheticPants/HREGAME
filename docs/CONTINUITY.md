@@ -28,12 +28,12 @@ python tools/verify_content.py
 
 | suite | checks |
 |---|---|
-| rules | 81 |
+| rules | 90 |
 | presentation | 270 |
-| the day (full loop) | 73 |
+| the day (full loop) | 76 |
 | content + encoding | PASS |
 
-The capture harness writes **50** frames. New this session: 44 a struck seal with
+The capture harness writes **51** frames. New this session: 44 a struck seal with
 the candle taken away (the veil), 45/46 the two documents that between them
 decide case_04, 47-49 a page caught mid-turn, and 50 the door by candlelight.
 
@@ -329,8 +329,12 @@ These are recorded so the next person does not think they are undiscovered.
   `ReferenceBook`'s half of this — a seeded wax outline rebuilt per frame per open
   plate — WAS real and is fixed: `WaxShape.outline` is memoised and the
   presentation suite asserts the memo holds.
-- **Favour is stored and inert.** `Register.favor_totals()` is written and never
-  called. It is the least systemic of the three columns and the most obvious
+- **Favour is REPORTED and inert.** The day ledger names who is pleased (see
+  `session_controller.gd`'s `_compose_ledger`), so it is not invisible — but it
+  has no downstream consequence whatever, and `Register.favor_totals()` itself is
+  still called by nothing. The plan for making it a supply line rather than a
+  score is in `docs/NEXT_SESSION.md`, along with the reason IMPERIAL favour must
+  not be the one banded. It is the least systemic of the three columns and the most obvious
   place to spend the next campaign-scale effort.
 - ~~**Thursday is three consecutive "nothing is wrong, confirm it" matters.**~~
   **Half fixed 2026-07-28.** case_04 now produces the build's first and only

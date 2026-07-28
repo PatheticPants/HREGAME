@@ -32,7 +32,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 81, presentation 270, session 73, content PASS**. Run the rules
+Green is **rules 90, presentation 270, session 76, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 
@@ -107,6 +107,93 @@ shared with case_02 and moving him damages a shipped case. And `docs/GRAPHICS.md
 was telling every session to avoid `ease(x, 0.4)` for a reason that is false;
 measured, it covers 4% of the distance in the first frame rather than snapping.
 All three are corrected in place.
+
+## THE LOOP: HOOK, SPINE, AND WHAT TO BUILD NEXT
+
+From a cold sweep — six designers, one synthesis, three prosecutors. Read this
+before adding content; it is the shape the content is supposed to make.
+
+### The hook
+
+You are the third hand at the third desk, and the man who sat here before you is
+not in the building. He left the memorandum, addressed TO THE THIRD HAND and
+signed R.V., and it is the most useful thing anybody says to you all week. Then
+the first man comes up with a seal rubbed to nothing and a witness who died the
+year it was drawn — and he is telling the truth, and the game's opening move is
+to punish the reflex you walked in with. What brings you back is smaller and
+worse: the third petitioner quotes what you did to the first, correctly. Your
+rulings go into a book, the book is on the desk, and other people open it. Three
+of its entries are not yours.
+
+### The spine
+
+**THE EMPIRE SUPPLIES ME. THE CHURCH INFORMS ME. THE COUNTRY COMES TO ME.**
+
+Favour is a supply line, not a score. Standing is inspected by noticing the
+Kalendar is thinner, the resin is worse and the tray is emptier — **never** by
+reading a number off a page. If a player cannot infer their standing from the
+state of the desk, the fix is stronger effects, never a readout. The antagonist
+is the record: six separate reasonable decisions turn out to be a position, and
+people plan around it before you notice it.
+
+### Build next, in order
+
+1. **`Register.standing(authority)`** — call the already-written, never-called
+   `favor_totals()` (`register.gd:96`), band it coarsely, and widen
+   `DayOpeningDocument` with `requires_standing` / `requires_burnt_out` /
+   `requires_unsound_at_least`. Then spend it in data. The mid-day arrival
+   channel (`after_case`) shipped this session and is the same plumbing.
+2. **Dockets say who MOVED the matter** (`interests`, rendered like the letters'
+   existing `endorsements`), and tray slips stamp any subject this desk has
+   already written on. Forecast without spoiling: an endorsement names a mover,
+   never who will approve of which verdict.
+3. **Saturday**, built on the returning Ford at Lenz — R.V.'s own referral,
+   already in `register_seed.json`, coming back down the stair.
+
+### The prosecutors' amendments — do not skip these
+
+- **Do not band IMPERIAL favour.** It is already a soundness proxy: in three of
+  eight matters the imperial delta is exactly +1 for the lawful verdict and −1
+  for the unlawful one. Banding it hands the player a competence score in
+  costume, which is the one thing the three-column rule exists to prevent. Use
+  church/custom for supply, or decouple the deltas first.
+- **`test_session.gd` asserts `not desk.ledger.allow_next_day`**, and
+  `allow_next_day` is `day_index + 1 < days.size()`. Adding `day_03` to
+  `_order.json` fails that assertion the instant it lands. Update it in the same
+  commit.
+- **`content_loader._load_days` parses only `case_id`, `requires_ruled`,
+  `fallback_case_id`.** Any new `DayCaseSlot` field is SILENTLY IGNORED — no
+  error, no test failure, the feature just never fires. This is the same class of
+  bug as the `after_case` field: if you add one, parse it.
+- **A foreign-hand prior is a party's argument, not the office's settled
+  position.** `PrecedentCheck._same_claimant` / `_competing_claimant` fold the
+  player's own priors into `Lex.Authority.OFFICE`; R.V.'s must not go the same
+  branch. And the distinction needs one authored sentence inside the case that
+  uses it — a player who spent Thursday treating the Register as uniformly
+  binding will read it as an inconsistency, not a revelation.
+- **Decide case_09's verdict model before writing dialogue.** Two incompatible
+  shipped patterns exist: fixed `correct_verdict` (case_03) and
+  `"DYNAMIC"` + `dynamic_precedent: true` (case_05/06, gated at
+  `content_loader.gd:284` and `register_book.gd:133`).
+- **`DocketSlip` extends `Draggable`, whose `_process` redraws every frame.** Do
+  any Register lookup once in `bind()`, not in `_draw`.
+- **`DocketView.content_bottom()` is hand-mirrored against `_draw_face`.** Adding
+  a line to one without the other reproduces the overflow bug a third time.
+
+### The twist seeds, planted and unfired
+
+- **R.V.'s tenure does not fit the household book.** Odo Fenne (d. 1208) and
+  Isenbard Kliff ("eight years at the desk", d. 1216) are both entered as notary
+  at the third desk; R.V. claims eleven years, which begins in 1210 and overlaps
+  Kliff by six. Two written records that cannot both be true, findable with three
+  books already in the room. **No answer exists in the build. Do not add one
+  without deciding what it costs.**
+- **The archive at Lenz burnt in '18 and took forty years of oath-rolls with
+  it** — R.V.'s own marginal note in the Book of Matrices, and the reason the
+  Count of Hallenstein's roll will not come. "Nobody has worked out yet what that
+  means for the Nether March. It will not be pretty when they do."
+- **The steward's line is ruled and blank.** He enters a man on the day his bed
+  is stripped, the bed under the stair has been stripped, and he has no date.
 
 ## THE PLAN OF ATTACK
 
