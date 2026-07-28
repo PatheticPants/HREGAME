@@ -62,15 +62,19 @@ func bind(v: int, desk_bounds: Rect2, at: Vector2) -> void:
 	verdict = v
 	home_position = at
 	match v:
+		# Three metals, deliberately far enough apart to tell at a glance in a dark
+		# room: gilt brass, cold iron, and a red bronze. CONFIRM and REFER used to
+		# be 0.82/0.74/0.48 and 0.72/0.62/0.44 — near-identical plates, on the two
+		# rings whose meanings are furthest apart.
 		Lex.Verdict.CONFIRM:
 			device = &"notary_confirm"
-			metal = Color(0.82, 0.74, 0.48)
+			metal = Color(0.88, 0.76, 0.42)
 		Lex.Verdict.DENY:
 			device = &"notary_deny"
-			metal = Color(0.62, 0.60, 0.58)
+			metal = Color(0.55, 0.55, 0.58)
 		_:
 			device = &"notary_refer"
-			metal = Color(0.72, 0.62, 0.44)
+			metal = Color(0.66, 0.46, 0.28)
 	name = "ring_" + Lex.verdict_name(v).to_lower()
 	setup(at, deg_to_rad(randf_range(-8.0, 8.0)), desk_bounds)
 
@@ -117,12 +121,35 @@ func _draw() -> void:
 	draw_texture_rect(ring_texture(), Rect2(-art_size * 0.5, art_size), false,
 		Color(1.0 - sink * 0.08, 1.0 - sink * 0.09, 1.0 - sink * 0.11, 1.0))
 
-	# The die itself, cut in reverse. Drawn the right way round anyway, because a
-	# mirrored placeholder glyph just reads as a mistake.
+	# THE DIE, CUT INTO METAL RATHER THAN PAINTED ON IT.
+	#
+	# A single pass in metal.darkened(0.55) was legible on the gold CONFIRM ring
+	# and effectively invisible on the dark iron DENY one — so the ring that ends
+	# a person's claim was the one you could not identify in your hand. An engraved
+	# device has a lit lip and a dark trough, and drawing both makes it read on
+	# every metal in the stand at the cost of one extra call.
+	var toward := (light_position - global_position).rotated(-global_rotation)
+	if toward.length() > 1.0:
+		toward = toward.normalized()
+	else:
+		toward = Vector2(0.3, -1.0)
+	draw_set_transform(visual_offset + Vector2(0, -1.5) - toward * 1.3,
+		press_rotation, Vector2.ONE)
+	Heraldry.draw_device(self, device, Vector2.ZERO, r * 0.47,
+		metal.lightened(0.55))
 	draw_set_transform(visual_offset + Vector2(0, -1.5), press_rotation, Vector2.ONE)
 	Heraldry.draw_device(self, device, Vector2.ZERO, r * 0.47,
-		metal.darkened(0.55))
+		metal.darkened(0.72))
 	draw_set_transform(visual_offset, 0.0, Vector2.ONE)
+
+	# A moving specular on the bezel, so brass and iron are told apart by how they
+	# catch the flame rather than only by their base colour — and so carrying the
+	# candle across the desk does visible work on the metal as well as the paper.
+	var spec := toward * r * 0.52
+	var sheen := clampf(light_level, 0.0, 1.0) * clampf(light_strength, 0.7, 1.1)
+	if sheen > 0.02:
+		draw_circle(spec, 2.4 + sheen * 2.0,
+			Color(1.0, 0.94, 0.78, (0.18 + 0.42 * sheen) * (1.0 - sink)))
 
 	# Rim highlight, cut back as the ring is pushed into wax.
 	draw_arc(Vector2(0, -1.5), r * 0.66, PI * 1.05, PI * 1.85, 18,

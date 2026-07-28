@@ -918,6 +918,15 @@ func _update_lighting() -> void:
 	ring_stand.light_position = flame
 	ring_stand.light_level = WINDOW_LEVEL if spent \
 		else candle.illumination_at(ring_stand.global_position)
+	# Which hollow is empty because its ring is in the player's hand. The word is
+	# cut into the block, so lifting the ring is precisely when it stops being
+	# readable — and precisely when knowing what you have picked up matters most.
+	ring_stand.lifted_slot = -1
+	for i in rings.size():
+		if rings[i].is_held:
+			ring_stand.lifted_slot = i
+			break
+	ring_stand.queue_redraw()
 	if ledge != null:
 		ledge.light_position = flame
 		ledge.light_level = WINDOW_LEVEL if spent \

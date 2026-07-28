@@ -325,33 +325,74 @@ func _draw_fallback_figure(base: Vector2, lean: Vector2, alpha: float) -> void:
 
 ## A slip of light beside the speaker. Not a UI panel: it is placed in the world
 ## next to the mouth it came out of, and it goes away when they stop talking.
+## What they are saying, on a slip beside them.
+##
+## THIS WAS THE LAST PIECE OF UI IN THE GAME AND IT WAS THE LOUDEST THING ON
+## SCREEN. A hard-edged rectangle, a 1px border, a flat unlit fill and a comic
+## tongue pointing at the speaker's head — every convention of a dialogue box,
+## in a game whose entire premise is that nothing on screen is a widget. In the
+## audience view it was reliably the brightest object in the room, because it
+## was the only thing that ignored the candle.
+##
+## It is now a physical scrap: cut from a skin like everything else here, lying
+## at a slight angle, lit by the same flame as the man holding it, thrown into
+## relief against the wall behind him. The tongue is gone — a slip does not point.
+## It sits beside the mouth it came out of and that is enough.
 func _draw_speech(offset: Vector2) -> void:
 	var shown := _current.substr(0, int(ceil(_current.length() * _reveal)))
-	var size := Ink.measure(_current, 14, BUBBLE_W - 36.0)
-	var box := Rect2(Vector2(data.build * 0.9, -data.height * ART_SCALE * 0.95) + offset,
-		Vector2(BUBBLE_W, size.y + 46.0))
+	var size := Ink.measure(_current, 14, BUBBLE_W - 40.0)
+	var head := Vector2(data.build * 0.9, -data.height * ART_SCALE * 0.95) + offset
+	var box := Rect2(head, Vector2(BUBBLE_W, size.y + 50.0))
 
-	draw_rect(box.grow(4.0), Color(0, 0, 0, 0.28))
-	draw_rect(box, Color(0.94, 0.90, 0.78, 0.97))
-	draw_rect(box, Color(0.62, 0.55, 0.42), false, 1.0)
+	# The same candle that lights the face lights the paper. Away from the flame
+	# it goes grey and cool like every other sheet in the room.
+	var lit := clampf(light_level * 1.5, 0.0, 1.0)
+	var paper := Color(0.62, 0.60, 0.55).lerp(Color(0.95, 0.89, 0.73), lit)
+	paper = paper.lerp(Color(1.0, 0.84, 0.58), lit * 0.22)
 
-	# A small tongue pointing back at the speaker.
-	draw_colored_polygon(PackedVector2Array([
-		box.position + Vector2(0, 26),
-		box.position + Vector2(-16, 40),
-		box.position + Vector2(0, 52),
-	]), Color(0.94, 0.90, 0.78, 0.97))
+	# A scrap is never square, and it lies at an angle. Seeded off the speaker so
+	# one person's slips are consistently their own and do not jitter per line.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(data.id) ^ 0x51ee
+	draw_set_transform(box.position + box.size * 0.5,
+		deg_to_rad(rng.randf_range(-1.6, 1.6)), Vector2.ONE)
+	var r := Rect2(-box.size * 0.5, box.size)
 
-	var at := box.position + Vector2(18, 14)
+	# Thrown against the wall behind him rather than floating in front of it.
+	for i in 3:
+		var g := 3.0 + float(i) * 3.5
+		draw_rect(Rect2(r.position + Vector2(4.0 + g * 0.4, 7.0 + g * 0.5),
+			r.size), Color(0, 0, 0, 0.11 * (1.0 - float(i) / 3.0)))
+	draw_rect(r, paper)
+
+	# Deckle: notches bitten out of the rim in the room's own dark, so the edge
+	# reads as cut rather than as a stroke width.
+	var bite := Color(0, 0, 0, 0.16)
+	for i in 18:
+		var t := (float(i) + 0.5) / 18.0
+		var d := rng.randf_range(0.6, 2.4)
+		draw_rect(Rect2(r.position.x + t * r.size.x, r.position.y, 7.0, d), bite)
+		draw_rect(Rect2(r.position.x + t * r.size.x, r.end.y - d, 7.0, d), bite)
+	draw_line(r.position, Vector2(r.end.x, r.position.y),
+		paper.lightened(0.26), 1.0)
+	draw_line(r.position, Vector2(r.position.x, r.end.y),
+		paper.lightened(0.16), 1.0)
+	draw_rect(r, paper.darkened(0.34), false, 1.0)
+
+	var at := r.position + Vector2(20, 15)
 	if not _speaker.is_empty():
 		at.y += Ink.label(self, at, _speaker, 9, Ink.FADED)
 		at.y += 2.0
-	Ink.block(self, at, shown, 14, Ink.CHANCERY, BUBBLE_W - 36.0)
+	Ink.block(self, at, shown, 14, Ink.CHANCERY, BUBBLE_W - 40.0)
 
 	if _reveal >= 1.0:
-		# The only affordance in the game that is not an object: a small mark
-		# saying there is more. Drawn inside the slip, in ink.
-		var tick := box.end - Vector2(20, 16)
-		draw_colored_polygon(PackedVector2Array([
-			tick, tick + Vector2(-9, -7), tick + Vector2(-9, 7)]),
-			Color(Ink.FADED, 0.55 + 0.35 * sin(_sway * 3.0)))
+		# There is more. A clerk's continuation mark in the bottom corner, in ink,
+		# the way a scribe says the sentence runs on to the next leaf.
+		var tick := r.end - Vector2(26, 20)
+		var pulse := 0.45 + 0.30 * sin(_sway * 3.0)
+		draw_line(tick, tick + Vector2(11, 0), Color(Ink.FADED, pulse), 1.4)
+		draw_line(tick + Vector2(11, 0), tick + Vector2(6, -4),
+			Color(Ink.FADED, pulse), 1.4)
+		draw_line(tick + Vector2(11, 0), tick + Vector2(6, 4),
+			Color(Ink.FADED, pulse), 1.4)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
