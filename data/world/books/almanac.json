@@ -4,10 +4,15 @@
   "subtitle": "Of the reckoning of years",
   "cover_color": "#3b3524",
   "page_color": "#e9e2cb",
-  "size": [320, 430],
-  "start_offset": [405, 230],
+  "size": [
+    320,
+    430
+  ],
+  "start_offset": [
+    405,
+    230
+  ],
   "start_angle_deg": 3.0,
-
   "pages": [
     {
       "kind": "text",
@@ -34,7 +39,7 @@
     {
       "kind": "text",
       "heading": "What each ring says",
-      "body": "CONFIRM says the authority admitting the instrument governs here.\n\nDENY says the authority refusing it governs here.\n\nREFER says this desk will not choose between them. It is the Chancery's standing procedure where two authorities reach two ends, but procedure is not a third law and does not make either old law false.\n\nThe ring does not discover a neutral answer. It records which consequence this office is willing to own."
+      "body": "CONFIRM says the authority admitting the instrument governs here.\n\nDENY says the authority refusing it governs here.\n\nREFER says this desk will not choose between them. It is the Chancery's standing procedure where two authorities reach two ends, but procedure is not a third law and does not make either old law false.\n\nThe ring does not discover a neutral answer. It records which consequence this office is willing to own.\n\nThe standing instruction of this office, before ever you reach a disagreement of laws:\n\nAn instrument shown to be FALSE is refused. A die that was dead, a skin scraped and written over — these are not errors and are not corrected.\n\nAn instrument merely DEFECTIVE is referred for correction, not refused. A slip of the pen, a name the rolls will not answer for, a hand that annotated what it could not know. The claim may yet be good; this office is simply not the one to mend it.\n\nThe difference is not how bad it looks. It is whether the instrument is a lie or a mess."
     }
   ]
 }
