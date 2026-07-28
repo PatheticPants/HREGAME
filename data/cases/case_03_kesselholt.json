@@ -31,9 +31,9 @@
       "start_angle_deg": 3.5,
       "petitioner_name": "Brother Anselm",
       "petitioner_style": "cellarer, the Abbey of Saint Wend's-in-the-Wood",
-      "claim_summary": "Claims the woodland called Kesselholt in the Nether March by episcopal grant. Produces one charter of the Bishop of Saint Wend, sealed by the cathedral chapter.",
-      "received_note": "Sent word ahead. Received at the door, the eleventh of October.",
-      "doorkeeper_note": "Would not wait in the passage with the others. Waited in the yard instead, which he seemed to think was different."
+      "claim_summary": "Claims the woodland called Kesselholt in the Nether March by episcopal grant. One charter of the Bishop, sealed by the cathedral chapter.",
+      "received_note": "Sent word ahead. The eleventh of October.",
+      "doorkeeper_note": "Would not wait in the passage. Waited in the yard, which he thought different."
     },
     {
       "kind": "charter",

@@ -52,6 +52,7 @@ func _run() -> void:
 	_test_wax_is_darker_molten(desk)
 	_test_the_page_turn(desk)
 	_test_every_leaf_fits(desk)
+	_test_dockets_fit(desk)
 	_test_reachability(desk)
 	await _test_view_transition(main, desk)
 	await _test_candle_light(desk)
@@ -69,6 +70,38 @@ func _run() -> void:
 	main.queue_free()
 	await get_tree().process_frame
 	_finish()
+
+
+## AND EVERY DOCKET FITS ITS SLIP.
+##
+## Same rule, same reason: nothing clips a Sheet either, so an over-long claim
+## summary is drawn straight off the bottom edge of the parchment and takes the
+## doorkeeper's note with it. case_08 carried 305 characters of claim on a
+## 330x235 slip against a median of 130, because its summary was doing two jobs
+## at once — the claim AND an office note about the Duke's settlement.
+func _test_dockets_fit(desk: Desk) -> void:
+	print("-- every docket fits its slip")
+	var seen := 0
+	for case_data in _lore_data.cases:
+		for doc in case_data.documents:
+			if not (doc is DocketData):
+				continue
+			var v := DocketView.new()
+			desk.add_child(v)
+			v.bind(doc, Desk.DESK_RECT)
+			var foot := v.rect().end.y
+			var bottom := v.content_bottom()
+			seen += 1
+			# 4 px of slack: the doorkeeper's note is drawn on a -2.5 degree
+			# slant, so its true extent is a shade under what Ink.measure reports
+			# for an unrotated block. Anything past that is real.
+			if bottom > foot + 4.0:
+				_fail("%s docket overruns its parchment by %.0f px"
+					% [case_data.id, bottom - foot])
+			else:
+				checks += 1
+			v.queue_free()
+	_is_true(seen >= 8, "every case's docket was measured (%d)" % seen)
 
 
 ## EVERY LEAF FITS THE BOARD IT IS PRINTED ON.

@@ -20,6 +20,38 @@ func docket_data() -> DocketData:
 	return data as DocketData
 
 
+## How far down the slip the flowed text reaches, before the doorkeeper's note
+## is pinned to the foot.
+##
+## Kept beside _draw_face and mirroring it exactly, so the suite can check that a
+## docket's authored text actually fits the parchment it is printed on. Nothing
+## clips a Sheet: Ink.block passes max_lines = -1, so an over-long claim is drawn
+## straight off the bottom edge and the doorkeeper's note lands on the blotter.
+## The guard below only stops the two colliding; it cannot make room that is not
+## there.
+##
+## KEEP IN STEP WITH _draw_face.
+func content_bottom() -> float:
+	var d := docket_data()
+	if d == null:
+		return 0.0
+	var r := rect()
+	var w := r.size.x - MARGIN * 2.0
+	var y := r.position.y + MARGIN * 0.7
+	y += Ink.line_height(10) + 3.0 + 7.0
+	y += Ink.line_height(16)
+	if not d.petitioner_style.is_empty():
+		y += Ink.line_height(12)
+	y += 7.0
+	y += Ink.measure(d.claim_summary, 13, w).y + 13 * 0.25 + 6.0
+	if not d.received_note.is_empty():
+		y += Ink.measure(d.received_note, 11, w).y + 11 * 0.25
+	if not d.doorkeeper_note.is_empty():
+		var note_h := Ink.measure(d.doorkeeper_note, 11, w).y
+		y = maxf(y + 10.0, r.end.y - MARGIN - note_h) + note_h
+	return y
+
+
 func _draw_face(r: Rect2) -> void:
 	var d := docket_data()
 	if d == null:
@@ -53,7 +85,14 @@ func _draw_face(r: Rect2) -> void:
 	# instruction about the candle, i.e. the whole tutorial. CharterView._draw_closing
 	# already guards its own footer this way; this is the same guard.
 	if not d.doorkeeper_note.is_empty():
+		# The foot is sized from the note, not from a flat 30 px. The guard above
+		# stops the doorkeeper's hand landing on top of the flowed text; it did
+		# nothing about the note itself being taller than the space reserved for
+		# it, so a three-line note was pinned to a two-line foot and its last
+		# line was drawn off the bottom of the parchment onto the desk. Same
+		# defect as the reference books' marginalia, in a second file.
+		var note_h := Ink.measure(d.doorkeeper_note, 11, w).y
 		var foot := Vector2(r.position.x + MARGIN,
-			maxf(at.y + 10.0, r.end.y - MARGIN - 30.0))
+			maxf(at.y + 10.0, r.end.y - MARGIN - note_h))
 		Ink.margin_note(self, foot, d.doorkeeper_note, 11, w, -2.5,
 			Color(0.36, 0.30, 0.22))
