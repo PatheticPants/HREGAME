@@ -29,13 +29,15 @@ python tools/verify_content.py
 | suite | checks |
 |---|---|
 | rules | 90 |
-| presentation | 280 |
+| presentation | 288 |
 | the day (full loop) | 76 |
 | content + encoding | PASS |
 
-The capture harness writes **51** frames. New this session: 44 a struck seal with
-the candle taken away (the veil), 45/46 the two documents that between them
-decide case_04, 47-49 a page caught mid-turn, and 50 the door by candlelight.
+The capture harness writes **56** frames. The latest additions are 52/53 for the
+petition packet's gather and carried phases, 54/55 for intermediate poses in the
+desk-to-audience projection, and 56 for the viscous wax neck and falling bead at
+inspection scale. Existing 47-49 now show authored page content remaining on the
+physical leaf throughout its turn.
 
 **Run the rules suite before the Python one.** `tests/test_rules.gd` writes the
 finding set it actually derived to `.tools/derived_findings.json`, and
@@ -322,10 +324,11 @@ path, the dead air between cases and the unreadable ring stand were all found.
 These are recorded so the next person does not think they are undiscovered.
 
 - **`Draggable._process` redraws unconditionally every frame**, twice per object,
-  with no dirty flag, as do `Desk` and `WaxPool`. **Measured 2026-07-28: 5.9 ms a
-  frame with 19 objects and both books open, about 169 fps.** So this is not a
-  problem and the previous note calling it a blocker was speculation. Re-measure
-  before and after any materials work; fix it if the number passes ~10 ms.
+  with no dirty flag, as do `Desk` and `WaxPool`. The original 2026-07-28 probe
+  measured 5.9 ms/frame; the return graphics pass now measures **9.22 ms/frame,
+  about 108 fps, with 19 draggables and all four books open**. It remains below
+  the 10 ms intervention line, but there is no longer enough headroom to skip
+  measurement before another broad material layer.
   `ReferenceBook`'s half of this — a seeded wax outline rebuilt per frame per open
   plate — WAS real and is fixed: `WaxShape.outline` is memoised and the
   presentation suite asserts the memo holds.

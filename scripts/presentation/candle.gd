@@ -206,11 +206,14 @@ func _make_light(light_name: String, sharpness: float, reach: float,
 	light.shadow_enabled = shadows
 	if shadows:
 		light.shadow_filter = Light2D.SHADOW_FILTER_PCF13
-		light.shadow_filter_smooth = 3.2
+		# A flame is an area source, not a pinhole. At desk distance its cast
+		# shadows keep a readable umbra but lose the ruler-straight mask edge that
+		# made books look like black rectangles pasted over the candle pool.
+		light.shadow_filter_smooth = 5.4
 		# Shadows are never black in a real room: the fill light and the ambient
 		# both reach into them. A pure black shadow is the fastest way to make a
 		# 2D light read as a stencil.
-		light.shadow_color = Color(0.03, 0.017, 0.011, 0.62)
+		light.shadow_color = Color(0.03, 0.017, 0.011, 0.52)
 	light.range_item_cull_mask = 1
 	light.shadow_item_cull_mask = 1
 	add_child(light)
@@ -588,21 +591,39 @@ func _draw_spent_wax() -> void:
 ## already cooled, so it gets no gloss and no glow.
 func _draw_flood(grow: float, set_wax: Color) -> void:
 	var centre := STUB + Vector2(1.0, 5.0)
-	# Stays inside the saucer. The brass is authored art and the best-looking
-	# surface on the desk; the flood is supposed to gather in it, not bury it.
+	# Stays inside the saucer, and OUTSIDE the standing candle wall. The former
+	# version drew a filled pale polygon after the authored texture; by late day
+	# it painted over the whole stub and became a cream doughnut. A flood in the
+	# dish is an annulus seen around the candle, not a new candle drawn on top.
 	var r := lerpf(15.0, 26.0, grow)
-	# Squashed, because the saucer is seen at the same shallow angle the stub is.
-	draw_colored_polygon(
-		WaxShape.scaled(_flood_shape, centre + Vector2(0.8, 1.6), r * 1.05, 0.80),
-		Color(0.16, 0.11, 0.06, 0.34))
-	draw_colored_polygon(WaxShape.scaled(_flood_shape, centre, r, 0.80),
-		set_wax.darkened(0.26))
-	draw_colored_polygon(WaxShape.scaled(_flood_shape, centre + Vector2(-0.6, -1.2),
-		r * 0.90, 0.80), set_wax)
-	# Surface tension leaves a raised lip all the way round, and the lip is the
-	# only part of a set pool that catches anything.
+	var inner := lerpf(14.5, STUB_RADIUS + 0.8, grow)
+	var mid := (r + inner) * 0.5
+	var band := maxf(1.5, r - inner)
+	# Squashed in y because the saucer and stub use the authored shallow cheat.
+	draw_set_transform(centre + Vector2(0.8, 1.6), 0.0, Vector2(1.0, 0.80))
+	draw_arc(Vector2.ZERO, mid, 0.0, TAU, 38,
+		Color(0.16, 0.11, 0.06, 0.34), band + 3.0, true)
+	for flow_arc: Vector2 in [
+		Vector2(PI * 0.04, PI * 0.72),
+		Vector2(PI * 0.87, PI * 1.43),
+		Vector2(PI * 1.58, PI * 2.02),
+	]:
+		draw_arc(Vector2.ZERO, mid, flow_arc.x, flow_arc.y, 16,
+			set_wax.darkened(0.24), band, true)
+	# Broken lighter shoulders: a perfectly uniform ring reads as a washer,
+	# whereas cooled wax reaches the dish in lobes and stops.
+	for arc: Vector2 in [
+		Vector2(PI * 1.08, PI * 1.54),
+		Vector2(PI * 1.76, PI * 2.14),
+		Vector2(PI * 0.26, PI * 0.62),
+	]:
+		draw_arc(Vector2(-0.8, -1.0), mid - 0.7, arc.x, arc.y, 12,
+			Color(set_wax.lightened(0.08), 0.86), maxf(1.2, band * 0.56), true)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	# Surface tension leaves a raised, irregular outer lip.
 	var lip := WaxShape.scaled(_flood_shape, centre + Vector2(-0.9, -1.8),
-		r * 0.90, 0.80)
+		r * 0.96, 0.80)
 	lip.append(lip[0])
 	draw_polyline(lip, Color(set_wax.lightened(0.30), 0.40), 1.4, true)
 

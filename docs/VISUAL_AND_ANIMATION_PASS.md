@@ -187,9 +187,9 @@ projection contract:
 
 Final verification:
 
-- rules: **64 checks, 0 failures**
-- session: **66 checks, 0 failures**
-- presentation: **138 checks, 0 failures**
+- rules: **90 checks, 0 failures**
+- session: **76 checks, 0 failures**
+- presentation: **288 checks, 0 failures**
 - independent content verifier: **passed**
 
 The Godot session and presentation harnesses still print their pre-existing

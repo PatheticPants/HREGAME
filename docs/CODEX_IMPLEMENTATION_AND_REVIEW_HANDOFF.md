@@ -52,6 +52,184 @@ feedback, and authored campaign.
 
 ---
 
+## 2026-07-28 return pass: graphics, animation, and lighting
+
+Codex returned after substantial intervening project changes and performed a
+new source audit, full rendered capture, implementation pass, and regression
+run. This was not a speculative art-direction review: the changes below are in
+the working tree and were judged from the real 1600×900 Godot render.
+
+### Lighting and exposure
+
+The night remains candle-led, but the ambient floor was lifted enough that an
+object outside the flame can still be found and carried. The shade veil was
+reduced slightly so it controls reading without erasing the desk.
+
+Morning is now colder rather than merely brighter. Directional shutter bands
+cross both the room and the separately projected desk plane, so the end of the
+day has geometry and direction instead of behaving like a global value slider.
+
+The pigeonhole rack was migrated to the shared `Surface` vocabulary. Oak,
+recess walls, runner, extrusion, and grain now respond to the carried flame;
+the lit side of a hollow changes when the candle crosses it.
+
+The candle key keeps its moving occlusion shadows, with a softer configured
+filter and a slightly lighter umbra. No shader was added and the Compatibility
+renderer remains the target.
+
+Relevant files:
+
+- `scripts/presentation/desk.gd`
+- `scripts/presentation/desk_plane_view.gd`
+- `scripts/presentation/desk_ledge.gd`
+- `scripts/presentation/draggable.gd`
+- `scripts/presentation/candle.gd`
+
+### The desk-to-audience transition
+
+The existing two-plane projection was preserved, then judged at intermediate
+poses rather than only at rest. Raised objects now carry an authored
+`presentation_lift` in addition to their normal relief compensation, and their
+shadows lengthen with that lift. The far desk edge remains registered while the
+contact plane foreshortens, so looking up no longer turns books, paper, tools,
+and wax into one flat layer.
+
+New capture frames 54 and 55 show the transition while it is moving. This is an
+important QA change: an endpoint-only screenshot could not prove that the path
+between the two good compositions was also good.
+
+### The petition packet handoff
+
+The former sweep assigned velocity to an unheld `DragSolver`, but unheld paper
+does not advance through that solver. Sheets could therefore wait on the desk
+until a timer deleted them.
+
+The handoff is now explicitly authored:
+
+1. staggered edge gather and anticipation;
+2. layered lift clear of the table;
+3. a quadratic carried arc toward the petitioner;
+4. small rotational differences and an arrival settle;
+5. cleanup only after every sheet has arrived.
+
+The presentation suite now asserts travel, lift, and arrival-before-cleanup.
+Frames 52 and 53 show the gather and carried phases.
+
+Relevant files:
+
+- `scripts/presentation/desk.gd`
+- `scripts/presentation/draggable.gd`
+- `tests/test_presentation.gd`
+- `tests/qa_capture.gd`
+
+### Page turns now preserve the physical leaf
+
+The old page-turn silhouette moved a blank parchment shape while the authored
+ink remained on the stationary spread. At the upright pose the book therefore
+looked like it had dropped a frame or lost its page.
+
+The moving leaf now owns the exact authored page content for its physical recto
+and verso. The destination fore-edge is exposed underneath from the lift phase,
+the correct face changes after the leaf crosses vertical, width follows the
+projected cosine around the gutter, and the free edge retains a small curve and
+wedge shadow. Forward and backward turns are both asserted.
+
+Frames 47, 48, and 49 should be read as one sequence. Content stays attached,
+the upright page becomes a narrow sliver, and the destination spread is already
+present beneath it.
+
+Relevant files:
+
+- `scripts/presentation/reference_book.gd`
+- `tests/test_presentation.gd`
+- `tests/qa_capture.gd`
+
+### Magnifier and seal inspection
+
+The rebuilt optical close-up was retained, then made less like a dark filter:
+
+- glass darkening was reduced;
+- the subject keeps a restrained optical offset rather than teleporting to the
+  centre of the lens;
+- reflections move with the carried candle;
+- the bezel has a candle-relative inner lip and material response;
+- the wooden handle carries directional grain and highlight;
+- small crown-glass inclusions break the perfectly clean disc;
+- enlarged wax receives a modest inspection shoulder light while preserving
+  legend wear, chips, strike position, and partial devices.
+
+The QA pose now deliberately brings the candle beside the received pendant
+seal. Inspection is a physical two-tool composition, and the close frame proves
+the detail under the lighting condition a player would actually create.
+
+Relevant files:
+
+- `scripts/presentation/lens.gd`
+- `scripts/presentation/seal_tag.gd`
+- `scripts/presentation/wax_pool.gd`
+- `tests/qa_capture.gd`
+
+### Candle melt and sealing wax motion
+
+The late candle had regressed into the exact failure described in the graphics
+rulebook: a pale procedural polygon was drawn over the authored candle and read
+as a large cream disc. Terminal wax is now drawn outside the remaining stub as
+broken, y-compressed annular shoulders and irregular lips. The holder, candle
+wall, melt cup, and drowned wick remain visible through the whole life cycle.
+
+The sealing-wax pour also received a final close-read pass. The neck between
+spoon and bead is no longer a pair of straight red sticks. It is a curved,
+tapering viscous strand with a centre highlight and an elongated, oriented bead
+with its own shadow and specular. Frame 56 exists specifically to judge that
+small transition at inspection scale.
+
+The die-to-pool ratio was measured again rather than changed by eye. It remains
+at the intended 0.80 on a sound pour, so the impression dominates while leaving
+a credible wax rim.
+
+Relevant files:
+
+- `scripts/presentation/candle.gd`
+- `scripts/presentation/wax_spoon.gd`
+- `scripts/presentation/wax_pool.gd`
+- `scripts/presentation/seal_tag.gd`
+
+### Rendered evidence and test expansion
+
+The capture harness now writes 56 staged frames. The new visual contracts are:
+
+- `shot_52_packet_gather.png`
+- `shot_53_packet_carried.png`
+- `shot_54_view_lifting.png`
+- `shot_55_view_near_arrival.png`
+- `shot_56_wax_ribbon_close.png`
+
+Existing frames materially changed by this pass:
+
+- `shot_26_glass_pendant_close.png`
+- `shot_36_candle_close_fresh.png`
+- `shot_40_candle_close_guttering.png`
+- `shot_41_candle_close_out.png`
+- `shot_47_page_lifting.png`
+- `shot_48_page_upright.png`
+- `shot_49_page_landing.png`
+- `shot_14_day_over.png`
+
+The presentation suite grew from 280 to 288 checks. Its new assertions cover the
+packet's visible travel and lift, cleanup after physical arrival, and the page
+identities below and on both faces of forward and backward turns.
+
+The post-pass stress probe reports **9.22 ms/frame, about 108 fps** at 1600×900
+with 19 draggables, all four books open, and 3 wax-outline builds. That is below
+the graphics rulebook's 10 ms intervention line, but close enough that the next
+broad per-frame material pass should re-run the same pose before proceeding.
+
+No new raster image was generated for this return pass. All work extends the
+authored pixel-art plates through geometry, layering, material response, and
+state-driven motion.
+
+---
+
 ## What Codex implemented
 
 ### 1. Plural authority became an actual ruling choice
@@ -459,9 +637,9 @@ All validation was run from `C:\HREGAME` after the visual pass.
 
 ### Automated results
 
-- rules: **64 checks, 0 failures**
-- session: **66 checks, 0 failures**
-- presentation: **138 checks, 0 failures**
+- rules: **90 checks, 0 failures**
+- session: **76 checks, 0 failures**
+- presentation: **288 checks, 0 failures**
 - independent Python content verifier: **passed**
 
 The suites cover:
@@ -526,10 +704,18 @@ Important frames in `.tools/`:
 - `shot_24_wax_pool_fresh.png`
 - `shot_25_glass_on_pendant_seal.png`
 - `shot_26_glass_pendant_close.png`
+- `shot_47_page_lifting.png`
+- `shot_48_page_upright.png`
+- `shot_49_page_landing.png`
+- `shot_52_packet_gather.png`
+- `shot_53_packet_carried.png`
+- `shot_54_view_lifting.png`
+- `shot_55_view_near_arrival.png`
+- `shot_56_wax_ribbon_close.png`
 
-The last capture proves that the incoming seal fills the glass, its circular
-legend is readable, its device remains identifiable, and the glass reflections
-sit above the wax.
+Together these captures prove that the incoming seal fills the glass, page
+content remains on its physical leaf, the packet visibly leaves the desk, depth
+survives the view transition, and wax leaves the spoon as a viscous material.
 
 ---
 

@@ -168,6 +168,9 @@ func detail_centre() -> Vector2:
 ## becomes readable, and therefore where the seal check actually happens.
 func draw_detail(c: CanvasItem, at: Vector2, radius: float) -> void:
 	var wax := impression.wax_color
+	# A slight value lift represents the broadened reflection visible across an
+	# enlarged wax shoulder. It improves separation without inventing a light.
+	var inspection_wax := wax.lightened(0.10)
 	var r := radius * 0.86
 	var depth := clampf(1.0 - impression.wear * 0.48, 0.42, 1.0)
 
@@ -179,12 +182,12 @@ func draw_detail(c: CanvasItem, at: Vector2, radius: float) -> void:
 	var light := (light_position - global_position)
 	light = light.normalized() if light.length() > 1.0 else Vector2(-0.65, -0.75)
 
-	WaxShape.draw_magnified_body(c, _unit, at, r, wax, light)
-	Heraldry.draw_device_incuse(c, impression.device, at, r * 0.38, wax, depth,
-		light)
+	WaxShape.draw_magnified_body(c, _unit, at, r, inspection_wax, light)
+	Heraldry.draw_device_incuse(c, impression.device, at, r * 0.38,
+		inspection_wax, depth, light)
 	Ink.circular_incuse(c, at, _legend_display(), r * 0.67,
-		9 if _legend_display().length() > 25 else 10, wax, depth, -c.rotation,
-		light)
+		9 if _legend_display().length() > 25 else 10, inspection_wax, depth,
+		-c.rotation, light)
 
 	# Chips and rubbing stay physical under the glass; a caption announcing wear
 	# was accurate but made the glass look like a tooltip.
@@ -195,7 +198,7 @@ func draw_detail(c: CanvasItem, at: Vector2, radius: float) -> void:
 			var a := rng.randf_range(1.15, 3.35)
 			var p := at + Vector2(cos(a), sin(a)) * r * rng.randf_range(0.83, 0.99)
 			c.draw_circle(p, rng.randf_range(2.0, 5.5),
-				Color(wax.darkened(0.62), 0.72))
+				Color(inspection_wax.darkened(0.62), 0.72))
 
 
 ## Illegible letters are recorded as a middle dot, so the player can see exactly

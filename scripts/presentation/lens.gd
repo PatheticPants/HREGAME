@@ -106,13 +106,20 @@ func _find_subject() -> Node2D:
 
 func _draw() -> void:
 	draw_soft_shadow(Rect2(-Vector2(RADIUS, RADIUS), Vector2(RADIUS, RADIUS) * 2.0), 1.0)
-	_draw_handle()
+	var lit := Surface.lit(light_level, light_strength)
+	var toward := Surface.toward(self, light_position)
+	_draw_handle(toward, lit)
 
 	# The glass itself: dark edge refraction, a warm body, and an almost-clear
 	# centre. A flat translucent disc looked like a UI panel placed on the desk.
-	draw_circle(Vector2.ZERO, RADIUS, Color(0.10, 0.075, 0.045, 0.24))
-	draw_circle(Vector2.ZERO, RADIUS * 0.965, Color(0.89, 0.84, 0.70, 0.16))
-	draw_circle(Vector2.ZERO, RADIUS * 0.91, Color(0.99, 0.97, 0.88, 0.055))
+	# Clear glass transmits almost all of the scene. The older 24% brown disc
+	# made inspection darker than looking with the naked eye and buried exactly
+	# the seal detail the tool exists to reveal.
+	draw_circle(Vector2.ZERO, RADIUS, Color(0.075, 0.055, 0.035, 0.15))
+	draw_circle(Vector2.ZERO, RADIUS * 0.965,
+		Color(0.86, 0.82, 0.72, 0.070 + lit * 0.025))
+	draw_circle(Vector2.ZERO, RADIUS * 0.91,
+		Color(0.98, 0.97, 0.91, 0.018 + lit * 0.012))
 
 	if _focus != null and _focus_amount > 0.02 and _focus.has_method("draw_detail"):
 		# Counter-rotate so the enlarged image stays upright no matter how the
@@ -121,47 +128,73 @@ func _draw() -> void:
 		# Focus settles over the last few percent rather than growing from a dot:
 		# the image belongs to the glass from first contact and gently resolves.
 		var resolve_scale := lerpf(0.965, 1.0, _focus_amount)
-		draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE * resolve_scale)
+		var focus_at := Vector2.ZERO
+		if _focus.has_method("detail_centre"):
+			var subject_centre: Vector2 = _focus.call("detail_centre")
+			# A real lens does not teleport an off-axis detail to its centre.
+			# Retaining a little of the subject's offset supplies optical parallax
+			# while the magnification still keeps the important mark readable.
+			focus_at = to_local(subject_centre) * 0.16
+			focus_at = focus_at.limit_length(RADIUS * 0.13)
+		draw_circle(focus_at + toward * RADIUS * 0.08, RADIUS * 0.73,
+			Color(1.0, 0.76, 0.48, 0.018 + lit * 0.035))
+		draw_set_transform(focus_at, -rotation, Vector2.ONE * resolve_scale)
 		_focus.call("draw_detail", self, Vector2.ZERO, RADIUS * 0.91)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	_draw_glass_reflections()
-	_draw_bezel()
+	_draw_glass_reflections(toward, lit)
+	_draw_bezel(toward, lit)
 
 
-func _draw_bezel() -> void:
-	var brass := Color(0.66, 0.52, 0.25)
-	var light_angle := (light_position - global_position).angle() - global_rotation
+func _draw_bezel(toward: Vector2, lit: float) -> void:
+	var brass := Surface.tint(Color(0.66, 0.52, 0.25), lit, 0.34, 0.22)
+	var light_angle := toward.angle()
 	draw_arc(Vector2.ZERO, RADIUS * 1.025, 0.0, TAU, 64,
 		brass.darkened(0.48), 11.0)
 	draw_arc(Vector2.ZERO, RADIUS * 1.008, 0.0, TAU, 64, brass, 6.5)
 	draw_arc(Vector2.ZERO, RADIUS * 1.006,
 		light_angle - 0.82, light_angle + 0.52, 24,
-		Color(0.96, 0.79, 0.42, 0.82), 2.8)
+		Color(0.98, 0.82, 0.46, 0.34 + lit * 0.54), 2.8)
 	draw_arc(Vector2.ZERO, RADIUS * 1.035,
 		light_angle + PI - 0.58, light_angle + PI + 0.48, 20,
 		Color(0.17, 0.10, 0.04, 0.55), 3.2)
+	# A rubbed inner lip catches a smaller echo of the outer highlight. The gap
+	# between the two is what makes this read as a metal channel holding glass.
+	draw_arc(Vector2.ZERO, RADIUS * 0.962,
+		light_angle - 0.56, light_angle + 0.34, 18,
+		Color(1.0, 0.91, 0.68, 0.12 + lit * 0.28), 1.5)
 
 
-func _draw_glass_reflections() -> void:
+func _draw_glass_reflections(toward: Vector2, lit: float) -> void:
 	# Reflections cross the enlarged object, which is what makes them read as
-	# belonging to a sheet of glass rather than to the wax below.
-	draw_arc(Vector2(-6, -3), RADIUS * 0.79, PI * 1.07, PI * 1.50, 20,
-		Color(1, 1, 1, 0.21), 7.0)
-	draw_arc(Vector2(-8, -5), RADIUS * 0.61, PI * 1.13, PI * 1.36, 14,
-		Color(1, 1, 1, 0.12), 3.8)
-	draw_arc(Vector2(4, 4), RADIUS * 0.86, PI * 0.08, PI * 0.39, 16,
-		Color(0.42, 0.27, 0.10, 0.085), 5.0)
+	# belonging to a sheet of glass rather than to the wax below. They move with
+	# the carried flame instead of being painted forever into the upper left.
+	var a := toward.angle()
+	var offset := toward * RADIUS * 0.045
+	draw_arc(offset, RADIUS * 0.79, a - 0.56, a + 0.17, 20,
+		Color(1, 1, 1, 0.12 + lit * 0.16), 6.0)
+	draw_arc(offset * 1.5, RADIUS * 0.61, a - 0.43, a - 0.04, 14,
+		Color(1, 1, 1, 0.07 + lit * 0.11), 3.2)
+	draw_arc(-offset, RADIUS * 0.86, a + PI - 0.39, a + PI + 0.19, 16,
+		Color(0.34, 0.22, 0.09, 0.060), 4.4)
+	# Two tiny seed bubbles in old crown glass. They catch the same light and
+	# keep the otherwise perfect disc from reading as a digital mask.
+	for p: Vector2 in [Vector2(-0.31, 0.18), Vector2(0.28, -0.36)]:
+		var at: Vector2 = p * RADIUS
+		draw_circle(at + toward * 1.2, 2.1, Color(1, 1, 1, 0.08 + lit * 0.08))
+		draw_circle(at - toward * 0.8, 1.1, Color(0.16, 0.11, 0.07, 0.12))
 
 
-func _draw_handle() -> void:
-	var wood := Color(0.29, 0.17, 0.095)
+func _draw_handle(toward: Vector2, lit: float) -> void:
+	var wood := Surface.tint(Color(0.29, 0.17, 0.095), lit, 0.28, 0.24)
 	draw_line(Vector2(0, RADIUS * 0.92), Vector2(0, RADIUS * 1.85),
 		wood.darkened(0.42), 19.0)
 	draw_line(Vector2(-1.5, RADIUS * 0.98), Vector2(-1.5, RADIUS * 1.84),
 		wood, 13.0)
-	draw_line(Vector2(-4.0, RADIUS * 1.03), Vector2(-4.0, RADIUS * 1.79),
-		Color(0.56, 0.35, 0.18, 0.45), 2.2)
+	var grain_x := clampf(toward.x * 4.0 - 1.5, -5.0, 3.0)
+	draw_line(Vector2(grain_x, RADIUS * 1.03),
+		Vector2(grain_x, RADIUS * 1.79),
+		Color(0.62, 0.40, 0.21, 0.25 + lit * 0.28), 2.2)
 	draw_circle(Vector2(0, RADIUS * 1.85), 12.5, wood.darkened(0.36))
 	draw_circle(Vector2(-1.5, RADIUS * 1.83), 9.0, wood.lightened(0.10))
 	draw_line(Vector2(0, RADIUS * 0.92), Vector2(0, RADIUS * 1.10),

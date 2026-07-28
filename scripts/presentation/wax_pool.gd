@@ -619,6 +619,7 @@ func detail_centre() -> Vector2:
 
 func draw_detail(c: CanvasItem, at: Vector2, radius_px: float) -> void:
 	var col := _wax_colour()
+	var inspection_col := col.lightened(0.10)
 	var r := radius_px * 0.84
 	var mapping := r / maxf(1.0, radius)
 	var pool_centre := at - press_offset * mapping
@@ -631,24 +632,25 @@ func draw_detail(c: CanvasItem, at: Vector2, radius_px: float) -> void:
 	# looks real.
 	var light := (light_position - global_position)
 	light = light.normalized() if light.length() > 1.0 else Vector2(-0.65, -0.75)
-	WaxShape.draw_magnified_body(c, _unit, pool_centre, r, col, light)
+	WaxShape.draw_magnified_body(c, _unit, pool_centre, r, inspection_col, light)
 	for poly in _struck_polygons():
 		var mapped := PackedVector2Array()
 		for p in poly:
 			mapped.append(at + (p - press_offset) * mapping)
-		c.draw_colored_polygon(mapped, col.darkened(0.27))
+		c.draw_colored_polygon(mapped, inspection_col.darkened(0.27))
 		if not mapped.is_empty():
 			mapped.append(mapped[0])
-			c.draw_polyline(mapped, col.darkened(0.50),
+			c.draw_polyline(mapped, inspection_col.darkened(0.50),
 				maxf(1.3, radius_px * 0.018), true)
 
 	var die_r := die_radius * mapping
 	c.draw_arc(at, die_r * 0.88, 0.0, TAU, 40,
-		Color(col.darkened(0.52), col.a * clampf(strike_coverage(), 0.25, 1.0)), 2.1)
-	Heraldry.draw_device_incuse(c, device, at, die_r * 0.56, col,
+		Color(inspection_col.darkened(0.52),
+			inspection_col.a * clampf(strike_coverage(), 0.25, 1.0)), 2.1)
+	Heraldry.draw_device_incuse(c, device, at, die_r * 0.56, inspection_col,
 		clampf(seat_depth, 0.25, 1.0), light)
 	var legend := "SIGILLVM • NOTARII •"
-	Ink.circular_incuse(c, at, legend, die_r * 0.72, 10, col,
+	Ink.circular_incuse(c, at, legend, die_r * 0.72, 10, inspection_col,
 		clampf(seat_depth, 0.25, 1.0), -c.rotation, light)
 
 

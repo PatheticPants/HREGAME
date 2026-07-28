@@ -24,6 +24,11 @@ extends Node
 ##   28  the audience view with a person actually standing in it
 ##   29  the same, speaking
 ##   30  the withdrawal, back toward the door they came in by
+##   52  the petitioner's hand first gathering the loose packet
+##   53  the same papers lifted and travelling off the desk
+##   54  the head-rise while the desk is visibly changing planes
+##   55  the same move near arrival, before its physical settle
+##   56  the viscous wax neck and falling bead at inspection scale
 
 const OUT := "res://.tools/"
 
@@ -53,6 +58,9 @@ func _run() -> void:
 
 	await _shot("01_desk_default")
 	await _inspect_pendant_seal()
+	await _show_packet_sweep()
+	_desk.lay_out_packet(Lore.data.cases[0].documents)
+	await _settle(60)
 
 	# Put both books away, and hover the charter, so one frame shows the rack in
 	# use and the grab affordance at the same time.
@@ -99,7 +107,11 @@ func _run() -> void:
 	var view_up := _main.get_node_or_null("view_controller")
 	if view_up != null and view_up.has_method("look_up"):
 		view_up.look_up()
-		await _settle(80)
+		await _settle(12)
+		await _shot("54_view_lifting")
+		await _settle(18)
+		await _shot("55_view_near_arrival")
+		await _settle(50)
 		await _shot("09_audience_view")
 
 		# THE DOOR MEETS THE CANDLE.
@@ -171,6 +183,21 @@ func _run() -> void:
 
 	print("captured")
 	get_tree().quit(0)
+
+
+## The packet handoff at the two phases a still frame can actually judge:
+## loose edges being gathered, then a layered packet clear of the table. The
+## former implementation never advanced unheld paper at all and a final-state
+## capture could only show that the objects had eventually vanished.
+func _show_packet_sweep() -> void:
+	if _desk.case_papers.is_empty():
+		return
+	_desk.sweep_packet_away()
+	await _settle(8)
+	await _shot("52_packet_gather")
+	await _settle(25)
+	await _shot("53_packet_carried")
+	await _settle(70)
 
 
 ## Thursday as it first appears: the chosen Kesselholt consequence on paper,
@@ -316,8 +343,14 @@ func _inspect_pendant_seal() -> void:
 		return
 	var view := _main.get_node_or_null("view_controller")
 	var camera := _main.get_node("camera") as Camera2D
-	_desk.bring_to_front(_desk.lens)
+	var candle_home := _desk.candle.position
+	var candle_angle := _desk.candle.rotation
 	var over := _desk.surface.to_local(seal.detail_centre())
+	# Inspection is a two-tool act: the glass enlarges and the carried candle
+	# reveals. Capture the intended composition rather than reviewing a green
+	# seal left at the dark edge of the desk.
+	await _move_candle(over + Vector2(178.0, -118.0))
+	_desk.bring_to_front(_desk.lens)
 	_desk.lens.solver.place(over, 0.0)
 	_desk.lens.position = over
 	await _settle(45)
@@ -337,6 +370,8 @@ func _inspect_pendant_seal() -> void:
 		view.set_process_input(true)
 	_desk.lens.solver.place(Vector2(700, 250), deg_to_rad(-14.0))
 	_desk.lens.position = Vector2(700, 250)
+	_desk.candle.solver.place(candle_home, candle_angle)
+	_desk.candle.position = candle_home
 	await _settle(12)
 
 
@@ -939,6 +974,21 @@ func _pour_and_strike(offset: Vector2, label: String) -> void:
 		await get_tree().process_frame
 		if label == "04_strike_centre" and i == 48:
 			await _shot("23_wax_pouring")
+			var camera := _main.get_node("camera") as Camera2D
+			var view := _main.get_node_or_null("view_controller")
+			if view != null:
+				view.set_process(false)
+				view.set_process_input(false)
+			if press.pool != null:
+				camera.position = press.pool.global_position
+				camera.zoom = Vector2(4.0, 4.0)
+				await _settle(4)
+				await _shot("56_wax_ribbon_close")
+			camera.zoom = Vector2.ONE
+			camera.position = Vector2(960, 590)
+			if view != null:
+				view.set_process(true)
+				view.set_process_input(true)
 	for i in 40:
 		press.tick(1.0 / 60.0, null, spoon_at, 500.0)
 		await get_tree().process_frame

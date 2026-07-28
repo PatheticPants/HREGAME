@@ -32,7 +32,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 90, presentation 280, session 76, content PASS**. Run the rules
+Green is **rules 90, presentation 288, session 76, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 
@@ -74,15 +74,16 @@ capture before theorising.
 
 ## WHERE THE LAST SESSION GOT TO (2026-07-28)
 
-**Phases 0, 1 and 5 are done. Phase 2 is four objects in.** What follows the
-status is the remaining plan; read the status first or you will redo work.
+**Phases 0, 1 and 5 are done. The 2026-07-28 return pass also completed the
+largest remaining Phase 2 visual targets.** What follows the status includes
+historical reasoning; read this status first or you will redo work.
 
 | | |
 |---|---|
-| **Phase 0** | Done in an hour, as instructed. Re-measured **6.07 ms, 165 fps**, 19 draggables, four open books, 3 outline builds. No performance problem. Two per-frame RNG allocations found (`seal_tag`, `petitioner_view`) — both deterministically seeded, so the speckle does not crawl; not worth the churn. |
+| **Phase 0** | Re-measured after the return pass at **9.22 ms, 108 fps**, 19 draggables, four open books, 3 outline builds. Still inside the 10 ms intervention line, but re-measure before another broad visual layer. Two per-frame RNG allocations found (`seal_tag`, `petitioner_view`) are deterministically seeded, so the speckle does not crawl. |
 | **Phase 1** | Done. `scripts/presentation/surface.gd`. **Named `Surface`, not `Material` — `Material` is a Godot built-in and `class_name Material` does not compile.** Shipped with nothing migrated and no pixels changed, as the plan asked. |
-| **Phase 2** | Six objects: the candle's flame, the wax pool and spoon's physics, the seal's shade veil, the spoon's brass, the reference book (page turn + blind tooling), and the Ledger's arrival. Each its own commit with before/after frames. |
-| **Phase 4** | Started: the door now takes the candle. The remaining items (a depth layer nearer than the desk, the acoustic bed, day's-end geometry) are untouched. |
+| **Phase 2** | The candle, wax pool and spoon, seal veil, brass response, Ledger arrival, page turn and blind tooling, magnifier, desk ledge, packet sweep, and view transition have all received implemented and rendered passes. |
+| **Phase 4** | The door takes the candle and cold morning now has directional shutter geometry across the room and desk. A nearer foreground depth layer and the acoustic bed remain open. |
 | **Bugs** | A second cold sweep found 21 candidates; 6 were refuted and **15 were reproduced and fixed** across six commits. See the log from "Two books were printing off the edge of their own boards" onward. |
 | **Phase 5** | Decided and done. See the commit "Phase 5: the Kalendar convicts one man". |
 
@@ -206,13 +207,11 @@ people plan around it before you notice it.
 Review it, disagree with it, expand it. It is ordered so that each phase makes
 the next one cheaper — do not reorder without a reason.
 
-**Phase 2's remaining objects, worst first.** `ReferenceBook` is now top of the
-list for two reasons rather than one: its page turn is still a rectangle whose
-width sweeps the gutter, *and* its blind tooling is lit inside out — the lit lip
-of a groove belongs on the side away from the flame, and the book puts it toward.
-`Surface` has the convention and the physics written down and asserted; the book
-has not been migrated onto it. Then `Ledger`, `Lens`, `DeskPlaneView` /
-`DeskLedge`, `Desk._tick_sweep`, `ViewController`.
+**Phase 2's named work has landed.** The page turn carries its physical recto and
+verso, blind tooling uses the shared `Surface` convention, the magnifier, ledge,
+packet sweep, and view transition have landed, and morning has geometry. Judge
+further material work from fresh captures instead of treating the historical
+list below as unfinished scope.
 
 **Phase 2 is deliberately not split into "the refactor" and "the fun part".** An
 earlier draft of this plan did split them, and that was a mistake twice over: a

@@ -94,6 +94,11 @@ var _hover_node: Node2D
 var _projection_plane_y := 1.0
 var _projection_depth_scale := 1.0
 var _projection_relief := 0.72
+## Extra height supplied by authored actions that are not direct dragging:
+## papers gathered by a petitioner, a tool being handed across the desk, and
+## similar beats. Kept separate from the solver so an action can lift an object
+## without pretending the mouse is holding it.
+var presentation_lift := 0.0
 
 
 func _ready() -> void:
@@ -141,6 +146,7 @@ func _process(delta: float) -> void:
 	# book visibly slides in and settles.
 	_stow_amount = move_toward(_stow_amount, 1.0 if stowed else 0.0, delta * 4.6)
 	want *= lerpf(1.0, stow_scale, ease(_stow_amount, 0.4))
+	want *= 1.0 + maxf(0.0, presentation_lift)
 	_visual_scale = move_toward(_visual_scale, want, _feel.pickup_scale_speed * delta)
 	var apparent_y := lerpf(_projection_plane_y, 1.0, _projection_relief)
 	var local_y := apparent_y / maxf(0.1, _projection_plane_y)
@@ -370,7 +376,7 @@ func shade_alpha() -> float:
 
 ## Never quite black. A sheet you cannot see at all is a lost sheet, and digging
 ## for a buried charter has to stay a mechanic rather than becoming a chore.
-const SHADE_MAX := 0.56
+const SHADE_MAX := 0.50
 ## Cold, so shadow separates from the warm light instead of reading as grey wash.
 const SHADE_COLOR := Color(0.045, 0.042, 0.075)
 
@@ -392,6 +398,7 @@ func shadow_offset() -> Vector2:
 	var throw := _feel.shadow_base_throw + stack_depth * _feel.shadow_throw_per_layer
 	if is_held:
 		throw += _feel.pickup_shadow_lift
+	throw += maxf(0.0, presentation_lift) * 74.0
 	var away := global_position - light_position
 	if away.length() < 1.0:
 		away = Vector2(0.4, 1.0)

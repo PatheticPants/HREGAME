@@ -45,6 +45,7 @@ const CATCH_MARGIN := 74.0
 
 var light_position := Vector2(0, -400)
 var light_level := 0.5
+var light_strength := 1.0
 
 ## Which hole would catch what the player is currently carrying, or -1.
 ##
@@ -146,32 +147,50 @@ func _draw() -> void:
 
 func _draw_hole(index: int) -> void:
 	var r := slot_rect(index)
-	var warm := clampf(light_level, 0.0, 1.0)
+	var lit := Surface.lit(light_level, light_strength)
+	var toward := Surface.toward(self, light_position)
 
 	# Carcass: a box of dark oak standing on the desk, lit from wherever the
 	# candle happens to be.
 	var frame := r.grow(11.0)
-	draw_rect(Rect2(frame.position + Vector2(4, 6), frame.size),
-		Color(0, 0, 0, 0.34))
-	draw_rect(frame, Color(0.20, 0.135, 0.078).lerp(
-		Color(0.42, 0.27, 0.14), warm * 0.55))
-	draw_rect(frame.grow(-4.0), Color(0.26, 0.175, 0.10).lerp(
-		Color(0.50, 0.33, 0.17), warm * 0.45))
+	var oak := Surface.tint(Color(0.31, 0.205, 0.105), lit, 0.32, 0.24)
+	Surface.extrude(self, frame, toward, oak, 5.0, 0.58)
+	draw_rect(Rect2(frame.position - toward * 4.0 + Vector2(0, 2),
+		frame.size), Color(0, 0, 0, 0.28))
+	draw_rect(frame, oak.darkened(0.18))
+	draw_rect(frame.grow(-4.0), oak)
+	# Lengthwise grain is restrained but catches more contrast near the flame.
+	for g: float in [0.24, 0.52, 0.78]:
+		var y: float = frame.position.y + frame.size.y * g
+		draw_line(Vector2(frame.position.x + 5.0, y),
+			Vector2(frame.end.x - 5.0, y + toward.x * 1.8),
+			Color(oak.darkened(0.32), 0.16 + lit * 0.12), 1.0)
 
 	# The hole itself. Nothing in a pigeonhole is ever properly lit.
-	draw_rect(r, Color(0.055, 0.038, 0.028))
-	# Depth: the inside of the top and left walls catch a little light.
+	draw_rect(r, Color(0.048, 0.033, 0.025))
+	# A recess lights on the wall opposite the source. The four weights make the
+	# hollow turn as the candle crosses the desk instead of keeping a painted
+	# highlight on its top-left corner.
+	var wall := Surface.tint(Color(0.20, 0.135, 0.075), lit, 0.34, 0.30)
+	var top_lit := maxf(0.0, toward.y)
+	var bottom_lit := maxf(0.0, -toward.y)
+	var left_lit := maxf(0.0, toward.x)
+	var right_lit := maxf(0.0, -toward.x)
 	draw_rect(Rect2(r.position, Vector2(r.size.x, 7.0)),
-		Color(0.14, 0.095, 0.06, 0.9))
+		wall.darkened(0.30 * (1.0 - top_lit)))
+	draw_rect(Rect2(Vector2(r.position.x, r.end.y - 7.0),
+		Vector2(r.size.x, 7.0)), wall.darkened(0.30 * (1.0 - bottom_lit)))
 	draw_rect(Rect2(r.position, Vector2(7.0, r.size.y)),
-		Color(0.11, 0.075, 0.05, 0.9))
+		wall.darkened(0.30 * (1.0 - left_lit)))
+	draw_rect(Rect2(Vector2(r.end.x - 7.0, r.position.y),
+		Vector2(7.0, r.size.y)), wall.darkened(0.30 * (1.0 - right_lit)))
 
 	if occupant(index) == null:
 		# A faint runner across the empty hole so it reads as a place for
 		# something rather than a hole in the desk.
 		draw_line(r.position + Vector2(12, r.size.y - 13),
 			Vector2(r.end.x - 12, r.end.y - 13),
-			Color(0.30, 0.21, 0.13, 0.55), 2.0)
+			Color(oak.lightened(0.05), 0.38 + lit * 0.22), 2.0)
 
 	# "Let go here and it will catch." Warm, like the flame and like the objects'
 	# own hover, and drawn on the carcass where it is visible against dark oak.

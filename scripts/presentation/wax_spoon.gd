@@ -314,21 +314,47 @@ func _draw_pour_neck(feel: WaxFeel) -> void:
 	var pulse := 0.5 + 0.5 * sin(_phase * TAU / maxf(0.06, feel.drip_interval))
 	var length := lerpf(5.0, 14.0, tilt) + pulse * 3.0
 	var side := Vector2(-outward.y, outward.x)
-	var width := lerpf(3.8, 1.2, pulse)
+	var tip_width := lerpf(3.8, 1.2, pulse)
 	var root_width := 4.2 * clampf(wax_remaining * 1.5, 0.35, 1.0)
-	var tip := lip + outward * length
-	var strip := PackedVector2Array([
-		lip - side * root_width,
-		lip + side * root_width,
-		tip + side * width,
-		tip + outward * 3.4,
-		tip - side * width,
-	])
-	draw_colored_polygon(strip, WAX_COLOR.darkened(0.20))
-	draw_line(lip - side * 1.2, tip - side * 0.4,
-		Color(1.0, 0.49, 0.28, 0.42), 1.5)
-	draw_circle(tip + outward * 2.6, 2.6 + pulse * 1.5,
-		WAX_COLOR.lightened(0.09))
+	var curl := sin(_phase * 3.7) * 1.8
+	var centres := PackedVector2Array()
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for i in 7:
+		var f := float(i) / 6.0
+		# Surface tension makes a catenary-like neck: it bows, narrows through the
+		# middle, then swells again into the bead. A five-point straight strip
+		# enlarged into two red sticks with a circle on the end.
+		var centre := lip + outward * length * f \
+			+ side * (sin(f * PI) * curl + f * f * 1.1)
+		var w := lerpf(root_width, tip_width, ease(f, 0.72))
+		w *= 1.0 - sin(f * PI) * 0.18
+		centres.append(centre)
+		left.append(centre - side * w)
+		right.append(centre + side * w)
+	var strip := PackedVector2Array(left)
+	for i in range(right.size() - 1, -1, -1):
+		strip.append(right[i])
+	var col := molten_colour()
+	draw_colored_polygon(strip, col.darkened(0.16))
+	var highlight := PackedVector2Array()
+	for i in centres.size():
+		var f := float(i) / float(centres.size() - 1)
+		highlight.append(centres[i] - side * lerpf(1.35, 0.35, f))
+	draw_polyline(highlight, Color(1.0, 0.55, 0.31, 0.34 + temperature * 0.24),
+		1.3, true)
+
+	var tip := centres[centres.size() - 1] + outward * (2.2 + pulse * 1.5)
+	draw_set_transform(tip, outward.angle(), Vector2.ONE)
+	draw_colored_polygon(_ellipse(Vector2(0.8, 0.7),
+		Vector2(4.6 + pulse * 1.6, 2.8 + pulse * 0.8), 18),
+		Color(0, 0, 0, 0.22))
+	draw_colored_polygon(_ellipse(Vector2.ZERO,
+		Vector2(4.4 + pulse * 1.6, 2.7 + pulse * 0.8), 18),
+		col.lightened(0.05))
+	draw_circle(Vector2(-1.4, -0.7), 1.0,
+		Color(1.0, 0.78, 0.56, 0.42 + temperature * 0.26))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _draw_heat_shimmer(feel: WaxFeel) -> void:

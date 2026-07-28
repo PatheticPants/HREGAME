@@ -48,6 +48,11 @@ func _run() -> void:
 	for i in 48:
 		await get_tree().process_frame
 
+	await _test_packet_sweep(desk)
+	desk.lay_out_packet(_lore_data.cases[0].documents)
+	for i in 48:
+		await get_tree().process_frame
+
 	_test_surface_helper(desk)
 	_test_wax_is_darker_molten(desk)
 	_test_the_page_turn(desk)
@@ -279,6 +284,29 @@ func _test_the_page_turn(desk: Desk) -> void:
 	book._turn = 0.0
 	book._turn_dir = 0
 
+	# The moving surface owns the writing. Beneath it, the page that will remain
+	# exposed after the turn must already be present; otherwise the content swaps
+	# on the arrival frame even when the silhouette is geometrically correct.
+	var old_spread := book.spread
+	book.spread = 0
+	book._turn_dir = 1
+	var under_forward := book.pages_under_turn()
+	_is_true(under_forward == Vector2i(0, 3),
+		"a forward leaf exposes the destination fore-edge while it is in the air")
+	_is_true(book.turning_leaf_index(false) == 1
+		and book.turning_leaf_index(true) == 2,
+		"the turning leaf carries its recto and verso rather than going blank")
+	book.spread = 1
+	book._turn_dir = -1
+	var under_back := book.pages_under_turn()
+	_is_true(under_back == Vector2i(0, 3),
+		"a backward leaf exposes the prior left page before it lands")
+	_is_true(book.turning_leaf_index(false) == 2
+		and book.turning_leaf_index(true) == 1,
+		"the backward leaf keeps the same two physical faces")
+	book.spread = old_spread
+	book._turn_dir = 0
+
 	# The cover starts AT REST. ease-out began at about 2.4x average speed, which
 	# is a board being flicked rather than pushed.
 	var first := smoothstep(0.0, 1.0, 1.0 / 60.0)
@@ -287,6 +315,33 @@ func _test_the_page_turn(desk: Desk) -> void:
 	_is_true(smoothstep(0.0, 1.0, 0.5) > 0.49
 		and smoothstep(0.0, 1.0, 0.5) < 0.51,
 		"and is halfway open halfway through")
+
+
+## A packet must travel before it is removed. The old implementation assigned
+## velocity to unheld DragSolvers, which never advance, then freed the stationary
+## papers on a timer.
+func _test_packet_sweep(desk: Desk) -> void:
+	print("-- the packet handoff")
+	_is_true(not desk.case_papers.is_empty(), "there is a packet to gather")
+	if desk.case_papers.is_empty():
+		return
+	var paper := desk.case_papers[0]
+	var start := paper.position
+	desk.sweep_packet_away()
+	for i in 18:
+		desk._tick_sweep(1.0 / 60.0)
+		await get_tree().process_frame
+	_is_true(is_instance_valid(paper) and paper.position.distance_to(start) > 12.0,
+		"the petitioner visibly carries the papers before cleanup")
+	_is_true(is_instance_valid(paper) and paper.presentation_lift > 0.01,
+		"the gathered packet lifts clear of the desk")
+	for i in 90:
+		if desk._sweeping.is_empty():
+			break
+		desk._tick_sweep(1.0 / 60.0)
+		await get_tree().process_frame
+	_is_true(desk._sweeping.is_empty(),
+		"the handoff completes only after every sheet arrives")
 
 
 ## MOLTEN IS DARKER THAN SET, on every object in the game that has wax on it.

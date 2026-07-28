@@ -379,8 +379,9 @@ func _draw_open(r: Rect2, glow: float) -> void:
 	if _open_amount < 0.75:
 		return  # mid-swing; do not draw text into a half-open book
 
-	_draw_page(left, spread * 2)
-	_draw_page(right, spread * 2 + 1)
+	var under := pages_under_turn()
+	_draw_page(left, under.x)
+	_draw_page(right, under.y)
 	_draw_corners(left, right)
 	_draw_turning_page(r, pw)
 
@@ -407,6 +408,22 @@ func _draw_open(r: Rect2, glow: float) -> void:
 ## With the geometry right, three cheap things finish it: the leaf shows its
 ## VERSO after it passes the vertical, it casts a shadow on whatever it is
 ## standing over, and it bows under its own weight instead of staying square.
+func pages_under_turn() -> Vector2i:
+	if _turn_dir > 0:
+		return Vector2i(spread * 2, (spread + 1) * 2 + 1)
+	if _turn_dir < 0:
+		return Vector2i((spread - 1) * 2, spread * 2 + 1)
+	return Vector2i(spread * 2, spread * 2 + 1)
+
+
+func turning_leaf_index(after_vertical: bool) -> int:
+	if _turn_dir > 0:
+		return spread * 2 + (2 if after_vertical else 1)
+	if _turn_dir < 0:
+		return spread * 2 + (-1 if after_vertical else 0)
+	return -1
+
+
 func _draw_turning_page(r: Rect2, pw: float) -> void:
 	if _turn_dir == 0:
 		return
@@ -417,7 +434,8 @@ func _draw_turning_page(r: Rect2, pw: float) -> void:
 	# projection is a line of zero width — but parchment is thick, and a leaf
 	# that disappears completely for a frame or two in the middle of the turn
 	# reads as a dropped frame rather than as a page standing up.
-	var width := maxf(pw * absf(cos(theta)), 2.5)
+	var projected := maxf(absf(cos(theta)), 0.018)
+	var width := pw * projected
 	var gutter := r.position.x + pw
 	var top := r.position.y + 6.0
 	var h := r.size.y - 12.0
@@ -430,41 +448,53 @@ func _draw_turning_page(r: Rect2, pw: float) -> void:
 	# A leaf standing off the page shades what it is standing over, hardest when
 	# it is upright — which is also the moment the leaf itself has no width, so
 	# without this the middle of every turn is a page that vanishes.
-	var shadow_w := width + 30.0 * lift
-	draw_rect(Rect2(gutter - (0.0 if on_right else shadow_w) + 6.0 * lift * dir,
-		top + 5.0 * lift, shadow_w, h),
-		Color(0.0, 0.0, 0.0, 0.13 + 0.20 * lift))
+	var shadow_reach := width + 34.0 * lift
+	var shadow_free := gutter + dir * shadow_reach + dir * 5.0
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(gutter + dir * 2.0, top + 3.0),
+		Vector2(shadow_free, top + 8.0 + lift * 5.0),
+		Vector2(shadow_free, top + h + 3.0 + lift * 5.0),
+		Vector2(gutter + dir * 2.0, top + h),
+	]), Color(0.0, 0.0, 0.0, 0.12 + 0.19 * lift))
 
 	# Recto until it goes over the top, verso after. The swap at the vertical is
 	# the single clearest cue that the thing rotated rather than slid sideways.
 	var glow := _lit()
-	var face := data.page_color.lightened(0.06) if t <= 0.5 \
+	var after_vertical := t > 0.5
+	var face := data.page_color.lightened(0.06) if not after_vertical \
 		else data.page_color.darkened(0.11)
 	face = Surface.tint(face, glow, 0.22, 0.26)
 
 	# Bowed, not square. Parchment under its own weight curves away from the
 	# spine, and the straight-edged version is most of why this read as a wipe.
+	var local_leaf := Rect2(
+		Vector2(3.0, -h * 0.5) if on_right else Vector2(-pw + 6.0, -h * 0.5),
+		Vector2(pw - 9.0, h))
+	draw_set_transform(Vector2(gutter, top + h * 0.5), 0.0,
+		Vector2(projected, 1.0 - lift * 0.024))
+	draw_rect(local_leaf, face)
+	draw_rect(local_leaf, face.darkened(0.28), false, 1.1)
+	_draw_page(local_leaf, turning_leaf_index(after_vertical))
+	# Sparse leaves still carry laid lines, which tighten with the rest of the
+	# surface as it goes edge-on.
+	for i in 9:
+		var y := local_leaf.position.y + 28.0 + float(i) * 34.0
+		if y < local_leaf.end.y - 24.0:
+			draw_line(Vector2(local_leaf.position.x + 12.0, y),
+				Vector2(local_leaf.end.x - 12.0, y),
+				Color(0.32, 0.24, 0.17, 0.045), 1.0)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	# A curved free edge supplies the bow without distorting the calligraphy.
 	var free_x := gutter + width * dir
-	var bow := 11.0 * lift * dir
-	var pts := PackedVector2Array()
-	pts.append(Vector2(gutter, top))
-	pts.append(Vector2(free_x, top))
-	for i in range(1, 8):
+	var bow := 10.0 * lift * dir
+	var edge := PackedVector2Array()
+	for i in 9:
 		var v := float(i) / 8.0
-		pts.append(Vector2(free_x + bow * sin(PI * v), top + h * v))
-	pts.append(Vector2(free_x, top + h))
-	pts.append(Vector2(gutter, top + h))
-	draw_colored_polygon(pts, face)
-
-	var edge := PackedVector2Array(pts)
-	edge.append(pts[0])
-	draw_polyline(edge, face.darkened(0.30), 1.0, true)
-
-	# The hinge is in shadow: pages curve down into the spine and the last
-	# few millimetres before the fold never catch the light.
-	var hinge_w := minf(11.0, maxf(width, 1.0))
-	draw_rect(Rect2(gutter - (0.0 if on_right else hinge_w), top, hinge_w, h),
-		Color(0, 0, 0, 0.10 + 0.10 * lift))
+		edge.append(Vector2(free_x + bow * sin(PI * v), top + h * v))
+	draw_polyline(edge, Color(face.lightened(0.18), 0.66), 1.4, true)
+	draw_line(Vector2(gutter, top), Vector2(gutter, top + h),
+		Color(0, 0, 0, 0.12 + 0.13 * lift), maxf(1.0, width * 0.05))
 
 
 ## Curled outer corners: the whole affordance for turning pages.

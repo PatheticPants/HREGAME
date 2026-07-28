@@ -19,8 +19,29 @@ func _draw() -> void:
 	draw_texture_rect(DESK_TEXTURE, Desk.DESK_RECT.grow(26.0), false)
 	if desk == null:
 		return
+	_draw_morning_light()
 	_draw_wax_memories()
 	_draw_sealing_kit()
+
+
+## Continuation of the shutter bands on the near plane. Their edges stay broad
+## and low contrast: this is cold reflected morning, not a theatrical spotlight.
+func _draw_morning_light() -> void:
+	if desk._morning_amount <= 0.01:
+		return
+	var rise := smoothstep(0.0, 1.0, desk._morning_amount)
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-410, Desk.DESK_RECT.position.y),
+		Vector2(-150, Desk.DESK_RECT.position.y),
+		Vector2(520, Desk.DESK_RECT.end.y),
+		Vector2(170, Desk.DESK_RECT.end.y),
+	]), Color(0.66, 0.74, 0.88, 0.15 * rise))
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(95, Desk.DESK_RECT.position.y),
+		Vector2(250, Desk.DESK_RECT.position.y),
+		Vector2(820, Desk.DESK_RECT.end.y),
+		Vector2(610, Desk.DESK_RECT.end.y),
+	]), Color(0.75, 0.82, 0.94, 0.075 * rise))
 
 
 ## A small supply box makes the source of the color legible before the player

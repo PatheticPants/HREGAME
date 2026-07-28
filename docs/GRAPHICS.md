@@ -13,6 +13,31 @@ This is the *how*.
 **Pixel-art anchored, lit by one carried flame, and every surface has to tell you
 what it is made of.** Not photoreal. Not smooth. Not decorated.
 
+### Current rendered state — 2026-07-28 return pass
+
+The latest pass closed the most visible remaining motion and material gaps:
+
+- a turning leaf now carries its authored recto and verso through the whole
+  projection instead of becoming a blank parchment rectangle;
+- the petition packet has a staggered gather, lift, arcing carry, and arrival
+  settle; cleanup happens only after every sheet reaches the petitioner;
+- the desk-to-audience move preserves prop relief and the registered far desk
+  edge at intermediate poses, not only at its endpoints;
+- the magnifier is clearer crown glass with candle-relative reflections,
+  transmitted subject parallax, a lit inner bezel, and a material-responsive
+  handle;
+- molten wax leaves the spoon as a curved, tapering viscous neck and oriented
+  bead rather than two straight lines;
+- the candle's terminal wax stays outside the authored stub instead of painting
+  a pale disc over it;
+- the pigeonhole rack is now directional oak rather than fixed-colour geometry;
+- cold morning light has a distinct colour and directional shutter bands across
+  both room and desk planes.
+
+These are rendered and covered by the 56-shot capture harness. The presentation
+suite is now 288 checks. The pass added no shader and no new raster plate: the
+authored pixel art remains the anchor.
+
 ---
 
 ## 1. Look at the pixels. Always.
@@ -27,12 +52,15 @@ review and obvious in a frame:
 | The candle's melt painted lighter than the brass it sits in | since it was written | the owner, and then a 4× capture |
 | A round spoon casting a rectangular shadow | months | a screenshot |
 | Verdict ring names at ~9 effective pixels, brown on brown | since the ring stand was written | a screenshot |
+| A page turned as a blank rectangle while its ink stayed behind | since the first page-turn animation | three staged page-turn frames |
+| The petition packet waited, then disappeared instead of travelling | since the sweep was authored | a mid-flight frame plus an arrival assertion |
+| Terminal candle wax painted a pale disc over the authored stub | since the late melt was added | the 4× guttering capture |
 
 ```bash
 .tools/godot-4.6.3/Godot_v4.6.3-stable_win64_console.exe --path . --resolution 1600x900 --scene res://tests/qa_capture.tscn
 ```
 
-43 frames into `.tools/shot_*.png` (gitignored). Deliberately **not** headless —
+56 frames into `.tools/shot_*.png` (gitignored). Deliberately **not** headless —
 Godot cannot render 2D lights with the dummy driver.
 
 **Three rules about captures, each of which was learned the hard way:**
@@ -157,10 +185,10 @@ not compile, because `Material` is a Godot built-in.**
 **The cut-line convention lives there and is not obvious.** A groove's far wall
 faces back toward the flame and catches it, so the **lit lip is displaced AWAY
 from the light** and the dark trough toward it. `SignetRing` had this right;
-`ReferenceBook`'s blind tooling has it **inverted** and still does, so the boards'
-stamped borders read as raised rather than impressed. That is a known open item,
-waiting on the book's own pass. Extracting the two into one file is what revealed
-they disagreed.
+`ReferenceBook` originally had it inverted, so the boards' stamped borders read
+as raised rather than impressed. Its migration to `Surface` fixed that and added
+the shared assertion. Extracting the two into one file is what revealed they
+disagreed.
 
 ### Cheap techniques that are already proven here
 
@@ -250,6 +278,12 @@ inherit the assumption.
 same 19 draggables, four open books, 3 outline builds. The materials pass cost
 essentially nothing, and the memo still holds.
 
+**Re-measured after the return lighting/animation pass: 9.22 ms, 108 fps** at
+1600×900 with the same 19 draggables, all four books open, and 3 outline builds.
+That remains under the 10 ms intervention line below, but no longer by a wide
+margin. Re-run this exact stress pose before adding another broad per-frame
+material layer.
+
 **Know what the probe actually covers before you lean on the number.** The probe
 lays out a packet and opens the books; it never strikes a seal, so nothing it
 measures has `impressed = true`. Anything on the struck-pool path is *unpriced*
@@ -265,12 +299,12 @@ presentation suite asserts the memo holds.
 What remains, and is **speculative until somebody measures it**:
 `Draggable._process` calls `queue_redraw()` unconditionally, twice per object,
 every frame, with no dirty flag. So do `Desk`, `WaxPool` (four child CanvasItems)
-and `ReferenceBook`. At 19 objects this costs nothing measurable. It would start
-to matter if the object count roughly doubled, or if per-object materials made
-each `_draw` substantially more expensive.
+and `ReferenceBook`. At 19 objects the current stress pose remains within
+budget, but the 9.22 ms return-pass measurement means its headroom is now small
+enough to watch.
 
-**So: re-run the probe before optimising, and again after.** The number to beat is
-5.9 ms. If a materials pass pushes it past about 10 ms, fix the dirty flag then —
+**So: re-run the probe before optimising, and again after.** The current number
+to beat is 9.22 ms. If a materials pass pushes it past about 10 ms, fix the dirty flag then —
 `desk_ledge.gd` has the pattern to copy. Do not spend a day on it in advance of a
 number.
 

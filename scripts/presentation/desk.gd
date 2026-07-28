@@ -35,12 +35,12 @@ const ROOM_TEXTURE := preload("res://art/environment/chancery_audience_room.png"
 ## with visibly less apparent travel than the desk, which is parallax.
 const PARALLAX_FAR := 74.0
 
-const NIGHT_AMBIENT := Color(0.235, 0.225, 0.275)
+const NIGHT_AMBIENT := Color(0.28, 0.27, 0.32)
 
 ## And what it looks like once the day is over. The candle dies and a cold grey
 ## morning comes up through the shutter to replace it: the ledger stays readable,
 ## and the warm-to-cold turn is the visual full stop on the day.
-const MORNING_AMBIENT := Color(0.62, 0.64, 0.70)
+const MORNING_AMBIENT := Color(0.58, 0.66, 0.78)
 
 ## Where the shutter is. Once the candle is out, shadows come from daylight
 ## instead: far away, so it is directional rather than radial, and near enough
@@ -99,6 +99,11 @@ var _cursor := Vector2.ZERO
 var _cursor_prev := Vector2.ZERO
 var _cursor_speed := 0.0
 var _sweeping: Array[Draggable] = []
+## instance id -> authored gather/flight data. The old sweep only assigned a
+## DragSolver velocity, but an unheld Draggable does not advance that solver:
+## papers remained on the desk and disappeared when the cleanup timer elapsed.
+## These tracks make the handoff an actual visible action.
+var _sweep_tracks: Dictionary = {}
 var _sweep_timer := 0.0
 var _wax_memories: Array[Dictionary] = []
 var _door_open_amount := 0.0
@@ -110,6 +115,7 @@ var _door: AudienceDoor
 var _desk_visual: DeskPlaneView
 var _view_amount := 0.0
 var _backlit_reported := false
+var _morning_amount := 0.0
 
 
 func _ready() -> void:
@@ -583,16 +589,33 @@ func _check_backlight() -> void:
 func sweep_packet_away() -> void:
 	var to := petitioner.global_position + Vector2(0, -60)
 	var local_target := surface.to_local(to)
+	_sweep_tracks.clear()
+	var order := 0
 	for d in case_papers:
 		if d == null or not is_instance_valid(d):
 			continue
 		d.draggable_enabled = false
 		d.solver.bounds = Rect2()
 		d.solver.sleeping = false
-		d.solver.velocity = (local_target - d.position).normalized() \
-			* randf_range(900.0, 1300.0)
-		d.solver.angular_velocity = randf_range(-4.0, 4.0)
+		d.solver.velocity = Vector2.ZERO
+		d.solver.angular_velocity = 0.0
+		var start := d.position
+		var travel := local_target - start
+		var normal := travel.normalized().orthogonal()
+		var target := local_target + Vector2(randf_range(-68.0, 68.0),
+			randf_range(-24.0, 34.0))
+		_sweep_tracks[d.get_instance_id()] = {
+			"from": start,
+			"target": target,
+			"control": start.lerp(target, 0.46)
+				+ normal * randf_range(-54.0, 54.0) + Vector2(0, -52),
+			"angle": d.rotation,
+			"turn": randf_range(-0.34, 0.34),
+			"delay": float(order) * 0.055 + randf_range(0.0, 0.035),
+			"duration": randf_range(0.56, 0.72),
+		}
 		_sweeping.append(d)
+		order += 1
 	_sweep_timer = 0.0
 	# paper_slide is a sustained loop. Playing it as a one-shot leaves a looping
 	# stream trapped forever in the one-shot pool; the moving sheets already
@@ -605,8 +628,10 @@ func sweep_packet_away() -> void:
 func _finish_sweep() -> void:
 	for d in _sweeping:
 		if is_instance_valid(d):
+			d.presentation_lift = 0.0
 			d.queue_free()
 	_sweeping.clear()
+	_sweep_tracks.clear()
 	_refresh_lens_subjects()
 
 
@@ -918,6 +943,8 @@ func _process(delta: float) -> void:
 		# Roughly six seconds from candlelight to morning.
 		_ambient.color = _ambient.color.lerp(_ambient_target,
 			clampf(delta * 0.42, 0.0, 1.0))
+	_morning_amount = move_toward(_morning_amount,
+		1.0 if _ambient_target == MORNING_AMBIENT else 0.0, delta * 0.24)
 
 	_update_hover()
 	_update_lighting()
@@ -954,6 +981,7 @@ func reset_for_next_day() -> void:
 	last_candle_remaining = candle.carry_forward()
 	candle.reset_day()
 	_ambient_target = NIGHT_AMBIENT
+	_morning_amount = 0.0
 	_work_reset_tools()
 	Audio.play(&"candle_light", candle.global_position)
 
@@ -1016,7 +1044,48 @@ func _on_door_settled(opening: bool) -> void:
 ## papers only have to be off the desk and out of the way.
 func _tick_sweep(delta: float) -> void:
 	_sweep_timer += delta
-	if _sweep_timer > 1.5:
+	var all_arrived := true
+	for d in _sweeping:
+		if not is_instance_valid(d):
+			continue
+		var track: Dictionary = _sweep_tracks.get(d.get_instance_id(), {})
+		if track.is_empty():
+			continue
+		var delay := float(track["delay"])
+		var duration := float(track["duration"])
+		var raw := clampf((_sweep_timer - delay) / maxf(0.01, duration), 0.0, 1.0)
+		if raw < 1.0:
+			all_arrived = false
+
+		var start: Vector2 = track["from"]
+		var target: Vector2 = track["target"]
+		var control: Vector2 = track["control"]
+		var start_angle := float(track["angle"])
+		var turn := float(track["turn"])
+
+		# Gather each loose edge before the packet travels. This anticipation is
+		# short, staggered, and physical rather than every sheet launching on the
+		# same frame.
+		if raw < 0.16:
+			var gather := smoothstep(0.0, 1.0, raw / 0.16)
+			var away := (start - target).normalized()
+			d.solver.position = start + away * (6.0 * sin(gather * PI))
+			d.solver.angle = start_angle - turn * 0.12 * gather
+			d.presentation_lift = gather * 0.018
+			continue
+
+		# Carry the gathered page on a weighted arc. Height peaks before arrival
+		# and the angular settle trails the translation by a fraction.
+		var flight_raw := (raw - 0.16) / 0.84
+		var flight := smoothstep(0.0, 1.0, flight_raw)
+		var inv := 1.0 - flight
+		d.solver.position = start * (inv * inv) \
+			+ control * (2.0 * inv * flight) + target * (flight * flight)
+		d.solver.angle = lerp_angle(start_angle - turn * 0.12,
+			start_angle + turn, ease(flight, -1.35))
+		d.presentation_lift = sin(flight * PI) * 0.095
+
+	if all_arrived or _sweep_timer > 1.35:
 		_finish_sweep()
 
 
@@ -1063,6 +1132,7 @@ func _update_lighting() -> void:
 	ring_stand.queue_redraw()
 	if ledge != null:
 		ledge.light_position = flame
+		ledge.light_strength = strength
 		ledge.light_level = WINDOW_LEVEL if spent \
 			else candle.illumination_at(ledge.global_position)
 		ledge.queue_redraw()
@@ -1116,3 +1186,25 @@ func _draw_room() -> void:
 	draw_texture_rect(ROOM_TEXTURE,
 		Rect2(ROOM_RECT.position - Vector2(0.0, _view_amount * PARALLAX_FAR),
 			ROOM_RECT.size), false)
+	if _morning_amount <= 0.01:
+		return
+
+	# The shutter is out of frame to the upper left, but its geometry has to be
+	# present in the light it admits. Two broad, imperfect bands cross the wall;
+	# the matching bands continue over the desk in DeskPlaneView. This turns the
+	# end of the day into a change of direction and shape, not only a brighter
+	# CanvasModulate colour.
+	var rise := smoothstep(0.0, 1.0, _morning_amount)
+	var shift := Vector2(0.0, -_view_amount * PARALLAX_FAR)
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-960, -790) + shift,
+		Vector2(-840, -870) + shift,
+		Vector2(-150, 160) + shift,
+		Vector2(-410, 160) + shift,
+	]), Color(0.64, 0.73, 0.88, 0.15 * rise))
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-720, -920) + shift,
+		Vector2(-650, -920) + shift,
+		Vector2(250, 160) + shift,
+		Vector2(95, 160) + shift,
+	]), Color(0.73, 0.80, 0.92, 0.075 * rise))
