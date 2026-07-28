@@ -29,13 +29,13 @@ python tools/verify_content.py
 | suite | checks |
 |---|---|
 | rules | 81 |
-| presentation | 206 |
+| presentation | 270 |
 | the day (full loop) | 73 |
 | content + encoding | PASS |
 
-The capture harness writes **46** frames. 44 and 45/46 are new: a struck seal
-with the candle taken away (the veil), and the two documents that between them
-decide case_04.
+The capture harness writes **50** frames. New this session: 44 a struck seal with
+the candle taken away (the veil), 45/46 the two documents that between them
+decide case_04, 47-49 a page caught mid-turn, and 50 the door by candlelight.
 
 **Run the rules suite before the Python one.** `tests/test_rules.gd` writes the
 finding set it actually derived to `.tools/derived_findings.json`, and
@@ -127,6 +127,45 @@ reaching for `z_index` to get something above something else, you almost
 certainly want child order instead. The legitimate uses are transient and
 self-cancelling: a ring while it is in the hand or in the wax, a falling bead,
 the lens.
+
+**NOTHING IN THIS GAME CLIPS ITS OWN TEXT.** `Ink.block` passes `max_lines = -1`,
+the only `clip_children` in the project is `wax_pool.gd`, and the shade veil
+covers boards rather than content. So text that overruns its surface is not
+truncated — it is drawn onto whatever is underneath, unlit, and silently lost.
+Four surfaces were doing it: the Almanac's ring-doctrine page (~150 px, taking
+the whole FALSE-versus-DEFECTIVE doctrine with it), the books' marginalia, the
+Kalendar's front matter, and three of the eight dockets. There are now fit
+assertions for both families — `ReferenceBook.page_bottom()` and
+`DocketView.content_bottom()`, each kept deliberately adjacent to the `_draw`
+they mirror. **If you add a flowed text surface, add its fit check.**
+
+**A FIXED RESERVATION IS THE BUG, NOT THE TEXT.** Both families failed the same
+way: a hole of constant height (54 px for book marginalia, 30 px for the
+doorkeeper's note) with a variable-length note pinned into it. The existing
+`maxf` guards only stopped two blocks colliding; they said nothing about the note
+being taller than its own reservation. **Diagnostic worth keeping: if shortening
+the text does not change the measured overflow, the text is not what is
+overflowing.** Trimming prose twice produced the identical 14 px and 34 px before
+that landed.
+
+**AN INVISIBLE OBJECT WAS ANSWERING CLICKS.** `Draggable.contains_point` checked
+`draggable_enabled` and not `visible`. The Ledger sits in `surface` from
+construction with `visible = false` all day, `z_index = 6`, and the biggest hit
+rectangle on the desk — so it absorbed clicks meant for the lens, the rings, the
+spoon and the candle wherever their rectangles overlapped it. Fixed.
+
+**`_pick` sorts by z_index now, then child order.** The renderer sorts by z
+first, so child-order-only hit testing could return something other than the
+object visibly on top — the lens (permanent `z_index = 2`) lost to any sheet
+picked up after it. This does NOT relax the stacking rule: child order still
+decides everything within a z level, and later-child-still-wins at equal z.
+
+**WRITING THE ASSERTION IS A SECOND SEARCH OF THE SAME GROUND.** It happened
+three times in one session: the leaf-fit check found the Kalendar overflow after
+only the Almanac had been fixed, the lens hit-test assertion uncovered the
+invisible Ledger, and the docket check found two more overflowing dockets plus
+the fixed-reservation cause. Budget for it; it is not paperwork that follows a
+fix.
 
 **`class_name Material` does not compile — `Material` is a Godot built-in.** The
 shared lighting helper is `Surface` (`scripts/presentation/surface.gd`) for that

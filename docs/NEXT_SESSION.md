@@ -32,7 +32,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 81, presentation 206, session 73, content PASS**. Run the rules
+Green is **rules 81, presentation 270, session 73, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 
@@ -81,7 +81,9 @@ status is the remaining plan; read the status first or you will redo work.
 |---|---|
 | **Phase 0** | Done in an hour, as instructed. Re-measured **6.07 ms, 165 fps**, 19 draggables, four open books, 3 outline builds. No performance problem. Two per-frame RNG allocations found (`seal_tag`, `petitioner_view`) — both deterministically seeded, so the speckle does not crawl; not worth the churn. |
 | **Phase 1** | Done. `scripts/presentation/surface.gd`. **Named `Surface`, not `Material` — `Material` is a Godot built-in and `class_name Material` does not compile.** Shipped with nothing migrated and no pixels changed, as the plan asked. |
-| **Phase 2** | Four objects: the candle's flame, the wax pool and spoon's physics, the seal's shade veil, the spoon's brass. Each its own commit with before/after frames. |
+| **Phase 2** | Six objects: the candle's flame, the wax pool and spoon's physics, the seal's shade veil, the spoon's brass, the reference book (page turn + blind tooling), and the Ledger's arrival. Each its own commit with before/after frames. |
+| **Phase 4** | Started: the door now takes the candle. The remaining items (a depth layer nearer than the desk, the acoustic bed, day's-end geometry) are untouched. |
+| **Bugs** | A second cold sweep found 21 candidates; 6 were refuted and **15 were reproduced and fixed** across six commits. See the log from "Two books were printing off the edge of their own boards" onward. |
 | **Phase 5** | Decided and done. See the commit "Phase 5: the Kalendar convicts one man". |
 
 **Three things the last session found that the plan did not predict**, all of
