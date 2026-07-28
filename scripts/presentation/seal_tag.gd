@@ -91,6 +91,11 @@ func _draw() -> void:
 	Heraldry.draw_device_incuse(self, impression.device, Vector2(0, 2.0),
 		RADIUS * 0.52, wax, 1.0 - impression.wear * 0.55)
 	_draw_wear(wax)
+	# Wax in the dark half of the desk loses its device before it loses its
+	# shape, like every other face here. This was the only piece of evidence in
+	# the game still legible at any distance from the flame, because it hangs off
+	# the charter instead of being part of it.
+	draw_shade(Rect2(-Vector2(RADIUS, RADIUS), Vector2(RADIUS, RADIUS) * 2.0), 1.0)
 
 
 ## Ticks around the rim stand in for a legend you cannot read. The player can

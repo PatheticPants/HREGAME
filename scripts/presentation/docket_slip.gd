@@ -57,5 +57,10 @@ func _draw() -> void:
 		Ink.block(self, r.position + Vector2(135, 49), claim, 8,
 			Color(Ink.CHANCERY, 0.78), 132)
 
+	# The tray sits on the back rail, which is the furthest thing on the desk
+	# from wherever the candle usually stands. Choosing who to hear should cost
+	# a trip with the light, not be free from the chair.
+	draw_shade(r)
+
 	if selected:
 		draw_rect(r.grow(-3), Color(Ink.RUBRIC, 0.65), false, 2.0)

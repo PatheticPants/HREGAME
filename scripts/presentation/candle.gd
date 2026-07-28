@@ -598,7 +598,7 @@ func _draw_cup(grow: float, set_wax: Color, molten: Color, lit: float) -> void:
 	# Never the whole stub. A wall of set wax survives all day — that wall IS the
 	# candle, and a cup that eats it entirely by mid-afternoon leaves nothing to
 	# read the hour against.
-	var r := lerpf(4.0, STUB_RADIUS * 0.74, grow)
+	var r := lerpf(5.5, STUB_RADIUS * 0.74, grow)
 	if _spent:
 		# Cold. It skins over and goes matte within a minute of the wick dying.
 		draw_colored_polygon(WaxShape.scaled(_cup_shape, wick, r, 0.78),
@@ -610,8 +610,8 @@ func _draw_cup(grow: float, set_wax: Color, molten: Color, lit: float) -> void:
 	# The lip: wax that has climbed the wall, gone pale again and stayed there.
 	# It is the brightest thing on the stub, which is what makes the liquid inside
 	# read as a hollow rather than as a lump.
-	draw_colored_polygon(WaxShape.scaled(_cup_shape, wick, r * 1.16, 0.78),
-		set_wax.lightened(0.10))
+	draw_colored_polygon(WaxShape.scaled(_cup_shape, wick, r * 1.10, 0.78),
+		set_wax)
 	# The wall dropping away into the cup. One dark ring does more for depth here
 	# than any amount of gradient inside the pool.
 	draw_colored_polygon(WaxShape.scaled(_cup_shape, wick + Vector2(0, 0.5),
@@ -713,8 +713,8 @@ func _draw_flame() -> void:
 	# Only the tight glare belongs to the drawn flame. Room-scale illumination is
 	# the PointLight2D's job — painting it here as well is what produces those
 	# visible concentric rings.
-	draw_circle(flame, 15.0 * pulse,
-		Color(1.0, 0.44, 0.11, 0.05 + _flicker * 0.022))
+	draw_circle(flame, 11.0 * pulse,
+		Color(1.0, 0.44, 0.11, 0.035 + _flicker * 0.016))
 	draw_set_transform(flame, atan2(lean.x, -8.0),
 		Vector2.ONE * lerpf(0.55, 1.0, _output()))
 	draw_colored_polygon(PackedVector2Array([
@@ -731,5 +731,43 @@ func _draw_flame() -> void:
 		Vector2(2.7, -2.2),
 		Vector2(2.7, 2.8),
 	]), Color(1.0, 0.84, 0.36, 0.98))
-	draw_circle(Vector2(0.1, 0.6), 2.0, Color(0.82, 0.91, 1.0, 0.92))
+
+	# THE DARK CONE. The single most recognisable thing about a real flame and it
+	# was missing: directly above the wick sits a pocket of unburnt vapour that has
+	# not reached the oxygen yet, and it is DARKER than the luminous sheath around
+	# it. Without it a flame is a bright lozenge; with it, it has an inside.
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-1.5, 2.4),
+		Vector2(-1.0, -0.6),
+		Vector2(0.1, -2.6),
+		Vector2(1.2, -0.4),
+		Vector2(1.5, 2.5),
+	]), Color(0.72, 0.30, 0.06, 0.55))
+
+	# The blue base, where the gas burns hottest and cleanest against the wick.
+	# Small, and it should never be obvious — but a flame whose foot is the same
+	# colour as its tip is a paper flame.
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-2.4, 3.4),
+		Vector2(-1.6, 0.8),
+		Vector2(0.0, 0.2),
+		Vector2(1.8, 0.9),
+		Vector2(2.4, 3.4),
+	]), Color(0.46, 0.66, 1.0, 0.34 + 0.14 * _flicker))
+	draw_circle(Vector2(0.1, 1.4), 1.5, Color(0.82, 0.91, 1.0, 0.85))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	# SMOKE BELONGS TO GUTTERING, NOT ONLY TO DEATH. A candle that is drowning in
+	# its own wax with a mushroomed wick smokes — that is what guttering IS — and
+	# this rig only ever produced smoke after the flame had already gone out, so
+	# the one visual warning that the day is nearly over arrived after it ended.
+	if burn > GUTTERING_FROM:
+		var soot := smoothstep(GUTTERING_FROM, 1.0, burn)
+		for i in 4:
+			var t := float(i) / 4.0
+			var rise := 11.0 + t * 26.0
+			var sway := sin(_time * 2.1 - t * 2.2) * (2.0 + t * 6.0) \
+				+ _flame_drift.x * 1.4
+			draw_circle(flame + Vector2(sway, -rise), 1.6 + t * 3.4,
+				Color(0.55, 0.50, 0.47,
+					0.13 * soot * (1.0 - t) * maxf(0.0, 1.0 - _flicker)))

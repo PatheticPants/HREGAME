@@ -202,6 +202,17 @@ func _draw() -> void:
 		Color(0.20, 0.15, 0.10), warm * 0.35))
 
 	_draw_marks(warm)
+	# YOUR OWN NOTES NEED LIGHT TOO.
+	#
+	# A scratch in blackened wax is legible only because the pale boxwood shows
+	# through it, and that contrast is entirely a matter of what is falling on it.
+	# The tablet is the one object whose whole purpose is to be re-read twenty
+	# minutes later, so making it the one thing you can read in the dark would
+	# quietly say the candle is decoration.
+	#
+	# Above the nib telegraph, deliberately: a smoothing you cannot see coming is
+	# the one thing this object may never do.
+	draw_shade(r)
 	if _nib_on:
 		_draw_nib_state()
 

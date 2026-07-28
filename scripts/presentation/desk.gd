@@ -76,6 +76,7 @@ var ring_stand: RingStand
 var ledge: DeskLedge
 var register_book: ReferenceBook
 var kalendar_book: ReferenceBook
+var dust: Dust
 ## The main scene's view controller, if there is one. Null in the test harnesses.
 var view: ViewController
 var docket_tray: DocketTray
@@ -162,7 +163,14 @@ func _ready() -> void:
 	press.name = "press"
 	add_child(press)
 
+	# Added after the work plane, so the air is in front of the desk and the
+	# papers rather than behind them. See scripts/presentation/dust.gd.
+	dust = Dust.new()
+	dust.name = "dust"
+	add_child(dust)
+
 	_build_fixtures()
+	dust.candle = candle
 	press.impression_finished.connect(_remember_impression)
 
 	session = SessionController.new()
