@@ -718,6 +718,23 @@ func _test_press(desk: Desk) -> void:
 		"completed press reaches DONE exactly once")
 	_is_true(desk._wax_memories.size() == 1,
 		"the blotter keeps one physical memory of the ruling")
+
+	# THE WAX IS ON THE PARCHMENT, NOT IN FRONT OF THE ROOM.
+	#
+	# The pool used to set z_index = 1, which with Godot's default z_as_relative
+	# lifted it one step above its host sheet — and a CanvasItem at a higher z
+	# draws above ALL lower-z siblings whatever the tree says. A sealed charter's
+	# seal therefore floated over every other paper on the desk for the rest of
+	# the day: slide a docket across it and the seal stayed on top, while the
+	# spoon that poured it slid underneath. The whole desk is built on "draw order
+	# is child order in surface, full stop", and this was the one object exempt.
+	_is_true(pool.z_index == 0,
+		"the poured wax takes no z of its own, so the pile can cover it")
+	var over := desk.case_papers[0]
+	desk.bring_to_front(over)
+	_is_true(desk.surface.get_children().find(over)
+			> desk.surface.get_children().find(pool.get_parent()),
+		"a sheet laid over a sealed charter sorts above the wax on it")
 	# You can put the glass on your own work, not just on theirs.
 	_is_true(press.pool.has_detail(),
 		"a struck seal is something the glass can be held over")

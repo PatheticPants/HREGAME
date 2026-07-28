@@ -102,7 +102,22 @@ func setup(wax_feel: WaxFeel, wax_color: Color, rng_seed: int) -> void:
 	# Opacity varies per pour, per the brief: no two impressions identical.
 	opacity = clampf(1.0 - _rng.randf_range(0.0, feel.opacity_jitter), 0.55, 1.0)
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	z_index = 1
+	# THE WAX OBEYS THE DESK'S STACKING RULE LIKE EVERYTHING ELSE.
+	#
+	# This was z_index = 1, which with Godot's default z_as_relative put the pool
+	# one step above its host sheet — and a CanvasItem at a higher z draws above
+	# ALL lower-z siblings regardless of tree order. So a sealed charter's wax
+	# floated above every other paper on the desk permanently: slide a docket over
+	# a struck seal and the seal stayed on top of it, while the brass spoon (which
+	# drops back to z=0 the moment it is set down flat) slid underneath the very
+	# wax it had just poured.
+	#
+	# It needs no z at all. The pool is a CHILD of the sheet, and children always
+	# draw after their parent — so it sits on the parchment it was poured onto,
+	# travels with it, and is covered by anything the player lays over it. Which
+	# is the entire documented contract of this desk: draw order is child order in
+	# `surface`, full stop.
+	z_index = 0
 	_build_layers()
 	set_process(true)
 

@@ -136,6 +136,7 @@ func _run() -> void:
 		await _settle(8)
 		await _shot("08_strike_centre_close")
 
+	await _paper_over_the_seal()
 	await _show_the_kalendar()
 	await _show_charter_foot()
 	await _show_the_register()
@@ -423,6 +424,45 @@ func _hold_to_the_flame() -> void:
 	camera.zoom = Vector2.ONE
 	camera.position = Vector2(960, 590)
 	await _settle(20)
+
+
+## A struck seal with another paper laid across it.
+##
+## The wax used to take a z_index of its own, which lifted it above every other
+## sheet on the desk for the rest of the day — so a sealed charter's seal
+## floated over anything slid across it, while the spoon that poured it slid
+## underneath. No test and no capture covered "is the wax actually ON the
+## parchment", because every existing frame looked at the seal in isolation. This
+## is that frame: if the docket's corner is not clearly in front of the wax, the
+## desk's one stacking rule has been broken again.
+func _paper_over_the_seal() -> void:
+	var camera := _main.get_node("camera") as Camera2D
+	if _desk.press.pool == null or not is_instance_valid(_desk.press.pool):
+		return
+	var wax := _desk.press.pool.global_position
+	var cover: Draggable = null
+	for paper in _desk.case_papers:
+		if paper is DocketView:
+			cover = paper
+	if cover == null:
+		return
+	# Bring the light to it, or the frame proves nothing except that the far
+	# corner of the desk is dark.
+	await _move_candle(_desk.surface.to_local(wax) + Vector2(120.0, -70.0))
+	_desk.bring_to_front(cover)
+	# Half across the seal, so the same frame shows wax that IS covered and wax
+	# that is not. Fully covering it would be indistinguishable from the seal
+	# having been deleted.
+	var over := _desk.surface.to_local(wax) + Vector2(-96.0, -52.0)
+	cover.solver.place(over, deg_to_rad(-9.0))
+	cover.position = over
+	camera.zoom = Vector2(2.6, 2.6)
+	camera.position = wax + Vector2(-10, -10)
+	await _settle(30)
+	await _shot("43_paper_laid_over_the_seal")
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	await _settle(12)
 
 
 ## The Kalendar of the Dead, open at a house's roll. Everything WitnessCheck can

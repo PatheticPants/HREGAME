@@ -97,9 +97,11 @@ func ring_texture() -> Texture2D:
 func _process(delta: float) -> void:
 	super._process(delta)
 	seat_impact = move_toward(seat_impact, 0.0, delta * 5.8)
-	# Child order governs the resting desk, but the pool is a child of the sheet
-	# with z=1. Temporarily rise above it while held or peeling, then return to
-	# ordinary stack order so a discarded ring can still be buried by paper.
+	# Child order governs the resting desk. A ring in the hand or in the wax has
+	# to be above the sheet it is pressing into — you are holding it over the
+	# document — so it rises for exactly as long as that is true and then returns
+	# to ordinary stack order, where a discarded ring can be buried by paper like
+	# anything else.
 	z_index = 3 if is_held or press_depth > 0.001 or peel_amount > 0.001 else 0
 
 
