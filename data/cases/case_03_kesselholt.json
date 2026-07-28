@@ -97,7 +97,7 @@
       "requires_case": "case_02_grellwater",
       "requires_verdict": "CONFIRM",
       "requires_soundness": 0,
-      "text": "I hear the Chancery has been generous this morning. A widow of Thurn, on wax that would not bear looking at. — I mention it only because I am asking you for rather less than you have already given to someone with a very much worse instrument than mine."
+      "text": "I hear the Chancery has been generous of late. A widow of Thurn, on wax that would not bear looking at. — I mention it only because I am asking you for rather less than you have already given to someone with a very much worse instrument than mine."
     },
     {
       "beat": "arrival",
@@ -105,14 +105,14 @@
       "requires_case": "case_02_grellwater",
       "requires_verdict": "DENY",
       "requires_soundness": 1,
-      "text": "I hear you refused a widow this morning on a point of wax. Good. I mean that sincerely. The law is not a kindness and everyone is better off when it stops pretending to be one. — I trust you will apply it as exactly to me."
+      "text": "I hear you refused a widow on a point of wax. Good. I mean that sincerely. The law is not a kindness and everyone is better off when it stops pretending to be one. — I trust you will apply it as exactly to me."
     },
     {
       "beat": "arrival",
       "priority": 4,
       "requires_case": "case_02_grellwater",
       "requires_verdict": "REFER",
-      "text": "I hear you sent a widow's mill upstairs this morning. I would rather you did not do the same to me. I expect you will."
+      "text": "I hear you sent a widow's mill upstairs. I would rather you did not do the same to me. I expect you will."
     },
     {
       "beat": "inspect_seal",

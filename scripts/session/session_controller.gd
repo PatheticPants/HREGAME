@@ -544,12 +544,27 @@ func _on_impression_finished(verdict: int, record: ImpressionRecord) -> void:
 	entry.reason_text = _adjudication.reason_text()
 	entry.impression = record
 	entry.finding_codes = _adjudication.codes()
+	# THE CORRECTION NAMES WHAT DECIDED THE CASE.
+	#
+	# This preferred hints()[0] over the decisive finding, and hints are the
+	# supplementary material — the things that were worth noticing but did not
+	# dispose of the instrument. On case_08 the decisive finding is
+	# `erasure_dispositive` and hints()[0] is `erasure_innocent`, so a player who
+	# ruled the knife wrongly was corrected by the senior hand with a note about
+	# the erasure that was EXPLICITLY FINE. The office's answer to "why was I
+	# wrong" was a description of the thing that was not the problem, which
+	# teaches the exact opposite of the lesson and reads as the game not knowing
+	# its own case.
+	#
+	# Decisive first, then a hint, then an affirmative check — because a player
+	# who refused a clean packet has no decisive finding to be shown and still
+	# deserves a specific correction rather than "nothing was wrong".
 	var review_source: Finding = null
 	var review_hints := _adjudication.hints()
-	if not review_hints.is_empty():
-		review_source = review_hints[0]
-	elif _adjudication.decisive != null:
+	if _adjudication.decisive != null:
 		review_source = _adjudication.decisive
+	elif not review_hints.is_empty():
+		review_source = review_hints[0]
 	else:
 		# Rejecting a clean packet still deserves a specific correction. There
 		# is no negative hint to quote, so use the first affirmative check the

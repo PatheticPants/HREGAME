@@ -85,7 +85,7 @@
       "requires_case": "case_02_grellwater",
       "requires_verdict": "CONFIRM",
       "priority": 5,
-      "text": "You admitted the first lion on Tuesday. I have brought you the second. I hope the extra words still matter."
+      "text": "You have admitted the first lion already. I have brought you the second. I hope the extra words still matter."
     },
     {
       "beat": "arrival",

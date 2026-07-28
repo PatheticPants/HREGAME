@@ -101,6 +101,45 @@ def color_close(a, b, tol=0.17):
     return all(abs(x - y) < tol for x, y in zip(hex_to_rgb(a), hex_to_rgb(b)))
 
 
+def mismatch_code(seal, candidates):
+    """Which feature of the impression fails, against the closest die.
+
+    This used to return a flat "seal_mismatch" — a code scripts/rules/
+    seal_check.gd CANNOT EMIT. Its _mismatch_finding initialises `code` to that
+    value and then overwrites it on every branch of an exhaustive if/elif/else,
+    so the engine always reports device_mismatch, shape_mismatch, color_mismatch
+    or legend_mismatch and never the generic one.
+
+    Nothing caught it because no shipped case has a visually mismatching seal, so
+    the two implementations have never both run this path. The first authored bad
+    seal would have made verify_content.py report a spurious "the two
+    implementations disagree" — and the convention is that when they disagree one
+    of them has a bug, which would have sent the next session hunting in the
+    engine. The bug was here.
+
+    Mirrors the engine exactly: same scoring (device 2, shape 1, legend 3), same
+    attribute precedence.
+    """
+    best, best_score = candidates[0], -1
+    for m in candidates:
+        s = 0
+        if seal["device"] == m["device"]:
+            s += 2
+        if seal["shape"] == m["shape"]:
+            s += 1
+        if legend_compatible(seal["legend"], m["legend"]):
+            s += 3
+        if s > best_score:
+            best_score, best = s, m
+    if seal["device"] != best["device"]:
+        return "device_mismatch"
+    if seal["shape"] != best["shape"]:
+        return "shape_mismatch"
+    if not color_close(best["wax_color"], seal["wax_color"]):
+        return "color_mismatch"
+    return "legend_mismatch"
+
+
 def seal_findings(charter, world, matrices, present):
     out = []
     seal = charter.get("seal")
@@ -128,7 +167,7 @@ def seal_findings(charter, world, matrices, present):
               and color_close(m["wax_color"], seal["wax_color"])
               and legend_compatible(seal["legend"], m["legend"])]
     if not visual:
-        return [(FATAL, "seal_mismatch")]
+        return [(FATAL, mismatch_code(seal, candidates))]
     if year is None:
         return [(NOTE, "seal_date_unresolved")]
 
