@@ -83,10 +83,10 @@
       ],
       "erasures": [
         {
-          "x": 0.165,
-          "y": 0.532,
-          "w": 0.55,
-          "h": 0.062,
+          "x": 0.054,
+          "y": 0.5718,
+          "w": 0.633,
+          "h": 0.0513,
           "altered_field": "The year of the grant",
           "original_value": "in the eleventh year of Aldric I",
           "innocent": false,

@@ -22,10 +22,18 @@ python tools/verify_content.py
 
 | suite | checks |
 |---|---|
-| rules | 71 |
-| presentation | 156 |
-| the day (full loop) | 66 |
+| rules | 81 |
+| presentation | 170 |
+| the day (full loop) | 71 |
 | content + encoding | PASS |
+
+**Run the rules suite before the Python one.** `tests/test_rules.gd` writes the
+finding set it actually derived to `.tools/derived_findings.json`, and
+`tools/verify_content.py` asserts its own list matches it case for case, in
+order. Without that file the Python still runs — it must, because being runnable
+with no Godot at all is the entire reason it is a separate implementation — but
+it falls back to comparing only the final verdict, which is a three-valued
+summary of a dozen findings and agrees by luck on most divergences.
 
 **It is a git repository now.** `github.com/PatheticPants/HREGAME`, branch `main`.
 The previous version of this file said it was not; that was the first thing a
@@ -194,6 +202,22 @@ These are recorded so the next person does not think they are undiscovered.
   candle-seconds convertible is the single largest missing system.
 - **Two of Thursday's four matters cannot be ruled wrongly**, because a pure
   precedent contest marks every ring defensible.
+- **`WitnessCheck` fires no defect in any shipped case.** Every witness in the
+  eight cases is either alive by the roll, silent within coverage, or outside
+  coverage entirely. The check is proven by synthetic packets in the rules suite
+  and by nothing the player will ever be handed. It wants a case.
+- **A witness's claimed house is never rendered on the parchment.** The rules
+  read `house` to decide which roll would have had a man; the charter shows only
+  his name and style. A player can infer the house from the style most of the
+  time, which is the intended lookup — but where they cannot, the ledger knows
+  something the desk never said.
+- **The Kalendar's Marchfeld roll is the one section with no marginalia.** The
+  other three carry R.V.'s hand and the book's front matter carries his best
+  line in the project ("in eleven years at this desk I have never once been able
+  to write down that a man was living — only that nobody has sent word he was
+  dead"). The city book is the roll a player will consult first, because
+  Marchfeld is where the tutorial case lives, and it is the one that says
+  nothing.
 
 ---
 

@@ -11,6 +11,11 @@ extends Sheet
 
 const MARGIN := 26.0
 
+## The rect the rubric date block was last drawn into, in sheet-local space.
+## Written by _draw_date; read only by the test that asserts an erasure claiming
+## to sit on the year actually does. Empty until the sheet has drawn once.
+var date_rect_local := Rect2()
+
 
 func charter_data() -> CharterData:
 	return data as CharterData
@@ -61,6 +66,15 @@ func _draw_date(at: Vector2, w: float, ch: CharterData) -> float:
 	var text := "Given in the %s year of %s." % [
 		Lex.ordinal(ch.date_regnal_year), who]
 	var h := Ink.block(self, at, text, 16, Ink.RUBRIC, w)
+	# WHERE THE DATE ACTUALLY LANDED.
+	#
+	# Erasure patches are authored as fractions of the sheet, and the date's
+	# position depends on how the body text happens to wrap at 14pt — so editing
+	# a single word of the arenga silently un-registers the scrape that is
+	# supposed to be sitting on the year, and nothing notices. Recording the rect
+	# the draw actually used lets a test assert the two agree, which is the only
+	# version of that check that cannot itself drift.
+	date_rect_local = Rect2(at, Vector2(w, h))
 	return h
 
 

@@ -55,7 +55,7 @@ func _run() -> void:
 	_test_docket_tray(desk)
 	_test_opening_letter(desk)
 	await _test_tablet(desk)
-	_test_evidence_is_on_the_desk(desk)
+	await _test_evidence_is_on_the_desk(desk)
 	_test_reactive_investigation(desk)
 	await _test_press(desk)
 	await _test_complete_ledger(desk)
@@ -434,6 +434,53 @@ func _test_evidence_is_on_the_desk(desk: Desk) -> void:
 			# shorter than the type it has to hold clips it.
 			_is_true(e.region.size.y * ch.size.y >= 22.0,
 				"%s: the scrape is tall enough to show the line beneath"
+				% case_data.id)
+
+	# REGISTRATION, not merely presence.
+	#
+	# The in-bounds check above passes happily on a patch drawn over the wrong
+	# paragraph, and that is the failure that actually happened: case_08's
+	# decisive scrape sat on the corroboratio while the ledger insisted the year
+	# had been altered. The player looked exactly where the finding pointed and
+	# saw clean parchment. The y-position depends on how the body text wraps, so
+	# any edit to the arenga silently un-registers it — which is why this asserts
+	# against the rect the renderer actually used rather than against a number.
+	for case_data in _lore_data.cases:
+		var ch2 := case_data.charter()
+		if ch2 == null:
+			continue
+		var wants_date := false
+		for e in ch2.erasures:
+			if e.dispositive and not e.innocent \
+					and e.altered_field.to_lower().contains("year"):
+				wants_date = true
+		if not wants_date:
+			continue
+		desk.lay_out_packet(case_data.documents)
+		for i in 6:
+			await get_tree().process_frame
+		var view := desk.current_charter
+		if view == null or view.date_rect_local.size == Vector2.ZERO:
+			_fail("%s: the charter never drew its date block" % case_data.id)
+			continue
+		var sheet_rect := Rect2(-ch2.size * 0.5, ch2.size)
+		for e in ch2.erasures:
+			if not (e.dispositive and not e.innocent
+					and e.altered_field.to_lower().contains("year")):
+				continue
+			var patch := Rect2(
+				sheet_rect.position + e.region.position * ch2.size,
+				e.region.size * ch2.size)
+			_is_true(patch.intersects(view.date_rect_local),
+				"%s: the scrape that claims the year is drawn on the year"
+				% case_data.id)
+			# And the ghost, which is drawn a line up from the patch's middle,
+			# has to land on the words it replaced rather than in the gutter
+			# above them.
+			var ghost_y: float = patch.position.y + patch.size.y * 0.5 - 7.0
+			_is_true(ghost_y >= view.date_rect_local.position.y - 10.0
+					and ghost_y <= view.date_rect_local.end.y,
+				"%s: and what the knife took out is written where it was"
 				% case_data.id)
 
 	# 1d. THE MEMORANDUM HAS TO FIT ON THE MEMORANDUM.

@@ -337,11 +337,15 @@ func _the_knife() -> void:
 		return
 	_desk.bring_to_front(leaf)
 	leaf.is_held = true
-	var at := _desk.candle.position + Vector2(-90.0, 70.0)
+	# Put the SCRAPE at the flame, not the sheet. Each patch is lit at its own
+	# position, so posing this by the middle of the parchment shows a charter near
+	# a candle and nothing coming up on it — which is the mechanic working and the
+	# capture failing. The dispositive patch sits about 57 units below centre.
+	var at := _desk.candle.position + Vector2(-95.0, -57.0)
 	leaf.solver.place(at, deg_to_rad(-1.0))
 	leaf.position = at
 	camera.zoom = Vector2(1.9, 1.9)
-	camera.position = _desk.to_global(at) + Vector2(0, 30)
+	camera.position = _desk.to_global(at) + Vector2(-40, 40)
 	await _settle(46)
 	await _shot("35_the_knife_against_the_flame")
 	leaf.is_held = false

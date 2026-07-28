@@ -1,6 +1,5 @@
 {
   "_comment": "Closes the hole in the witness check. A witness's death used to be an annotation on the charter's own witness list, so a forger who simply declined to write obiit defeated the whole test by omission. Deaths live out here now, in a book he never touched.\n\nNOTE what this is NOT. It is not a necrology of the Empire, because a complete one would be an oracle and an oracle ends the game. It is four extracts in four hands: each covers one house, each is written up only so far, each reckons in its own house's style — and three houses return nothing at all, with the reason printed on the page beside them. Absence from these rolls is NEVER evidence of life.\n\nThe Saint Wend extract is reckoned from ELECTION. A clerk who reduces it as an imperial notary would will lay its men in the grave later than they went into it. That is fair rather than cruel only because the roll states its own reckoning in its own note, on its own page.\n\nMatching is on person_id and never on the name. Two men may be called Hugo Wend, and one of them is in nobody's roll at all.",
-
   "book": {
     "title": "The Kalendar of the Dead",
     "subtitle": "obits returned to this Chancery, and by whom",
@@ -9,7 +8,6 @@
     "front_matter": "This Chancery keeps no roll of its own dead and never has. What it keeps is this book, which is not a necrology but a binding of extracts: what the houses that do keep such rolls have returned to us, copied in the order their own books were written, with the hand named at the head of each.\n\nRead the head before you read the names. Every hand counts an emperor's years as its own chancery counts them, and says so on its own page, and one of these four does not count as we do.\n\nRead the covering line also. It says whose dead that house undertook to keep, and no more than that. A man who is not in a roll is not thereby living; he may only be a man that roll was never keeping.",
     "marginalia": "Four houses answer and three do not. In eleven years at this desk I have never once been able to write down that a man was living — only that nobody has sent word he was dead. — R.V."
   },
-
   "rolls": [
     {
       "id": "chapter_of_saint_wend",
@@ -88,7 +86,6 @@
         }
       ]
     },
-
     {
       "id": "chapel_at_thurnstadt",
       "hand": "The Margrave's chapel at Thurnstadt",
@@ -166,7 +163,6 @@
         }
       ]
     },
-
     {
       "id": "city_book_of_marchfeld",
       "hand": "The city book of Marchfeld",
@@ -176,7 +172,7 @@
       "written_up_to_emperor": "kunrad_iv",
       "written_up_to_regnal_year": 7,
       "note": "The council keeps no roll of the dead. It keeps the roll of the city, and strikes a man out of it in the week it is told he is gone, and the book is copied to Aachen-Verd every Michaelmas whether the Chancery has asked for it or not.",
-      "marginalia": "",
+      "marginalia": "The commune strikes a man out the week he dies and never says of what. Two years ahead of the Church and half a sentence behind it. — R.V.",
       "entries": [
         {
           "person_id": "ide_krump",
@@ -244,7 +240,6 @@
         }
       ]
     },
-
     {
       "id": "chancery_household_book",
       "hand": "The Chancery's own household book",
@@ -315,7 +310,6 @@
       ]
     }
   ],
-
   "silent": [
     {
       "polity_id": "ostmark",
