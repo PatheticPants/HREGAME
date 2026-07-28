@@ -140,6 +140,7 @@ func _run() -> void:
 	await _seal_out_of_the_light()
 	await _paper_over_the_seal()
 	await _show_the_kalendar()
+	await _the_dead_witness()
 	await _show_charter_foot()
 	await _show_the_register()
 	await _show_reviewed_register()
@@ -520,6 +521,92 @@ func _show_the_kalendar() -> void:
 	book.spread = 2
 	await _settle(30)
 	await _shot("32_kalendar_a_roll")
+	book.is_open = false
+	await _settle(20)
+	_desk._park_in_rack(book, 2)
+	await _settle(20)
+
+
+## THE ONE FACT THAT DECIDES A CASE, ON BOTH THE DOCUMENTS THAT CARRY IT.
+##
+## case_04 is the only matter in the game that turns on the Kalendar, and the
+## only one that produces a DEFECT. The whole of that case is two lines of text
+## in two different books, so this is a contract test made of pixels: the ledger
+## may only say a thing was findable if it was legible on the desk, and that rule
+## has been broken three times, every one treated as critical.
+##
+## 45 is the charter's witness list. The player must be able to read "Herbord
+## Gantz, castellan of Thurnstadt" — the STYLE is load-bearing, because a
+## witness's house is not printed anywhere and naming Thurnstadt is the only
+## thing that tells a reader which of the four rolls would have had him.
+##
+## 46 is the leaf that condemns him, found by searching for the page that
+## actually carries his obit rather than by hardcoding a spread number, so this
+## frame cannot silently start showing the wrong leaf if the roll grows.
+func _the_dead_witness() -> void:
+	var camera := _main.get_node("camera") as Camera2D
+	var case_04: CaseData = null
+	for c in Lore.data.cases:
+		if c.id == &"case_04_second_lion":
+			case_04 = c
+	if case_04 == null:
+		return
+
+	_desk.sweep_packet_away()
+	await _settle(20)
+	_desk.lay_out_packet(case_04.documents)
+	await _settle(40)
+	var charter := _desk.current_charter
+	if charter != null:
+		_desk.bring_to_front(charter)
+		var at := Vector2(-40.0, 40.0)
+		charter.solver.place(at, 0.0)
+		charter.position = at
+		await _move_candle(at + Vector2(150.0, 60.0))
+		camera.zoom = Vector2(2.2, 2.2)
+		camera.position = charter.global_position + Vector2(0.0, 150.0)
+		await _settle(30)
+		await _shot("45_the_witness_list_that_fails")
+		camera.zoom = Vector2.ONE
+		camera.position = Vector2(960, 590)
+		await _settle(10)
+
+	var book := _desk.kalendar_book
+	if book == null:
+		return
+	var leaf := -1
+	for i in book.data.pages.size():
+		var page: BookPage = book.data.pages[i]
+		if page.kind != &"obits" or page.roll_id != &"chapel_at_thurnstadt":
+			continue
+		var roll := Lore.obit_roll(page.roll_id)
+		if roll == null:
+			continue
+		var last := mini(roll.entries.size(), page.entry_from + page.entry_count)
+		for j in range(page.entry_from, last):
+			if roll.entries[j].person_id == &"herbord_gantz":
+				leaf = i
+	if leaf < 0:
+		push_error("Herbord Gantz is on no leaf of the Kalendar. "
+			+ "The case that convicts him is unwinnable.")
+		return
+
+	_desk.ledge.release(book)
+	book.unstow()
+	_desk.bring_to_front(book)
+	var where := Vector2(-90.0, 130.0)
+	book.solver.place(where, deg_to_rad(-1.0))
+	book.position = where
+	book.is_open = true
+	book.spread = leaf / 2
+	await _move_candle(where + Vector2(70.0, -30.0))
+	await _settle(50)
+	camera.zoom = Vector2(1.7, 1.7)
+	camera.position = book.global_position
+	await _settle(20)
+	await _shot("46_the_roll_that_condemns_him")
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
 	book.is_open = false
 	await _settle(20)
 	_desk._park_in_rack(book, 2)

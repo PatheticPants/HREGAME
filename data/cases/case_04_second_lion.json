@@ -1,10 +1,10 @@
 {
   "id": "case_04_second_lion",
   "title": "The Meadow Above the Vech",
-  "_design": "A fast Day 2 mastery case. Dietrich's second lion is not the dead first die from Grellwater: it carries DEI GRATIA, was cut in 1207, and is live at this instrument's date in 1210.",
-  "correct_verdict": "CONFIRM",
-  "correct_reason": "nothing_against",
-  "correct_reason_text": "Dietrich's second die was live in 1210, and the seventh year of Aldric reduces cleanly by accession.",
+  "_design": "The case that makes the Kalendar of the Dead decide something, and the only one in the build that produces a DEFECT. Everything the player is trained to check comes back clean: Dietrich's second lion is not the dead first die from Grellwater, it carries DEI GRATIA, was cut in 1207 and is live in 1210; the seventh year of Aldric reduces without argument. The seal is genuine and the date is genuine. What is wrong is on the witness list, and only the Kalendar can say so: Herbord Gantz, castellan of Thurnstadt, is entered in the Margrave's chapel roll as dead in the fifth year of Aldric, two years before this grant. One dead witness is a DEFECT and not a FATAL, because a stale name copied forward from an exemplar is ordinary and two would be a fabrication. So the answer is REFER, and it is the first and only time in the game that REFER means 'this instrument is broken, send it back for correction' rather than 'two laws disagree'. The other witness, Hugo Wend, is given no house at all, so the same packet teaches both halves of the rolls' authority: one name the roll positively condemns, one it cannot speak about and therefore says nothing about.",
+  "correct_verdict": "REFER",
+  "correct_reason": "witness_dead",
+  "correct_reason_text": "The seal is live and the date reduces cleanly, but Herbord Gantz was two years dead when this was witnessed.",
   "petitioner": {
     "id": "gero_kalt",
     "name": "Gero Kalt",
@@ -51,6 +51,7 @@
       "claimant_id": "gero_kalt",
       "witnesses": [
         { "name": "Eckhard von Melle", "person_id": "eckhard_von_melle", "house": "thurn", "title": "marshal of Thurn" },
+        { "name": "Herbord Gantz", "person_id": "herbord_gantz", "house": "thurn", "title": "castellan of Thurnstadt" },
         { "name": "Hugo Wend", "person_id": "hugo_wend", "house": "", "title": "of Grellwater" }
       ],
       "seal": {
@@ -102,6 +103,10 @@
       "text": "There are the two of them. Mine is the later entry, and the date sits between its cutting and its breaking."
     },
     {
+      "beat": "consult_kalendar",
+      "text": "The chapel's roll. Whatever is written in it, I stood at that muster and so did every man on that list. I would put my hand on it."
+    },
+    {
       "beat": "waiting",
       "text": "I said it was a small matter. Small matters have a way of taking exactly as long as large ones in this building."
     }
@@ -109,24 +114,24 @@
   "outcomes": [
     {
       "verdict": "CONFIRM",
-      "favor": { "imperial": 1 },
+      "favor": { "imperial": -1, "custom": 1 },
       "reaction": "Good. I had begun to fear a second lion required a second morning.",
-      "register_note": "Dietrich's second die, with DEI GRATIA, live at the date. Meadow confirmed to Gero Kalt.",
-      "aftermath": "The meadow was entered without objection. A routine instrument remained routine."
+      "register_note": "Confirmed on a live die and a sound date. The witness list was not carried against the rolls.",
+      "aftermath": "The meadow was entered. Four years later the chapel at Thurnstadt was asked for its roll in another matter, and the castellan's obit was read out in open court; the grant was reopened, and the men who had confirmed it were named."
     },
     {
       "verdict": "DENY",
       "favor": { "imperial": -1 },
       "reaction": "Then write down which part died before Dietrich did. I would like to know what I am meant to mourn.",
-      "register_note": "Second die of Dietrich refused despite a date within its life.",
-      "aftermath": "Thurn requested an explanation for the refusal of its live die. None in the packet supplied one."
+      "register_note": "Refused. The die was live at the date and the grant itself was not impeached.",
+      "aftermath": "Thurn asked on what ground a live seal had been refused. The packet recorded a dead witness and no finding that the grant was false, which are not the same objection."
     },
     {
       "verdict": "REFER",
-      "favor": { "imperial": -1 },
-      "reaction": "Upstairs. For a meadow and a live seal. Very well.",
-      "register_note": "Routine Thurn household grant sent up.",
-      "aftermath": "The meadow stood vacant while a clean household grant waited behind harder disputes."
+      "favor": { "imperial": 1, "custom": -1 },
+      "reaction": "Upstairs, for a name. He was at the muster that year, I would have sworn it. But I was not the one holding the pen.",
+      "register_note": "Referred for correction. Herbord Gantz, castellan of Thurnstadt, is entered in the Margrave's chapel roll as dead in the fifth year of Aldric; the instrument is dated the seventh. The seal and the date stand.",
+      "aftermath": "The chapel returned a corrected list with two names struck and one added. The meadow was granted again on the amended instrument, to the same man, in the following spring."
     }
   ]
 }

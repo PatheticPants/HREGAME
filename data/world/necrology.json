@@ -138,6 +138,14 @@
           "note": "His die was defaced in this chapel the same day, before nine witnesses, as the March requires."
         },
         {
+          "person_id": "herbord_gantz",
+          "name": "Herbord Gantz",
+          "title": "castellan of Thurnstadt",
+          "died_emperor": "aldric_i",
+          "died_regnal_year": 5,
+          "note": "Held the castle eleven years. Buried beneath this chapel, on the north side, with his wife."
+        },
+        {
           "person_id": "tammo_isel",
           "name": "Tammo Isel",
           "title": "ministerialis at Grellwater",
