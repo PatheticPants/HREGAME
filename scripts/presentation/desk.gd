@@ -532,6 +532,33 @@ func _on_lens_focus_confirmed(subject: Node2D) -> void:
 
 func _on_book_consulted(book_id: StringName) -> void:
 	investigation_performed.emit(StringName("consult_" + String(book_id)))
+	_report_open_roll(book_id)
+
+
+## WHICH LEAF, NOT MERELY WHICH BOOK.
+##
+## Investigation has only ever been reported at book granularity — "he opened the
+## Kalendar" — which is all a petitioner needs, since a petitioner is watching
+## your hands and not your page. It is not enough for anything that cares WHAT
+## you looked up.
+##
+## The Kalendar has four rolls and one of them is the Chancery's own dead. Turning
+## to that leaf is a materially different act from turning to the Margrave's
+## chapel, and until now nothing in the game could tell them apart. Emitted on
+## open and on every page turn, because `consulted` already fires on both, which
+## is exactly when the open spread changes.
+func _report_open_roll(book_id: StringName) -> void:
+	for b in books:
+		if b.data == null or b.data.id != book_id or not b.is_open:
+			continue
+		for i in [b.spread * 2, b.spread * 2 + 1]:
+			if i < 0 or i >= b.data.pages.size():
+				continue
+			var page: BookPage = b.data.pages[i]
+			if page.roll_id != &"":
+				investigation_performed.emit(
+					StringName("read_" + String(page.roll_id)))
+		return
 
 
 ## Lifting a charter into the candle is as conspicuous as reaching for the glass,

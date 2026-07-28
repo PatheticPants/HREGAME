@@ -50,3 +50,17 @@ func resolve_arrivals(register: Register, after: StringName) -> Array[DocumentDa
 				and conditional.document != null:
 			out.append(conditional.document)
 	return out
+
+
+## What arrives because of something the player LOOKED UP rather than ruled.
+func resolve_investigation_arrivals(register: Register,
+		beat: StringName) -> Array[DocumentData]:
+	var out: Array[DocumentData] = []
+	if beat == &"":
+		return out
+	for conditional in opening_documents:
+		if conditional.after_investigation == beat \
+				and conditional.matches(register) \
+				and conditional.document != null:
+			out.append(conditional.document)
+	return out

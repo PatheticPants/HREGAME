@@ -47,6 +47,33 @@
           "HOUSEHOLD"
         ]
       }
+    },
+    {
+      "_note": "THE THREAD ANSWERS WHEN YOU PULL IT. Keyed to read_chancery_household_book, which fires only when the Kalendar is actually OPEN AT THE CHANCERY'S OWN DEAD -- the leaf carrying Odo Fenne and Isenbard Kliff, both styled notary at the third desk. Turning to the Margrave's chapel or the city book does not fire it. This is the whole point: the player used the game's ordinary verbs on something that was not a case, and the office wrote back.\n\nIt still answers NOTHING. Meinwerk supplies one more fact -- that he was told to strip the bed by somebody who did not sign for it -- and confirms he has the two notaries and not the third. The contradiction between R.V.'s eleven years and Kliff's eight is left standing, unremarked, for the player to do the arithmetic on. Do not have anyone in the office notice it for them.",
+      "after_investigation": "read_chancery_household_book",
+      "document": {
+        "kind": "letter",
+        "id": "letter_steward_second",
+        "title": "Further from the Steward",
+        "size": [
+          352,
+          320
+        ],
+        "tint": "#d1c4a2",
+        "start_offset": [
+          -402,
+          -150
+        ],
+        "start_angle_deg": 4.0,
+        "takes_seal": false,
+        "sender": "Meinwerk, steward of the house",
+        "recipient": "The third desk, second floor",
+        "body": "You have the household book open, so I will save you the asking.\n\nTwo notaries of the third desk are entered in it and I entered them both. Odo Fenne I had from the infirmarer. Isenbard Kliff I had from the man who carried him down, and I wrote the day the same evening.\n\nFor the third I have no infirmarer and no man. I was told to strip the bed and I stripped it. I did not think at the time to ask who told me, and I have since asked four people who did not.",
+        "closing": "A steward does not enter what he was not told. The line stands as it is.",
+        "endorsements": [
+          "HOUSEHOLD"
+        ]
+      }
     }
   ]
 }

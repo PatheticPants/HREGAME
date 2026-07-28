@@ -72,6 +72,9 @@ var _adjudication: Adjudication = null
 ## The matter just ruled, held only until the office has had its chance to
 ## react to it. See _deliver_arrivals.
 var _last_ruled: StringName = &""
+## Documents already delivered by an investigation, so leafing back through a
+## book does not fetch the same slip twice. See _deliver_investigation_arrivals.
+var _arrived: Dictionary = {}
 var _heard_beats: Dictionary = {}
 var _work_time := 0.0
 ## False until the player first puts a hand to evidence, a reference, or a tool.
@@ -488,6 +491,24 @@ func _on_investigation_performed(beat: StringName) -> void:
 	# should not be prompted as though they had gone to sleep.
 	_work_time = 0.0
 	_speak_beat(beat)
+	_deliver_investigation_arrivals(beat)
+
+
+## THE OFFICE NOTICED WHAT YOU LOOKED UP.
+##
+## Fired ONCE per document for the whole session, not once per day and not once
+## per lookup — `consulted` emits on every page turn, so a player leafing back
+## and forth through the Kalendar would otherwise be buried in identical slips.
+## The set is never cleared, because the second time you read a roll you are not
+## discovering it.
+func _deliver_investigation_arrivals(beat: StringName) -> void:
+	if current_day == null or desk == null:
+		return
+	for doc in current_day.resolve_investigation_arrivals(register, beat):
+		if _arrived.has(doc.id):
+			continue
+		_arrived[doc.id] = true
+		desk.deliver_day_document(doc)
 
 
 func _on_practice_lens_dropped(_lens: Draggable) -> void:

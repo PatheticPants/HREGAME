@@ -51,6 +51,7 @@ func _run() -> void:
 	_test_surface_helper(desk)
 	_test_wax_is_darker_molten(desk)
 	_test_the_page_turn(desk)
+	_test_the_office_notices_what_you_read(desk)
 	_test_every_leaf_fits(desk)
 	_test_dockets_fit(desk)
 	_test_reachability(desk)
@@ -70,6 +71,91 @@ func _run() -> void:
 	main.queue_free()
 	await get_tree().process_frame
 	_finish()
+
+
+## THE OFFICE NOTICES WHICH LEAF, NOT MERELY WHICH BOOK.
+##
+## Investigation was reported at book granularity — "he opened the Kalendar" —
+## which is all a petitioner needs, since a petitioner watches your hands and not
+## your page. It meant the R.V. thread was completely inert: every piece of it was
+## discoverable, and following the whole chain caused nothing whatever to happen.
+##
+## The Kalendar has four rolls. Turning to the Chancery's own dead — the leaf that
+## enters two notaries at the third desk and not the third — is a materially
+## different act from turning to the Margrave's chapel, and this is the assertion
+## that the game can tell them apart.
+func _test_the_office_notices_what_you_read(desk: Desk) -> void:
+	print("-- the office notices what you read")
+	var kalendar := desk.kalendar_book
+	_is_true(kalendar != null, "the Kalendar is on the desk")
+	if kalendar == null:
+		return
+
+	var heard: Array[StringName] = []
+	var probe := func(beat: StringName) -> void: heard.append(beat)
+	desk.investigation_performed.connect(probe)
+
+	# Find the spread carrying the Chancery's own household roll, by searching
+	# rather than by hardcoding — the book is generated and its pagination moves.
+	var household := -1
+	var chapel := -1
+	for i in kalendar.data.pages.size():
+		var page: BookPage = kalendar.data.pages[i]
+		if page.roll_id == &"chancery_household_book" and household < 0:
+			household = i
+		if page.roll_id == &"chapel_at_thurnstadt" and chapel < 0:
+			chapel = i
+	_is_true(household >= 0 and chapel >= 0,
+		"the Kalendar carries both the Chancery's dead and the Margrave's")
+	if household < 0 or chapel < 0:
+		desk.investigation_performed.disconnect(probe)
+		return
+
+	kalendar.is_open = true
+	kalendar.spread = chapel / 2
+	heard.clear()
+	desk._on_book_consulted(kalendar.data.id)
+	_is_true(heard.has(&"consult_kalendar"),
+		"opening the Kalendar reports the book, as it always did")
+	_is_true(not heard.has(&"read_chancery_household_book"),
+		"but reading the Margrave's chapel is not reading the Chancery's dead")
+
+	kalendar.spread = household / 2
+	heard.clear()
+	desk._on_book_consulted(kalendar.data.id)
+	_is_true(heard.has(&"read_chancery_household_book"),
+		"turning to the Chancery's own dead reports THAT leaf specifically")
+
+	# And a closed book reports nothing but the book, because a closed book is
+	# not being read.
+	kalendar.is_open = false
+	heard.clear()
+	desk._on_book_consulted(kalendar.data.id)
+	_is_true(not heard.has(&"read_chancery_household_book"),
+		"a shut book is not being read")
+	desk.investigation_performed.disconnect(probe)
+
+	# The thread answers when it is pulled: the steward writes back, and only to
+	# that one leaf.
+	var tuesday := _lore_data.day_by_id(&"day_01")
+	_is_true(tuesday != null, "Tuesday exists to carry the thread")
+	if tuesday == null:
+		return
+	var reply := tuesday.resolve_investigation_arrivals(Register.new(),
+		&"read_chancery_household_book")
+	_is_true(reply.size() == 1
+			and reply[0].id == &"letter_steward_second",
+		"reading the Chancery's own dead brings a second slip from the steward")
+	_is_true(tuesday.resolve_investigation_arrivals(Register.new(),
+			&"read_chapel_at_thurnstadt").is_empty(),
+		"and no other roll does")
+	# It must not be part of the morning's post, or the thread answers itself
+	# before the player has asked anything.
+	var dawn := PackedStringArray()
+	for doc in tuesday.resolve_opening_documents(Register.new()):
+		dawn.append(String(doc.id))
+	_is_true(not dawn.has("letter_steward_second"),
+		"and it is not lying on the desk at dawn, before it was earned")
 
 
 ## AND EVERY DOCKET FITS ITS SLIP.

@@ -17,9 +17,24 @@ extends Resource
 ## the cheapest way to say so is for one of them to interrupt.
 @export var after_case: StringName = &""
 
+## Or: after the player LOOKS SOMETHING UP.
+##
+## The thread about the man who held this desk before you was, when it was first
+## written, entirely inert. Every piece of it was discoverable — the steward's
+## slip, his hand in four books, the household roll that enters two notaries at
+## the third desk and not him, and the arithmetic that puts his eleven years
+## across another man's eight — and following the whole chain caused precisely
+## nothing to happen. It was a reading experience sitting beside a ruling game.
+##
+## Keying an arrival to an investigation beat is what joins them: the same verbs
+## the player already uses on a charter, producing the same kind of consequence
+## the game already delivers, through the same machinery. The office notices what
+## you looked up, and writes to you about it.
+@export var after_investigation: StringName = &""
+
 
 func arrives_at_dawn() -> bool:
-	return after_case == &""
+	return after_case == &"" and after_investigation == &""
 
 
 func matches(register: Register) -> bool:
