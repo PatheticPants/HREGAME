@@ -124,15 +124,15 @@
     },
     {
       "beat": "waiting",
-      "text": "Take your time. I have stood through longer offices than this and at least here somebody is thinking."
+      "text": "Take your time. I have stood through longer offices than this one."
     },
     {
       "beat": "waiting_long",
-      "text": "Your candle is going. I notice you have not said anything for some while, which I take to mean you have found the difficulty. Good. It is a real one, and I would think less of you for missing it."
+      "text": "Your candle is going. You have found the difficulty, I think. It is a real one, and I would rather you took the light to it than hurried."
     },
     {
       "beat": "consult_matrix_book",
-      "text": "That volume has ended many arguments in this room without settling any of them."
+      "text": "The dies are not in question. It is the year, and the year is not in that book."
     },
     {
       "beat": "consult_almanac",

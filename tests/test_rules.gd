@@ -13,6 +13,11 @@ extends SceneTree
 ## content is broken, and the failure should arrive here rather than in a
 ## playtest three weeks later.
 
+## See the note at the foot of _initialize. This is a truncation guard, not a
+## target: it exists because a runtime error in one test function silently
+## deletes the rest of that function's checks and still reports zero failures.
+const MINIMUM_CHECKS := 90
+
 var failures := 0
 var checks := 0
 
@@ -33,6 +38,23 @@ func _initialize() -> void:
 	_test_plural_authority(lore)
 	_test_precedent(lore)
 	_test_campaign_data(lore)
+
+	# A SCRIPT ERROR INSIDE A TEST REPORTS GREEN.
+	#
+	# GDScript aborts the enclosing function on a runtime error and carries on
+	# with the next one, so a typo in an assertion silently deletes every check
+	# after it in that function and the suite still prints "0 failure(s)". That
+	# happened while writing the Thursday-consequence assertions below: `a.rect`
+	# where the field is `a.region` truncated four shipped checks, and the run
+	# looked clean.
+	#
+	# A floor on the count is the cheapest thing that catches it. Raise it
+	# deliberately when adding tests; if it trips without you having removed
+	# something on purpose, look for a SCRIPT ERROR in the output above.
+	if checks < MINIMUM_CHECKS:
+		_fail("only %d checks ran, expected at least %d — a test probably hit a "
+			% [checks, MINIMUM_CHECKS]
+			+ "runtime error and truncated. Look for SCRIPT ERROR above.")
 
 	print("\n%d checks, %d failure(s)\n" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -540,6 +562,61 @@ func _test_campaign_data(lore: LoreData) -> void:
 			letter_ids[letters[0].id] = true
 	_eq(letter_ids.size(), 3,
 		"all three Kesselholt choices produce distinct correspondence")
+
+	# THURSDAY ANSWERS FOR THE KNIFE.
+	#
+	# Every one of this day's arrivals used to gate on case_03, so case_08 —
+	# the matter Tuesday's own day file calls its sting in the tail, and the
+	# worst ruling available to a player — produced no consequence at all. One
+	# skippable ledger paragraph, and then Thursday simply began.
+	var knife := lore.case_by_id(&"case_08_mill_on_the_aue")
+	var aue_ids := {}
+	for verdict in [Lex.Verdict.CONFIRM, Lex.Verdict.DENY, Lex.Verdict.REFER]:
+		var history := Register.new()
+		history.add(_prior_record(knife, verdict))
+		var post := thursday.resolve_opening_documents(history)
+		var ids := PackedStringArray()
+		for doc in post:
+			ids.append(String(doc.id))
+			aue_ids[doc.id] = true
+		_is_true(post.size() >= 1,
+			"the mill on the Aue answers for itself after %s"
+			% Lex.verdict_name(verdict).to_lower())
+		if verdict == Lex.Verdict.CONFIRM:
+			# The instrument itself comes back, not merely a letter about it.
+			_is_true(ids.has("charter_aue_mill_returned")
+					and ids.has("letter_aue_recall"),
+				"admitting the knife returns the parchment AND the writ recalling it")
+	_is_true(aue_ids.size() == 4,
+		"the three rulings on the knife produce distinct correspondence")
+
+	# The returned instrument has to be the SAME parchment, or holding it to the
+	# flame on Thursday shows something other than what was missed on Tuesday.
+	var original := knife.charter()
+	var returned: CharterData = null
+	var confirmed := Register.new()
+	confirmed.add(_prior_record(knife, Lex.Verdict.CONFIRM))
+	for doc in thursday.resolve_opening_documents(confirmed):
+		if doc.id == &"charter_aue_mill_returned":
+			returned = doc as CharterData
+	_is_true(returned != null, "the returned instrument is a charter")
+	if returned != null and original != null:
+		_eq(returned.erasures.size(), original.erasures.size(),
+			"it carries the same number of scrapes")
+		var same := true
+		for i in returned.erasures.size():
+			var a: Erasure = original.erasures[i]
+			var b: Erasure = returned.erasures[i]
+			if not (is_equal_approx(a.region.position.x, b.region.position.x)
+					and is_equal_approx(a.region.position.y, b.region.position.y)
+					and is_equal_approx(a.region.size.x, b.region.size.x)
+					and is_equal_approx(a.region.size.y, b.region.size.y)
+					and a.dispositive == b.dispositive):
+				same = false
+		_is_true(same,
+			"and every scrape at the same fraction of the same sheet")
+		_is_true(not returned.takes_seal,
+			"and no wax, because the seal was cut from the cord and filed")
 
 	var unresolved_ids := PackedStringArray()
 	for c in thursday.resolve_cases(lore, Register.new()):

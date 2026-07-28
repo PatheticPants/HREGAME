@@ -237,8 +237,19 @@ func _day_two_tray() -> void:
 		"Thursday waits for the notary to choose a docket")
 	_is_true(desk.docket_slips.size() == 4,
 		"four named matters protrude from the passage tray")
-	_is_true(desk.day_papers.size() == 1 and desk.day_papers[0] is LetterView,
+	# Counted by CONTENT, not by size. Thursday used to deliver exactly one
+	# document — the Kesselholt letter — because that was the only Tuesday matter
+	# with any next-day consequence at all. The knife answers for itself now, so
+	# a full Tuesday produces two arrivals, and asserting "== 1" was asserting
+	# that the day had nothing else to say.
+	var thursday_ids := {}
+	for paper in desk.day_papers:
+		if is_instance_valid(paper) and paper.data != null:
+			thursday_ids[paper.data.id] = true
+	_is_true(thursday_ids.has(&"letter_kesselholt_refer"),
 		"Tuesday's Kesselholt choice arrives as sealed correspondence")
+	_is_true(thursday_ids.has(&"letter_aue_receipt"),
+		"and the office receipts the knife the player refused")
 
 	# THE CANDLE FINALLY BUYS SOMETHING.
 	#
@@ -263,9 +274,12 @@ func _day_two_tray() -> void:
 		"the last docket may be heard first")
 	_is_true(desk.docket_slips.size() == 3,
 		"the selected docket disappears exactly once")
-	_is_true(desk.day_papers.size() == 1
-			and is_instance_valid(desk.day_papers[0]),
-		"the political letter remains on the desk during the hearing")
+	var still_there := 0
+	for paper in desk.day_papers:
+		if is_instance_valid(paper):
+			still_there += 1
+	_is_true(still_there == thursday_ids.size() and still_there > 0,
+		"the morning's correspondence remains on the desk during the hearing")
 	_is_true(is_equal_approx(candle_before, desk.candle.burn),
 		"choosing from the tray spends no candle")
 
