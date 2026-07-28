@@ -253,7 +253,28 @@ func _test_witnesses(lore: LoreData) -> void:
 	_is_true(b.codes().has(&"necrology_incomplete"),
 		"the ledger says WHICH roll fell short rather than only that one did")
 
-	# 4. The annotation on the parchment is cross-examined, not believed. This
+	# 4. TWO DEAD MEN IS A DIFFERENT ANIMAL FROM ONE.
+	#
+	#    No shipped case reaches this, so without an assertion the whole
+	#    escalation is unexercised code that will rot. One stale name is a
+	#    copyist working from an exemplar; a list assembled out of a book rather
+	#    than a room is a fabrication, and the severity has to jump accordingly
+	#    or the rule is a comment.
+	var two_dead := _packet_witnessed(lore, &"thurn", dead.person_id, "Dietrich",
+		&"aldric_i", 14, &"")
+	var second := Witness.new()
+	second.name = "Eckhard von Melle"
+	second.person_id = &"eckhard_von_melle"
+	second.house = &"thurn"
+	var ch2 := two_dead.charter()
+	ch2.witnesses = [ch2.witnesses[0], second]
+	var many := Adjudicator.adjudicate(two_dead)
+	_is_true(many.codes().has(&"witness_list_impossible"),
+		"two dead witnesses is a fabricated list, not a copyist's slip")
+	_eq(many.verdict, Lex.Verdict.DENY,
+		"and a fabricated witness list is refused rather than referred")
+
+	# 5. The annotation on the parchment is cross-examined, not believed. This
 	#    closes the hole from the other side: against a forger who writes an
 	#    obiit that suits him rather than leaving it off.
 	var lied := _packet_witnessed(lore, &"thurn", dead.person_id, "Dietrich",

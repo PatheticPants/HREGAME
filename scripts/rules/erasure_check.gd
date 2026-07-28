@@ -68,14 +68,25 @@ func run(ctx: CheckContext) -> Array[Finding]:
 				+ "stands.", ch.id))
 			continue
 
+		# NOTHING HERE MAY ASSERT A FACT THIS CHECK HAS NOT ESTABLISHED.
+		#
+		# The first version of this sentence read "the wax is the Margrave's, the
+		# die was alive, and the witnesses were in the room" — which is true of
+		# the one case it was written against and false the moment somebody
+		# authors a scraped charter whose seal is also bad. A check that narrates
+		# the findings of other checks will eventually narrate them wrongly, and
+		# the ledger is the only authoritative voice the player has.
+		#
+		# The point this finding actually owns is general and needs no help: an
+		# instrument's authority is that it is the thing that was sealed.
 		out.append(Finding.make(&"erasure_dispositive", Lex.Severity.FATAL,
 			"This has been altered since it was sealed",
 			"%s has been scraped away and written over. Against the light it "
 			% _field(e)
-			+ "reads %s.\nThe wax is the Margrave's, the die was alive, and the "
+			+ "reads %s.\nWhatever else is sound here, this is not the "
 			% e.original_value
-			+ "witnesses were in the room. None of that survives the knife: what "
-			+ "was sealed is not what is in front of us.", ch.id))
+			+ "instrument the wax was set on, and the office cannot admit one "
+			+ "document in place of another.", ch.id))
 	return out
 
 

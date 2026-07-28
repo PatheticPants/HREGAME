@@ -46,3 +46,9 @@ Desktop.ini
 # NOTE: *.uid files ARE committed on purpose. Godot 4.4+ writes a .gd.uid next to
 # every script; if those are missing, the other machine generates different UIDs
 # and every scene referencing a script shows as modified. Do not add them here.
+
+# Scratch files left behind by review agents. They run probes against the real
+# project to settle a claim, and a probe that gets committed is a probe that
+# will one day be run. The encoding guard in tools/verify_content.py caught the
+# first one; this stops the next.
+tmp_*
