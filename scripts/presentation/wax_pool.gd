@@ -333,14 +333,38 @@ func _uvs_for(points: PackedVector2Array) -> PackedVector2Array:
 
 # ------------------------------------------------------------------- drawing
 
+## MOLTEN IS DARKER THAN SET. This had it exactly the wrong way round.
+##
+## Set wax is pale because it is full of microcrystals that scatter light back
+## out of it. Melted, those are gone, it goes clear, and what you see is the
+## shaded bottom of the pool through a translucent liquid. docs/GRAPHICS.md
+## states this as one of two physics facts that had already been shipped
+## backwards once — and names the candle as the place it was fixed. It was never
+## applied here, on the seal, which is the object the whole game is named after.
+##
+## Measured before the change, on the press's own tint Color(0.60, 0.13, 0.16):
+## molten came out at luminance 0.280 and fully set at 0.176, so the liquid was
+## 59% BRIGHTER than the solid. It now runs 0.172 molten to 0.276 set.
+##
+## The old version also lerped fresh wax toward a bright orange on the grounds
+## that it was "hot enough to glow slightly on its own". Wax pours at about a
+## hundred and twenty degrees and does not glow at any temperature it survives.
+## What actually distinguishes hot wax is that it is WET, and that cue already
+## existed and was already correct — _draw_body's gloss is scaled by (1 - chill)
+## and tracks the flame. So the colour was fighting a cue that was already
+## right; now they agree, and freshly poured wax reads as dark, wet and
+## translucent while set wax reads as pale, dry and opaque.
+##
+## The gameplay signal survives the inversion unharmed. The pool still changes
+## visibly as it goes off — which is what makes the pour and the press two
+## decisions rather than one — it simply now changes in the direction real
+## sealing wax changes.
 func _wax_colour() -> Color:
-	# Cooling darkens and dulls. Press it late and the impression takes badly,
-	# which is the reason the pour and the press are two decisions and not one.
 	var c := Color(color, opacity)
 	var cold := chill()
-	c = c.darkened(cold * 0.24)
-	# Fresh wax is hot enough to glow slightly on its own.
-	return c.lerp(Color(0.94, 0.36, 0.20, c.a), (1.0 - cold) * 0.20)
+	c = c.darkened((1.0 - cold) * 0.26)
+	# Going opaque and chalky as the crystals come out of it.
+	return c.lerp(Color(0.78, 0.34, 0.30, c.a), cold * 0.22)
 
 
 func _draw_under() -> void:

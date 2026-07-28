@@ -181,6 +181,31 @@ func _draw_brass() -> void:
 		20, brass_light, 2.8)
 
 
+## The liquid in the bowl.
+##
+## MOLTEN IS DARKER THAN SET, here as in the pool and as in the candle. Heat used
+## to LIGHTEN this by 12%, and the solid cake was then drawn 25% darker than the
+## liquid it melts into — so the tablet went brighter as it dissolved, which is
+## the reverse of what happens in a spoon and the reverse of what the candle
+## eighteen inches away was already doing correctly. Measured before the change:
+## the molten reservoir read at luminance 0.241 against the cake's 0.181 cold,
+## and 0.332 against 0.249 hot. Both the wrong way round, at every temperature.
+##
+## Named rather than inline so the suite can assert on the colour that is
+## actually drawn rather than on a second copy of the arithmetic.
+func molten_colour() -> Color:
+	var hot := clampf(temperature, 0.0, 1.0)
+	var remaining := clampf(wax_remaining, 0.0, 1.0)
+	return WAX_COLOR.darkened(hot * 0.16).darkened((1.0 - remaining) * 0.20)
+
+
+## The solid tablet, which is the PALE one: pigmented beeswax and resin, full of
+## scattering microcrystal, with a dry chalky bloom on it. Watching it go dark
+## and clear is the cue that it is ready to pour.
+func cake_colour() -> Color:
+	return molten_colour().lightened(0.22)
+
+
 func _draw_wax(feel: WaxFeel) -> void:
 	var centre := Vector2(0, 2)
 	var remaining := clampf(wax_remaining, 0.0, 1.0)
@@ -191,8 +216,7 @@ func _draw_wax(feel: WaxFeel) -> void:
 		return
 
 	var hot := clampf(temperature, 0.0, 1.0)
-	var col := WAX_COLOR.lightened(hot * 0.12)
-	col = col.darkened((1.0 - remaining) * 0.20)
+	var col := molten_colour()
 
 	if melt < 0.24:
 		# The pre-pigmented tablet is deliberately unmistakable: faceted sides,
@@ -203,8 +227,8 @@ func _draw_wax(feel: WaxFeel) -> void:
 		for i in 8:
 			var a := float(i) / 8.0 * TAU + PI / 8.0
 			cake.append(centre + Vector2(cos(a) * r, sin(a) * r * 0.68))
-		draw_colored_polygon(cake, col.darkened(0.25))
-		draw_polyline(cake, col.lightened(0.16), 2.0, true)
+		draw_colored_polygon(cake, cake_colour())
+		draw_polyline(cake, col.lightened(0.34), 2.0, true)
 		draw_line(centre + Vector2(-9, -3), centre + Vector2(7, -6),
 			Color(0.90, 0.47, 0.31, 0.58), 2.0)
 		draw_circle(centre + Vector2(10, 5), 1.7,

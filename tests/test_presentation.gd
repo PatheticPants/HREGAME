@@ -49,6 +49,7 @@ func _run() -> void:
 		await get_tree().process_frame
 
 	_test_surface_helper(desk)
+	_test_wax_is_darker_molten(desk)
 	_test_reachability(desk)
 	await _test_view_transition(main, desk)
 	await _test_candle_light(desk)
@@ -66,6 +67,63 @@ func _run() -> void:
 	main.queue_free()
 	await get_tree().process_frame
 	_finish()
+
+
+## MOLTEN IS DARKER THAN SET, on every object in the game that has wax on it.
+##
+## docs/GRAPHICS.md names this as one of two physics facts that had already been
+## shipped backwards once, and records it as fixed. It was fixed on the CANDLE
+## and never applied to the seal or the spoon — the two objects the press runs
+## on. Set wax is pale because it is full of microcrystals that scatter light;
+## melted, it goes clear and you see the shaded bottom of the cup. Drawing the
+## liquid brighter than the solid is what made the candle read as a poached egg,
+## and it was doing the same thing to the wax the game is named after.
+##
+## Asserted on luminance, and against the functions the renderer actually calls,
+## so this cannot be satisfied by a second copy of the arithmetic drifting away
+## from the drawing.
+func _test_wax_is_darker_molten(desk: Desk) -> void:
+	print("-- wax physics")
+	var feel := Lore.wax_feel()
+
+	var pool := WaxPool.new()
+	desk.add_child(pool)
+	pool.setup(feel, Color(0.60, 0.13, 0.16), 4242)
+	pool.age = 0.0
+	var molten := pool._wax_colour()
+	pool.age = feel.cool_time * 2.0
+	var chilled := pool._wax_colour()
+	_is_true(pool.chill() >= 1.0, "the pool reaches a fully set state")
+	_is_true(molten.get_luminance() < chilled.get_luminance(),
+		"a freshly poured pool is DARKER than the same pool once it has set")
+	# And by enough to see. The inverted version differed by 59%, so a fix that
+	# merely flattened the difference would pass a bare inequality and lose the
+	# cue that the wax is going off.
+	_is_true(chilled.get_luminance() - molten.get_luminance() > 0.05,
+		"and by a margin a player can actually see")
+	pool.queue_free()
+
+	var spoon := desk.wax_spoon
+	_is_true(spoon != null, "the desk has a wax spoon")
+	if spoon == null:
+		return
+	var saved_temp := spoon.temperature
+	var saved_left := spoon.wax_remaining
+	spoon.wax_remaining = 1.0
+	for t in [0.0, 0.5, 1.0]:
+		spoon.temperature = t
+		_is_true(spoon.molten_colour().get_luminance()
+			< spoon.cake_colour().get_luminance(),
+			"the spoon's melt is darker than its solid cake at temperature %.1f" % t)
+	# Heating the reservoir must take it further toward clear, not toward white.
+	spoon.temperature = 0.0
+	var cold_melt := spoon.molten_colour().get_luminance()
+	spoon.temperature = 1.0
+	var hot_melt := spoon.molten_colour().get_luminance()
+	_is_true(hot_melt < cold_melt,
+		"heating the reservoir darkens it, because it is going clear")
+	spoon.temperature = saved_temp
+	spoon.wax_remaining = saved_left
 
 
 ## The shared material helper. Nothing is migrated onto it yet, so these are
