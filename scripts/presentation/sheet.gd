@@ -211,7 +211,48 @@ func is_backlit() -> bool:
 	return _backlit > 0.55
 
 
+## EACH PATCH LIGHTS ON ITS OWN.
+##
+## The first version sampled `light_level`, which the desk computes at the
+## sheet's CENTRE — so on a 430x585 charter you could hold the top edge in the
+## flame and reveal a scrape 290 units away at the foot. The fiction is that you
+## put the thin place in front of the light; the implementation was that you put
+## the sheet somewhere near it. Sampling each patch at its own position costs one
+## distance per erasure per frame and makes the gesture what it says it is: you
+## pass the parchment across the flame and the marks come up as they cross it.
+func _patch_light(patch_centre_local: Vector2) -> float:
+	if not is_held:
+		return 0.0
+	var flame := _flame()
+	if flame == null:
+		return light_level
+	return flame.illumination_at(to_global(patch_centre_local))
+
+
+var _flame_cache: Candle = null
+
+
+## Walk up for the desk rather than counting parents. A sheet lives three nodes
+## deep today (surface / work_plane / desk) and the projection work has already
+## moved that hierarchy once; a hardcoded chain of get_parent() calls is a silent
+## null the next time somebody inserts a layer.
+func _flame() -> Candle:
+	if _flame_cache != null and is_instance_valid(_flame_cache):
+		return _flame_cache
+	var node := get_parent()
+	while node != null:
+		var desk_node := node as Desk
+		if desk_node != null:
+			_flame_cache = desk_node.candle
+			return _flame_cache
+		node = node.get_parent()
+	return null
+
+
 func _tick_backlight(delta: float) -> void:
+	# The sheet-wide value still drives the once-per-case dialogue beat: the
+	# petitioner reacts to you holding their charter up to the light, not to
+	# which particular clause you happened to reach.
 	var want := 1.0 if (is_held and light_level >= BACKLIT_LEVEL) else 0.0
 	# Eased, and faster to rise than to fall, so bringing a sheet to the flame
 	# rewards immediately and taking it away lets you finish reading.
@@ -238,11 +279,15 @@ func _draw_erasures(r: Rect2) -> void:
 				Vector2(patch.end.x - 2.0, y),
 				Color(0.35, 0.30, 0.22, 0.05), 1.0)
 
-		if _backlit <= 0.01:
+		# AGAINST THE LIGHT: the thin place transmits. Sampled at the patch, so a
+		# long charter has to be passed across the flame rather than merely
+		# brought near it.
+		var here := clampf(
+			(_patch_light(patch.get_center()) - BACKLIT_LEVEL * 0.62)
+			/ maxf(0.01, 1.0 - BACKLIT_LEVEL * 0.62), 0.0, 1.0)
+		var glow := ease(minf(_backlit + 0.0, 1.0) * here, 0.5)
+		if glow <= 0.01:
 			continue
-
-		# AGAINST THE LIGHT: the thin place transmits.
-		var glow := ease(_backlit, 0.5)
 		for i in 3:
 			var g := float(3 - i) * 2.4
 			draw_rect(patch.grow(g),

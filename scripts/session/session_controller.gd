@@ -346,9 +346,18 @@ func _tick_knock() -> void:
 		# performing it, and it puts the "return to desk" caption on screen at
 		# the exact moment it becomes useful. It is not forced a second time —
 		# _on_case_work_engaged puts the head back down and it stays down.
-		if not _looked_up_for_case and desk.view != null:
-			_looked_up_for_case = true
-			desk.view.look_up()
+
+	# But NEVER out of somebody's hand. ViewController.look_up() calls
+	# desk.cancel_hand_for_view(), because the desk is not interactive from the
+	# audience plane — which is correct when the player chose to look up and
+	# hostile when the game chose for them. A notary carrying the candle across
+	# the desk does not fling it down because somebody knocked at a door he is
+	# not even looking at. Retried every frame until they let go, so a player who
+	# sets the candle down a moment after the knock still gets the lift.
+	if _knocked and not _looked_up_for_case and desk.view != null \
+			and not desk.hands_full():
+		_looked_up_for_case = true
+		desk.view.look_up()
 	if _timer > (KNOCK_DELAY + ENTER_DELAY) * _beat:
 		desk.open_door()
 		_door_closed = false
@@ -359,7 +368,7 @@ func _tick_knock() -> void:
 
 
 func _tick_entering() -> void:
-	if not _door_closed and _timer > SPEAK_DELAY * 0.5:
+	if not _door_closed and _timer > SPEAK_DELAY * 0.5 * _beat:
 		# The door shuts behind them while they are still crossing the room,
 		# which is what happens, rather than after they have finished walking.
 		_door_closed = true
@@ -367,7 +376,7 @@ func _tick_entering() -> void:
 	# Nobody starts talking mid-stride. Speech used to begin on a flat timer that
 	# could fire while the figure was still halfway across the floor, so the walk
 	# and the first line fought each other for the player's attention.
-	if _timer < SPEAK_DELAY or not desk.petitioner.has_arrived():
+	if _timer < SPEAK_DELAY * _beat or not desk.petitioner.has_arrived():
 		return
 	var lines := _current.lines_for(&"arrival", register)
 	var texts: Array[String] = []
@@ -409,7 +418,13 @@ func _tick_departing() -> void:
 	# of an eighteen-hundred-millisecond wait, so every case ended with a second
 	# of a motionless empty room before the next case's own silent knock delay.
 	# Now the beat is over when the two things that were moving have stopped.
-	if desk.petitioner.is_offstage() and _door_closed and _timer > DEPART_DELAY * _beat:
+	# The DOOR ITSELF, not the request to shut it. _door_closed goes true the
+	# instant close_door() is called and the leaf then takes most of a second to
+	# arrive, so gating on the flag started the next caller's knock while the last
+	# one's door was still swinging — the thud of it shutting landed on top of the
+	# next knock, and the rattle was applied to a leaf already in motion.
+	if desk.petitioner.is_offstage() and desk.door_is_settled() \
+			and _timer > DEPART_DELAY * _beat:
 		desk.petitioner.clear()
 		_advance_case()
 

@@ -728,6 +728,12 @@ func bring_to_front(d: Draggable) -> void:
 	_refresh_lens_subjects()
 
 
+## Is the player holding something? Anything the game does to the view on its own
+## initiative has to ask this first, because looking up drops what is in hand.
+func hands_full() -> bool:
+	return _held != null
+
+
 func cancel_hand_for_view() -> void:
 	if _held == null:
 		return
@@ -878,6 +884,15 @@ func close_door() -> void:
 	_door_target = 0.0
 	if _door != null:
 		_door.swing_to(0.0)
+	# Pulling it to has a start as well as an end. Opening had one and closing did
+	# not, so half the door's cycle began in silence.
+	Audio.play(&"door_latch", _door_world(), -6.0)
+
+
+## Is the leaf actually where it was told to go? Callers that sequence beats
+## around the door must ask this rather than assuming the request was the event.
+func door_is_settled() -> bool:
+	return _door == null or _door.is_settled()
 
 
 ## Somebody is on the other side. The leaf jumps against the latch and stays shut.

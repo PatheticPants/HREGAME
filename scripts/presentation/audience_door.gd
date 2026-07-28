@@ -29,8 +29,14 @@ const DOOR_SIZE := Vector2(390.0, 715.0)
 ## Heavy and slightly underdamped (zeta ~0.86), so the leaf overshoots by a hair
 ## and rocks back rather than stopping dead on the number. Deliberately slower
 ## than the view spring: a door has more mass than a head.
+## zeta = DAMPING / (2*sqrt(STIFFNESS)) = 0.61, which overshoots by about 9% and
+## puts the rock at a couple of visible pixels. The first version used 11.7 for
+## zeta = 0.86 — mathematically "slightly underdamped" and an overshoot of 0.47%,
+## which after clamping is a tenth of a pixel. The leaf arrived dead-stop on the
+## number, which is precisely the failure this spring exists to avoid. A comment
+## claiming a spring is not a spring.
 const HINGE_STIFFNESS := 46.0
-const HINGE_DAMPING := 11.7
+const HINGE_DAMPING := 8.3
 
 ## A shove has to overcome the pin before anything moves. Small, and entirely
 ## felt rather than seen, but it is the difference between a door being pushed
@@ -90,7 +96,12 @@ func advance(delta: float) -> void:
 
 	if _rattle > 0.0:
 		_rattle_phase += delta * 34.0
-		_rattle = maxf(0.0, _rattle - delta * 4.2)
+		# Exponential, not linear. A latch ringing down does not lose the same
+		# amount of amplitude every millisecond, and the linear version had a
+		# visible corner where it hit zero.
+		_rattle *= pow(0.012, delta)
+		if _rattle < 0.004:
+			_rattle = 0.0
 
 	if not _settled and absf(open_amount - target) < 0.004 and absf(velocity) < 0.06:
 		open_amount = target
@@ -108,6 +119,15 @@ func advance(delta: float) -> void:
 ## How fast the leaf is travelling, 0..1, for the creak.
 func swing_rate() -> float:
 	return clampf(absf(velocity) * 0.62, 0.0, 1.0)
+
+
+## Has it actually arrived? The session gates the beat between one caller and the
+## next on this rather than on "close was requested", because the request and the
+## arrival are most of a second apart and gating on the request meant the next
+## petitioner's knock landed on a leaf that was still swinging shut behind the
+## last one.
+func is_settled() -> bool:
+	return _settled
 
 
 func set_open_amount(value: float) -> void:
