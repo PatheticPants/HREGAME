@@ -143,6 +143,7 @@ func _run() -> void:
 	await _inspect_own_seal()
 	await _show_day_two()
 	await _the_knife()
+	await _candle_close()
 	await _write_on_tablet()
 	await _burn_series()
 
@@ -463,6 +464,47 @@ func _show_the_petitioner() -> void:
 	if view != null and view.has_method("look_down"):
 		view.look_down()
 	await _settle(80)
+
+
+## THE CANDLE, CLOSE, AT FIVE HOURS OF THE DAY.
+##
+## The wide burn series (11-14) shows what the ROOM does as the light goes. It
+## cannot show what the object does, because at the size the candle occupies in a
+## desk-wide frame it is about ninety pixels and any change to it is a handful of
+## them. Every judgement about whether the melt is satisfying has to be made here.
+func _candle_close() -> void:
+	var camera := _main.get_node("camera") as Camera2D
+	var view := _main.get_node_or_null("view_controller")
+	if view != null:
+		view.set_process(false)
+		view.set_process_input(false)
+	_desk.set_process(true)
+	await _move_candle(Vector2(60.0, 40.0))
+	camera.zoom = Vector2(4.0, 4.0)
+	camera.position = _desk.candle.global_position + Vector2(0, -14)
+
+	for step in [
+		{"burn": 0.00, "label": "36_candle_close_fresh"},
+		{"burn": 0.30, "label": "37_candle_close_third"},
+		{"burn": 0.62, "label": "38_candle_close_half"},
+		{"burn": 0.90, "label": "39_candle_close_low"},
+		{"burn": 0.99, "label": "40_candle_close_guttering"},
+	]:
+		_desk.candle.reset_day()
+		_desk.candle.burn = float(step["burn"])
+		await _settle(26)
+		await _shot(String(step["label"]))
+
+	_desk.candle.snuff()
+	await _settle(30)
+	await _shot("41_candle_close_out")
+	_desk.candle.reset_day()
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	if view != null:
+		view.set_process(true)
+		view.set_process_input(true)
+	await _settle(16)
 
 
 ## Scratch a note onto the tablet, the way a player would: drag the stylus

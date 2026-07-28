@@ -70,11 +70,41 @@ var burn := 0.0
 ## Below this much candle left, it starts to gutter in earnest.
 const GUTTERING_FROM := 0.86
 
+## THE STUB, IN THE AUTHORED PLATE'S OWN COORDINATES.
+##
+## art/props/candle_holder.png is a plan view: a hammered brass saucer with a
+## short candle standing in it, drawn with just enough cheat that you can see the
+## cylinder and its drips. That cheat is the style anchor, and the melt has to
+## extend it rather than paint over it — which is exactly what the first version
+## did. It flooded a jagged pale star across the whole stub and obliterated the
+## best-looking thing on the desk.
+const STUB := Vector2(-15.0, -14.0)
+const STUB_RADIUS := 17.0
+const SAUCER_RADIUS := 31.0
+
 var _time := 0.0
 var _flicker := 1.0
 var _flame_drift := Vector2.ZERO
 var _spent := false
 var _warned := false
+
+## Outlines generated once and then only scaled. Regenerating a wax silhouette
+## per frame makes it crawl, which reads as static rather than as wax — the same
+## rule WaxShape's own docstring states, and the candle was breaking it by
+## rebuilding a RandomNumberGenerator inside _draw.
+var _flood_shape: PackedVector2Array = PackedVector2Array()
+var _cup_shape: PackedVector2Array = PackedVector2Array()
+
+## A DRIP IS AN EVENT. A melt that is only a continuously interpolated parameter
+## has nothing to watch; it is a number wearing wax. A bead that swells on the
+## lip, hangs, breaks and runs gives the candle discrete beats — something
+## happens, at intervals, without the player doing anything, which is most of
+## what "atmosphere" means in a room where you are reading.
+var _bead_angle := 0.0
+var _bead := 0.0          ## 0 none, 0..1 swelling, 1..2 running
+var _next_drip := 9.0
+## Set runnels down the side of the stub: angle, length, thickness. They stay.
+var _runnels: Array[Vector3] = []
 var _engagement_pulse := 0.0
 var _engaged := false
 ## 1 while the day's clock is stopped. Damps the flicker bands and the flame's
@@ -115,6 +145,14 @@ func _ready() -> void:
 	# declared for exactly this and then never wired, so every day melted into a
 	# pixel-identical pool.
 	_wax_seed = randi()
+	# The same generator that makes the pendant seals and the poured pool. The
+	# candle's wax and the sealing wax should be the same substance, and until now
+	# the candle was drawing its own twenty-two-lobe polygon with per-lobe random
+	# radii — which at any size reads as a crumpled paper star rather than as
+	# something that flowed.
+	_flood_shape = WaxShape.outline(&"round", _wax_seed, 0.11, 34)
+	_cup_shape = WaxShape.outline(&"round", _wax_seed ^ 0x9e37, 0.07, 26)
+	_next_drip = randf_range(7.0, 15.0)
 	_low_noise.seed = randi()
 	_mid_noise.seed = randi()
 	_high_noise.seed = randi()
@@ -233,6 +271,13 @@ func reset_day() -> void:
 	_engagement_pulse = 0.0
 	_rested = 1.0
 	_rest_amount = 1.0
+	# A NEW CANDLE IS A NEW CANDLE. The runnels down the side are a whole day's
+	# history and they must not survive into Thursday morning; the second day is
+	# supposed to open with a fresh one in the dish.
+	_runnels.clear()
+	_bead = 0.0
+	_next_drip = randf_range(7.0, 15.0)
+	_time = 0.0
 
 
 ## How much of its original output survives. Deliberately not linear: a candle
@@ -282,8 +327,40 @@ func _process(delta: float) -> void:
 		-absf(mid) * 1.1 - gutter * 2.4 + high * 0.8) * live \
 		- Vector2(0.0, _engagement_pulse * 4.5)
 
+	_tick_drip(delta)
 	_update_light_nodes()
 	queue_redraw()
+
+
+## Beads form on the lip, hang, and go. More often as the cup widens and the wall
+## thins, which is also true of candles, and which means the object gets busier
+## as the day gets worse — the melt accelerates exactly when the player is most
+## aware of the clock.
+func _tick_drip(delta: float) -> void:
+	if _spent:
+		_bead = 0.0
+		return
+	if _bead > 0.0:
+		# Swelling is slow; the run is quick. A drip that falls at the same rate
+		# it grew is a slider, not a drip.
+		_bead += delta * (0.85 if _bead < 1.0 else 2.6)
+		if _bead >= 2.0:
+			_bead = 0.0
+			# It sets where it stopped, and it stays there for the rest of the day.
+			_runnels.append(Vector3(_bead_angle,
+				randf_range(0.55, 1.0), randf_range(2.6, 4.6)))
+			if _runnels.size() > 8:
+				_runnels.remove_at(0)
+			Audio.play(&"wax_drip", global_position, -18.0)
+		return
+	_next_drip -= delta * lerpf(0.6, 2.4, burn)
+	if _next_drip <= 0.0:
+		_next_drip = randf_range(6.0, 16.0)
+		# Down the side the flame is leaning away from, because that is the side
+		# whose wall the heat has thinned.
+		_bead_angle = atan2(_flame_drift.y, _flame_drift.x) + PI \
+			+ randf_range(-0.7, 0.7)
+		_bead = 0.001
 
 
 func _update_light_nodes() -> void:
@@ -342,8 +419,13 @@ func wick_local() -> Vector2:
 
 
 func flame_local() -> Vector2:
-	# The wick settles into the pool as the column beneath it goes.
-	return WICK + _flame_drift + Vector2(0.0, burn * 3.5)
+	# THE FLAME DESCENDS. In plan view a shortening candle cannot show its column,
+	# but the light source still physically drops toward the desk — and that is
+	# readable, because every shadow in the room is cast from this point. It used
+	# to sink three and a half units over a whole working day, which is nothing.
+	# Sixteen is a visible slump, and it makes the late-day light feel like it is
+	# coming from inside a dish rather than from above one.
+	return WICK + _flame_drift + Vector2(0.0, ease(burn, 0.85) * 16.0)
 
 
 func flame_world() -> Vector2:
@@ -426,55 +508,166 @@ func _draw() -> void:
 		_draw_dead_wick()
 
 
-## Seen from directly above, a candle burning down does not get shorter — it
-## drowns. Wax floods out around the stub and creeps across the saucer, and the
-## bright ring of the collar widens as the column inside it sinks. That, plus a
-## light that keeps pulling in, is the whole read.
+## WHAT A CANDLE DOES, SEEN FROM ABOVE.
+##
+## It cannot show a shortening column, so it has to show the two things that are
+## actually visible in plan: the CUP of molten wax at the top opening wider and
+## wider until the whole face of the stub is liquid, and the set flood creeping
+## out across the saucer beneath it.
+##
+## The version this replaces did neither. It drew one jagged twenty-two-sided
+## star in a flat cream that was lighter than the brass — so it read as crumpled
+## paper — and it drew that star over the entire stub, wiping out the authored
+## art at every burn level past about a third. Three straight thick lines stood
+## in for runs and looked like sticking plasters. Nothing was translucent,
+## nothing was glossy, and nothing moved.
+##
+## Wax is worth this much code because the whole game is wax.
 func _draw_spent_wax() -> void:
-	if burn <= 0.01:
-		return
-	var rng := RandomNumberGenerator.new()
-	rng.seed = _wax_seed
-	var centre := WICK + Vector2(1.0, 4.0)
 	var grow := ease(clampf(burn, 0.0, 1.0), 0.72)
-	var pale := Color(0.90, 0.85, 0.71)
-	var warm := clampf(light_level + 0.35, 0.35, 1.15)
-	pale = pale.lerp(Color(1.0, 0.86, 0.62), 0.30 * warm)
+	var lit := clampf(0.55 + _flicker * 0.45, 0.0, 1.2)
 
-	# Irregular flood, generated once from a fixed seed so it does not crawl.
-	var points := PackedVector2Array()
-	var lobes := 22
-	for i in lobes:
-		var a := float(i) / float(lobes) * TAU
-		var r := lerpf(13.0, 33.0, grow) * (0.86 + rng.randf() * 0.28)
-		points.append(centre + Vector2(cos(a) * r, sin(a) * r * 0.82))
-	draw_colored_polygon(points, Color(pale.darkened(0.30), 0.92))
-	var inner := PackedVector2Array()
-	for i in points.size():
-		inner.append(centre + (points[i] - centre) * 0.84)
-	draw_colored_polygon(inner, Color(pale, 0.95))
+	# Set wax is warm and OPAQUE and sits below the brass in value. Molten wax is
+	# brighter, more saturated and slightly transparent, because light is coming
+	# through it from the flame directly above.
+	# MOLTEN WAX IS DARKER THAN SET WAX. Set wax is pale because it is full of
+	# microcrystals that scatter light; melted, it goes clear and you see the
+	# shadowed bottom of the cup through it. Drawing the liquid brighter than the
+	# solid — which is the intuitive way round and the way this first went — makes
+	# the whole candle read as a poached egg, and it is why the object looked
+	# flat: there was no dark anywhere on it.
+	var set_wax := Color(0.80, 0.72, 0.55).lerp(Color(0.98, 0.84, 0.60),
+		0.30 + 0.18 * _flicker)
+	var molten := Color(0.62, 0.40, 0.17)
 
-	# Runs that have set solid over the rim of the dish.
-	if grow > 0.45:
-		for i in 3:
-			var a := 0.7 + float(i) * 2.1
-			var from := centre + Vector2(cos(a), sin(a) * 0.8) * 26.0
-			var to := centre + Vector2(cos(a), sin(a) * 0.8) * lerpf(26.0, 44.0, grow)
-			draw_line(from, to, Color(pale.darkened(0.12), 0.85),
-				lerpf(3.0, 6.5, grow))
+	if burn > 0.02:
+		_draw_flood(grow, set_wax)
+	_draw_runnels(set_wax)
+	_draw_cup(grow, set_wax, molten, lit)
+	if _bead > 0.0:
+		_draw_bead(set_wax, molten)
 
-	# The collar the wick sits in, widening as the column sinks into it.
-	draw_circle(centre + Vector2(-1, -2), lerpf(7.0, 12.0, grow),
-		Color(pale.darkened(0.42), 0.9))
+
+## The spilt wax in the dish. Low, wide, and set: this is the part that has
+## already cooled, so it gets no gloss and no glow.
+func _draw_flood(grow: float, set_wax: Color) -> void:
+	var centre := STUB + Vector2(1.0, 5.0)
+	# Stays inside the saucer. The brass is authored art and the best-looking
+	# surface on the desk; the flood is supposed to gather in it, not bury it.
+	var r := lerpf(15.0, 26.0, grow)
+	# Squashed, because the saucer is seen at the same shallow angle the stub is.
+	draw_colored_polygon(
+		WaxShape.scaled(_flood_shape, centre + Vector2(0.8, 1.6), r * 1.05, 0.80),
+		Color(0.16, 0.11, 0.06, 0.34))
+	draw_colored_polygon(WaxShape.scaled(_flood_shape, centre, r, 0.80),
+		set_wax.darkened(0.26))
+	draw_colored_polygon(WaxShape.scaled(_flood_shape, centre + Vector2(-0.6, -1.2),
+		r * 0.90, 0.80), set_wax)
+	# Surface tension leaves a raised lip all the way round, and the lip is the
+	# only part of a set pool that catches anything.
+	var lip := WaxShape.scaled(_flood_shape, centre + Vector2(-0.9, -1.8),
+		r * 0.90, 0.80)
+	lip.append(lip[0])
+	draw_polyline(lip, Color(set_wax.lightened(0.30), 0.40), 1.4, true)
+
+
+## Beads that have already run and set. They stay for the rest of the day, so by
+## evening the stub has a history down one side of it.
+func _draw_runnels(set_wax: Color) -> void:
+	for run in _runnels:
+		var dir := Vector2(cos(run.x), sin(run.x) * 0.72)
+		var from := STUB + dir * STUB_RADIUS * 0.72
+		var to := STUB + dir * (STUB_RADIUS * 0.72 + run.y * 13.0)
+		draw_line(from, to, set_wax.darkened(0.34), run.z + 1.4, true)
+		draw_line(from, to, set_wax, run.z * 0.62, true)
+		# The blunt end where it stopped and set.
+		draw_circle(to, run.z * 0.60, set_wax.darkened(0.10))
+		draw_circle(to + Vector2(-0.6, -0.8), run.z * 0.34,
+			set_wax.lightened(0.22))
+
+
+## THE CUP. The one thing a plan view can show properly, and the cue that says
+## this candle is burning right now rather than merely standing there.
+##
+## It opens around the wick and widens all day until the whole face of the stub
+## is liquid. Under the flame the wax is thin enough to transmit, so the middle
+## of the cup glows from inside rather than being lit from outside — which is the
+## single most characteristic thing about a lit candle and was entirely absent.
+func _draw_cup(grow: float, set_wax: Color, molten: Color, lit: float) -> void:
+	var wick := WICK + Vector2(0.0, ease(burn, 0.85) * 16.0)
+	# Never the whole stub. A wall of set wax survives all day — that wall IS the
+	# candle, and a cup that eats it entirely by mid-afternoon leaves nothing to
+	# read the hour against.
+	var r := lerpf(4.0, STUB_RADIUS * 0.74, grow)
+	if _spent:
+		# Cold. It skins over and goes matte within a minute of the wick dying.
+		draw_colored_polygon(WaxShape.scaled(_cup_shape, wick, r, 0.78),
+			set_wax.darkened(0.16))
+		draw_colored_polygon(WaxShape.scaled(_cup_shape, wick + Vector2(0, -0.8),
+			r * 0.84, 0.78), set_wax.darkened(0.04))
+		return
+
+	# The lip: wax that has climbed the wall, gone pale again and stayed there.
+	# It is the brightest thing on the stub, which is what makes the liquid inside
+	# read as a hollow rather than as a lump.
+	draw_colored_polygon(WaxShape.scaled(_cup_shape, wick, r * 1.16, 0.78),
+		set_wax.lightened(0.10))
+	# The wall dropping away into the cup. One dark ring does more for depth here
+	# than any amount of gradient inside the pool.
+	draw_colored_polygon(WaxShape.scaled(_cup_shape, wick + Vector2(0, 0.5),
+		r * 1.02, 0.78), set_wax.darkened(0.48))
+	# The liquid: clear, so you are looking at the shaded bottom of the cup.
+	draw_colored_polygon(WaxShape.scaled(_cup_shape, wick, r, 0.78),
+		Color(molten.darkened(0.22), 0.95))
+	draw_colored_polygon(WaxShape.scaled(_cup_shape, wick + Vector2(0, -0.5),
+		r * 0.80, 0.78), molten)
+	# TRANSMITTED LIGHT, and only at the very middle. Wax glows where it is thin
+	# and directly under the flame, not across a whole dish.
+	draw_circle(wick + Vector2(0, 0.8), r * 0.42,
+		Color(1.0, 0.62, 0.22, 0.22 * lit))
+	draw_circle(wick + Vector2(0, 0.6), r * 0.24,
+		Color(1.0, 0.82, 0.44, 0.30 * lit))
+	# One small moving specular, opposite the way the flame is leaning. A liquid
+	# surface that does not move its highlight is a painted one.
+	var gloss := wick - _flame_drift.normalized() * r * 0.42 \
+		if _flame_drift.length() > 0.01 else wick + Vector2(-r * 0.35, -r * 0.35)
+	draw_circle(gloss, maxf(0.8, r * 0.13),
+		Color(1.0, 0.94, 0.76, 0.42 + 0.24 * _flicker))
+
+
+## A drip in progress: it swells on the lip, hangs heavy, then goes.
+func _draw_bead(set_wax: Color, molten: Color) -> void:
+	var dir := Vector2(cos(_bead_angle), sin(_bead_angle) * 0.72)
+	var swell := minf(_bead, 1.0)
+	var run := clampf(_bead - 1.0, 0.0, 1.0)
+	var at := STUB + dir * (STUB_RADIUS * 0.72 + run * 13.0)
+	# Heavier as it hangs, then stretched by the fall.
+	var size := lerpf(1.2, 4.2, ease(swell, 0.6)) * lerpf(1.0, 0.72, run)
+	draw_circle(at + Vector2(0.6, 1.0), size * 1.05, Color(0.14, 0.09, 0.05, 0.30))
+	draw_circle(at, size, molten.lerp(set_wax, run * 0.7))
+	draw_circle(at + Vector2(-0.5, -0.7), size * 0.42,
+		Color(1.0, 0.93, 0.74, 0.55 * (1.0 - run * 0.6)))
+	if run > 0.02:
+		# The thread it leaves behind, thinning as it goes.
+		var from := STUB + dir * STUB_RADIUS * 0.72
+		draw_line(from, at, Color(molten.lerp(set_wax, 0.4),
+			0.70 * (1.0 - run * 0.5)), maxf(0.8, size * 0.42), true)
 
 
 ## When it goes out there is still something to look at: a black wick, a thread
 ## of smoke, and a saucer full of set wax.
 func _draw_dead_wick() -> void:
 	var flame := flame_local()
-	draw_line(flame + Vector2(0, 4), flame + Vector2(0, -5),
-		Color(0.09, 0.07, 0.06), 2.4)
-	draw_circle(flame + Vector2(0, -5), 1.8, Color(0.06, 0.05, 0.05))
+	# The same drowned, hooked, soot-headed wick that was burning a second ago —
+	# not a fresh upright thread. Death should not tidy it up.
+	_draw_wick(flame)
+	# A last ember at the tip, cooling over a few seconds. This is the one moment
+	# in the day when the room has no light of its own, and watching the very last
+	# of it go out is worth three draw calls.
+	var ember := clampf(1.0 - _time * 0.35, 0.0, 1.0)
+	if ember > 0.01:
+		draw_circle(flame + Vector2(0, -5), 1.4 + ember,
+			Color(1.0, 0.42, 0.12, 0.55 * ember))
 	# Smoke, drifting and thinning. Stops entirely after a while.
 	var since := clampf(_time * 0.12, 0.0, 1.0)
 	for i in 5:
@@ -485,8 +678,34 @@ func _draw_dead_wick() -> void:
 			Color(0.62, 0.60, 0.58, 0.10 * (1.0 - t) * (1.0 - since)))
 
 
+## The wick, which is the part of a candle that visibly ages.
+##
+## Fresh it is a short pale thread. By the middle of the day it has charred back
+## to a black stalk; by the end it is long, bent over into the cup, and carrying
+## a mushroom of soot that makes the flame gutter — which is the physical reason
+## the last hour is unsteady, and it was previously asserted only by a noise
+## curve. Drawn under the flame, so the flame's own glare eats most of it and
+## what survives reads as a dark core.
+func _draw_wick(flame: Vector2) -> void:
+	var age := clampf(burn, 0.0, 1.0)
+	var base := flame + Vector2(0.0, 3.2)
+	# It leans the way the flame leans, and further as it lengthens.
+	var lean := _flame_drift.x * 0.22 + age * 2.6
+	var tip := base + Vector2(lean, -lerpf(3.0, 7.5, age))
+	var char_col := Color(0.10, 0.075, 0.06).lerp(Color(0.05, 0.04, 0.04), age)
+	draw_line(base, tip, char_col, lerpf(1.6, 2.4, age), true)
+	if age > 0.45:
+		# The hook. A long wick falls over into its own cup.
+		var hook := tip + Vector2(lean * 1.5 + 2.2 * age, 1.1 * age)
+		draw_line(tip, hook, char_col, lerpf(1.4, 2.2, age), true)
+		# The mushroom: unburnt carbon, and the reason it guts.
+		draw_circle(hook, lerpf(0.4, 1.9, (age - 0.45) / 0.55),
+			Color(0.07, 0.055, 0.05))
+
+
 func _draw_flame() -> void:
 	var flame := flame_local()
+	_draw_wick(flame)
 	var lean := _flame_drift - Vector2(0, absf(_flame_drift.y) * 0.35)
 	# A wick sitting in a pool of its own wax carries a smaller, meaner flame.
 	var pulse := lerpf(0.84, 1.10, _flicker) * lerpf(0.58, 1.0, _output())
