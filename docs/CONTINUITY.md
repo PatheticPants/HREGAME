@@ -29,7 +29,7 @@ python tools/verify_content.py
 | suite | checks |
 |---|---|
 | rules | 81 |
-| presentation | 172 |
+| presentation | 173 |
 | the day (full loop) | 73 |
 | content + encoding | PASS |
 
@@ -257,10 +257,13 @@ path, the dead air between cases and the unreadable ring stand were all found.
 These are recorded so the next person does not think they are undiscovered.
 
 - **`Draggable._process` redraws unconditionally every frame**, twice per object,
-  with no dirty flag — as does `Desk`, `WaxPool` (four child CanvasItems) and
-  `ReferenceBook` (which regenerates a seeded wax outline per frame per open
-  plate). Nothing renders slowly today. It is the first thing to fix if anything
-  ever does, and it is a hard blocker on attaching per-object materials.
+  with no dirty flag, as do `Desk` and `WaxPool`. **Measured 2026-07-28: 5.9 ms a
+  frame with 19 objects and both books open, about 169 fps.** So this is not a
+  problem and the previous note calling it a blocker was speculation. Re-measure
+  before and after any materials work; fix it if the number passes ~10 ms.
+  `ReferenceBook`'s half of this — a seeded wax outline rebuilt per frame per open
+  plate — WAS real and is fixed: `WaxShape.outline` is memoised and the
+  presentation suite asserts the memo holds.
 - **Favour is stored and inert.** `Register.favor_totals()` is written and never
   called. It is the least systemic of the three columns and the most obvious
   place to spend the next campaign-scale effort.

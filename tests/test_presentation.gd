@@ -728,6 +728,22 @@ func _test_press(desk: Desk) -> void:
 	# the day: slide a docket across it and the seal stayed on top, while the
 	# spoon that poured it slid underneath. The whole desk is built on "draw order
 	# is child order in surface, full stop", and this was the one object exempt.
+	# NOTHING REBUILDS A WAX OUTLINE WHILE IT IS BEING LOOKED AT.
+	#
+	# An outline is a pure function of its arguments and immutable once built —
+	# WaxShape's own docstring says so — but the reference book's matrix and
+	# polity plates were calling it from inside _draw, so every open book rebuilt
+	# a seeded polygon plus two smoothing passes every frame for as long as it
+	# stayed open. Memoised now; this asserts the memo actually holds, because a
+	# cache that silently misses is the same cost with more code.
+	var plate_seed := hash("regression_plate")
+	WaxShape.outline(&"round", plate_seed, 0.03, 26)
+	var builds_before := WaxShape.builds
+	for i in 30:
+		WaxShape.outline(&"round", plate_seed, 0.03, 26)
+	_is_true(WaxShape.builds == builds_before,
+		"asking for the same wax outline thirty times builds it none")
+
 	_is_true(pool.z_index == 0,
 		"the poured wax takes no z of its own, so the pile can cover it")
 	var over := desk.case_papers[0]

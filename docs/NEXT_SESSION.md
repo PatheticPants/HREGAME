@@ -32,7 +32,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 81, presentation 172, session 73, content PASS**. Run the rules
+Green is **rules 81, presentation 173, session 73, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 
@@ -77,29 +77,39 @@ capture before theorising.
 Review it, disagree with it, expand it. It is ordered so that each phase makes
 the next one cheaper — do not reorder without a reason.
 
-### Phase 0 — Make the pass affordable (half a day)
+### Phase 0 — MEASURED. Mostly already done. (an hour)
 
-**Nothing here is visible. Everything after it depends on it.**
+**Do not spend a day here. The previous session's brief called this a blocker and
+then measured it, and it was not.**
 
-`Draggable._process` calls `queue_redraw()` unconditionally, twice per object,
-every frame, with no dirty flag. So do `Desk`, `WaxPool` (four child CanvasItems)
-and `ReferenceBook`, which regenerates a seeded wax outline per frame per open
-plate. About twenty idle objects redraw twice a frame for the whole session.
+A throwaway probe with 19 draggables on the desk and both reference books open,
+at 1600x900, reported **5.9 ms/frame — about 169 fps**. There is no performance
+problem today.
 
-Attaching per-object materials or shaders on top of that is where this finally
-runs slowly, so it is a **precondition, not a nicety**.
+What was genuinely wrong is fixed: `WaxShape.outline()` was being called from
+inside `_draw` by the reference book's matrix and polity plates, so an open book
+rebuilt a seeded polygon plus two smoothing passes every frame for as long as it
+stayed open. It is memoised now, the probe reports 3 outline builds for a whole
+session, and `test_presentation` asserts the memo holds.
 
-- Add a dirty-flag pattern to `Draggable._process` before `queue_redraw()` —
-  `desk_ledge.gd` already has the shape to copy. Skip when not held, not hovered,
-  stowed and settled, and position/rotation/scale unchanged.
-- Gate `WaxPool`'s four redraws behind "is anything still animating".
-- Cache `WaxShape.outline()` per matrix/polity id; it runs per frame per open
-  plate today.
-- Cache `Candle._draw_spent_wax`'s generated shapes — **already done**, use it as
-  the reference for the others.
+What is left is **speculative**: `Draggable._process` calls `queue_redraw()`
+unconditionally, twice per object, every frame, with no dirty flag, and so do
+`Desk`, `WaxPool` and `ReferenceBook`. At this object count it costs nothing
+measurable.
 
-Verify with a frame-time print, not by eye. Commit separately, because it should
-change nothing visually and if it does you want the bisect.
+So your actual Phase 0 is:
+
+1. **Re-run the probe and write the number down.** It is about twenty lines —
+   instantiate `main.tscn`, open both books, time 240 frames, print the average.
+   Delete it afterwards; `tmp_*` is gitignored.
+2. **Grep `_draw` and `_process` for allocation** — `RandomNumberGenerator.new()`,
+   array building, polygon generation, `%`-formatting. Those are real waste
+   regardless of frame time. `Candle` and `WaxShape` are the reference for how to
+   cache them.
+3. **Leave the dirty flag alone** unless the number says otherwise.
+
+Then measure again after Phase 1. **If a materials pass pushes it past about
+10 ms, fix the dirty flag then** — `desk_ledge.gd` has the pattern. Not before.
 
 ### Phase 1 — Give the game a material vocabulary (1–2 days)
 

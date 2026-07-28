@@ -9,8 +9,44 @@ extends RefCounted
 ## reads as static, not as wax. This is the single most important thing about the
 ## wax rendering and it is easy to get wrong by putting randf() in _draw.
 
+## Every outline ever asked for, keyed by its arguments.
+##
+## An outline is a pure function of (shape, seed, jitter, count) and is immutable
+## once built — the docstring above already insists it must be generated once and
+## then only scaled. Most callers honour that by building theirs in `setup` or
+## `_ready`. The two that did not were the reference book's matrix and polity
+## plates, which rebuilt one from scratch inside `_draw`: a RandomNumberGenerator,
+## a PackedVector2Array, and two smoothing passes that each allocate a fresh
+## array, every frame, for every open plate, for as long as a book is open. Which
+## is most of a working day.
+##
+## Memoising it here rather than at those two call sites means the next person to
+## draw a wax silhouette gets it right without knowing this happened. The key
+## space is bounded by the content — one per matrix, polity, seal and pour — so
+## this is a few dozen entries and never grows with time.
+static var _cache: Dictionary = {}
+
+
+## How many outlines have been built rather than served from the cache. Read by
+## the presentation suite, which asserts that opening a book twice does not build
+## the same plate twice.
+static var builds := 0
+
+
 ## Unit-radius outline. Multiply by the current radius to draw.
 static func outline(shape: StringName, rng_seed: int, jitter: float,
+		count: int) -> PackedVector2Array:
+	var key := "%s|%d|%.4f|%d" % [shape, rng_seed, jitter, count]
+	var hit = _cache.get(key)
+	if hit != null:
+		return hit
+	var built := _build(shape, rng_seed, jitter, count)
+	_cache[key] = built
+	builds += 1
+	return built
+
+
+static func _build(shape: StringName, rng_seed: int, jitter: float,
 		count: int) -> PackedVector2Array:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = rng_seed

@@ -187,24 +187,36 @@ slides and lands. The door shoves, swings, arrives and rocks.
 
 ---
 
-## 6. Performance, which is now a blocker
+## 6. Performance — measured, not assumed
 
-`Draggable._process` calls `queue_redraw()` **unconditionally, twice per object,
-every frame**, with no dirty flag. So do `Desk`, `WaxPool` (four child
-CanvasItems) and `ReferenceBook` (which regenerates a seeded wax outline per
-frame per open plate).
+**Measured 2026-07-28: 5.9 ms/frame at 1600x900 with 19 draggables on the desk
+and both reference books open. About 169 fps.** There is no performance problem
+today, and the previous version of this section claiming the redraw pattern was a
+"blocker" was speculation. It is written down here so the next person does not
+inherit the assumption.
 
-Nothing renders slowly today. It is the first thing to fix if anything ever does,
-and it is a **hard precondition for per-object materials or shaders** — attaching
-either on top of ~20 idle objects redrawing twice a frame is where this finally
-gets slow.
+What *was* real and is now fixed: `WaxShape.outline()` was being called from
+inside `_draw` by the reference book's matrix and polity plates, so an open book
+rebuilt a seeded polygon plus two smoothing passes every frame. It is memoised
+now — the same probe reports 3 outline builds for a whole session, and the
+presentation suite asserts the memo holds.
+
+What remains, and is **speculative until somebody measures it**:
+`Draggable._process` calls `queue_redraw()` unconditionally, twice per object,
+every frame, with no dirty flag. So do `Desk`, `WaxPool` (four child CanvasItems)
+and `ReferenceBook`. At 19 objects this costs nothing measurable. It would start
+to matter if the object count roughly doubled, or if per-object materials made
+each `_draw` substantially more expensive.
+
+**So: re-run the probe before optimising, and again after.** The number to beat is
+5.9 ms. If a materials pass pushes it past about 10 ms, fix the dirty flag then —
+`desk_ledge.gd` has the pattern to copy. Do not spend a day on it in advance of a
+number.
 
 The project has **zero `.gdshader` files and zero `CanvasItemMaterial`s.**
 `gl_compatibility` supports canvas shaders; a single cheap one for parchment
 translucency or wax subsurface would replace a lot of banded-rect faking. Confirm
 the available feature set with `godot-reviewer` before committing to it.
-
----
 
 ## 7. The workflow that works
 
