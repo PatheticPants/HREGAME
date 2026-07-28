@@ -131,9 +131,14 @@ that is wrong in both places.
 
 ## What is actually built
 
-Three days is not built. Two are: Tuesday (fixed order, three matters) and
-Thursday (a tray you choose from). Seven cases plus one, and the campaign seams
-in `data/days/*.json` mean a third day is data rather than a session change.
+A third day is not built. Two are: Tuesday (fixed order, four matters) and
+Thursday (a tray you choose from, four of five slots used). Eight cases, and the
+campaign seams in `data/days/*.json` mean a third day is data rather than a
+session change.
+
+A portrait constrains scheduling: Reimbold Zant reuses Gero Kalt's bust because
+no new art exists, so the two of them cannot be heard on the same day. That is
+why the knife is a Tuesday matter.
 
 Checks that fire on shipped content: `ErasureCheck`, `SealCheck`, `DateCheck`,
 `WitnessCheck`, `AuthorityCheck`, `PrecedentCheck`. Still unwritten:
