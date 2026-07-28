@@ -502,6 +502,57 @@ func _test_candle_light(desk: Desk) -> void:
 		"the flame leans the way the draught is blowing")
 	desk.candle._flame_drift = saved_drift
 
+	# YOU GET THE THING YOU CAN SEE.
+	#
+	# _pick walked child order alone, but the renderer sorts by z_index FIRST.
+	# The lens is z_index = 2 permanently, so it always draws on top — and the
+	# moment any sheet was picked up (which moves it to the end of the child
+	# list) a click on the lens returned that sheet instead. The player grabbed a
+	# charter out from under a magnifying glass they were looking straight at.
+	var glass := desk.lens
+	var paper := desk.current_charter
+	if glass != null and paper != null:
+		var glass_home := glass.position
+		var paper_home := paper.position
+		var spot := Vector2(120.0, 60.0)
+		glass.solver.place(spot, 0.0)
+		glass.position = spot
+		paper.solver.place(spot, 0.0)
+		paper.position = spot
+		# The sheet last, exactly as picking it up would leave it.
+		desk.bring_to_front(glass)
+		desk.bring_to_front(paper)
+		_is_true(glass.z_index > paper.z_index,
+			"the lens draws above the sheet it is over")
+		# The Ledger sits in `surface` all day with visible = false, z_index 6 and
+		# the biggest hit box on the desk. It answered clicks meant for anything
+		# earlier in child order — the lens, the rings, the spoon, the candle.
+		_is_true(not desk.ledger.visible
+			and not desk.ledger.contains_point(desk.surface.to_global(spot)),
+			"an invisible ledger does not answer clicks meant for the desk")
+		_is_true(desk._pick(spot) == glass,
+			"and a click there picks the lens, not the sheet under it")
+		# Within one z level the rule is unchanged: last touched wins.
+		desk.bring_to_front(paper)
+		var docket: Draggable = null
+		for p in desk.case_papers:
+			if p is DocketView:
+				docket = p
+		if docket != null:
+			docket.solver.place(spot, 0.0)
+			docket.position = spot
+			desk.bring_to_front(docket)
+			_is_true(desk._pick(spot) == glass,
+				"the lens still wins over anything at the ordinary level")
+			glass.solver.place(glass_home, 0.0)
+			glass.position = glass_home
+			_is_true(desk._pick(spot) == docket,
+				"and with the lens moved away, the last thing touched wins")
+		glass.solver.place(glass_home, 0.0)
+		glass.position = glass_home
+		paper.solver.place(paper_home, 0.0)
+		paper.position = paper_home
+
 	# THE DOOR TAKES THE CANDLE TOO.
 	#
 	# It was the one large object in the room that read none of the three

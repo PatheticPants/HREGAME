@@ -243,7 +243,15 @@ func drop() -> void:
 ## outright. Digging a buried charter out of a pile is a mechanic here; it cannot
 ## be at the mercy of another subsystem's sort order.
 func contains_point(world: Vector2) -> bool:
-	if not draggable_enabled:
+	# AN OBJECT YOU CANNOT SEE CANNOT BE CLICKED.
+	#
+	# The Ledger lives in `surface` from construction with visible = false for
+	# the whole working day, carries z_index = 6, and has the largest hit
+	# rectangle on the desk. It sat later in child order than the lens, the
+	# rings, the spoon and the candle — so a click anywhere in the middle of the
+	# desk that hit one of those was answered by an invisible book, and the
+	# player picked up nothing they could see.
+	if not visible or not draggable_enabled:
 		return false
 	return Rect2(-hit_size * 0.5, hit_size).has_point(to_local(world))
 

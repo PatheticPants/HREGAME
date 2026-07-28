@@ -723,14 +723,36 @@ func _click_empty() -> void:
 	petitioner.on_click()
 
 
-## Topmost first. The list is the truth about what is on top of what.
+## Topmost first, and topmost means WHAT THE PLAYER CAN SEE.
+##
+## Child order is the truth about what is on top of what — except where a
+## CanvasItem carries a higher z_index, because Godot draws every higher-z
+## sibling above every lower-z one whatever the tree says. This walked child
+## order alone, so the two could and did disagree: the lens sets z_index = 2
+## permanently, under a comment calling it "the one object that is always on
+## top", and it IS always on top visually — but the moment any sheet was picked
+## up and moved to the end of the child list, clicking the lens returned that
+## sheet instead. The player grabbed a charter out from under a magnifying glass
+## they were looking straight at.
+##
+## Sorting the hit test by the same key the renderer sorts by costs one pass over
+## a list of twenty and makes the two agree by construction. This does NOT
+## relax the desk's stacking rule — child order still decides everything within
+## a z level, which is every ordinary object on the desk.
 func _pick(point: Vector2) -> Draggable:
 	var world := surface.to_global(point)
-	for i in range(surface.get_child_count() - 1, -1, -1):
+	var best: Draggable = null
+	var best_z := -(1 << 30)
+	for i in surface.get_child_count():
 		var d := surface.get_child(i) as Draggable
-		if d != null and d.contains_point(world):
-			return d
-	return null
+		if d == null or not d.contains_point(world):
+			continue
+		# Later child wins at equal z, which preserves "what did the player
+		# touch last" exactly as before.
+		if d.z_index >= best_z:
+			best_z = d.z_index
+			best = d
+	return best
 
 
 func bring_to_front(d: Draggable) -> void:
