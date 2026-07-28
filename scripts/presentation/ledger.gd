@@ -34,7 +34,30 @@ var next_day_label := "NEXT DAY"
 
 var _pages: Array[Array] = []
 var _last_scratch := -1
-var _arrived := 0.0
+
+## THE ARRIVAL, AS A FALL RATHER THAN AS A TIMER.
+##
+## This used to be one linear ramp read through ease(), and the thud was played
+## by open_with() — on the frame the ledger was PLACED, while it was still forty
+## pixels in the air with four tenths of a second of travel left. So the heaviest
+## object in the game announced itself landing while it was still falling, which
+## is precisely the "the event is the arrival, not the request" bug that had
+## already been found and fixed twice on the door.
+##
+## Height above the desk in pixels, and the velocity carrying it there. A book
+## this size lands, bounces once, and stops.
+var _lift := 0.0
+var _lift_vel := 0.0
+var _bounces := 0
+var _landed := false
+## Decaying compression pulse at each landing, so the boards visibly take the hit.
+var _impact := 0.0
+
+const FALL_ACCEL := 620.0
+const DROP_HEIGHT := 46.0
+## Below this the remaining bounce is not worth a frame, let alone a sound.
+const BOUNCE_FLOOR := 40.0
+const BOUNCE_RESTITUTION := 0.24
 
 
 func _ready() -> void:
@@ -54,12 +77,17 @@ func open_with(new_lines: Array[Dictionary], desk_bounds: Rect2, at: Vector2) ->
 	revealed = 0.0
 	spread = 0
 	_last_scratch = -1
-	_arrived = 0.0
 	_paginate()
 	visible = true
 	setup(at, deg_to_rad(randf_range(-1.5, 1.5)), desk_bounds)
-	Audio.play(&"ledger_thud", at)
-	Audio.play(&"book_open", at)
+	# Dropped, not placed. Per-arrival variance so the end of the second day does
+	# not land on exactly the same frame as the end of the first.
+	_lift = DROP_HEIGHT + randf_range(-5.0, 5.0)
+	_lift_vel = randf_range(0.0, 30.0)
+	_bounces = 0
+	_landed = false
+	_impact = 0.0
+	# NO SOUND HERE. It has not arrived yet. See _land().
 
 
 func total_lines() -> int:
@@ -104,7 +132,14 @@ func _process(delta: float) -> void:
 	super._process(delta)
 	if not visible:
 		return
-	_arrived = move_toward(_arrived, 1.0, delta * 2.2)
+	_update_fall(delta)
+	_impact = maxf(0.0, _impact - delta * 4.6)
+	# The clerk does not start writing while the book is still in the air. The
+	# reveal used to begin on the frame the ledger was placed, so the first two
+	# lines were scratched out mid-drop.
+	if not _landed:
+		queue_redraw()
+		return
 	if revealed < float(lines.size()):
 		revealed = minf(float(lines.size()), revealed + delta * reveal_rate)
 		var whole := int(revealed)
@@ -117,6 +152,50 @@ func _process(delta: float) -> void:
 				if kind == "text" or kind == "heading" or kind == "note":
 					Audio.play(&"quill_scratch", global_position, -4.0)
 	queue_redraw()
+
+
+## Fall, land, bounce once, settle. Four phases with the end as an EVENT, which
+## is the whole of the animation rule and was the whole of what this was missing.
+func _update_fall(delta: float) -> void:
+	if _landed and _lift <= 0.0 and is_zero_approx(_lift_vel):
+		return
+	_lift_vel += FALL_ACCEL * delta
+	_lift -= _lift_vel * delta
+	if _lift > 0.0:
+		return
+	_lift = 0.0
+	if _lift_vel > BOUNCE_FLOOR and _bounces < 2:
+		_land()
+		_bounces += 1
+		_lift_vel = -_lift_vel * BOUNCE_RESTITUTION
+		_lift = 0.001
+		return
+	if not _landed:
+		_land()
+	_lift_vel = 0.0
+
+
+## Arrival. The sound belongs here and nowhere else.
+func _land() -> void:
+	var first := not _landed
+	_landed = true
+	_impact = 1.0 if first else 0.45
+	# The second knock of a book settling is much quieter than the first.
+	Audio.play(&"ledger_thud", global_position, 0.0 if first else -11.0)
+	if first:
+		# The boards fall open because it was dropped, so this belongs on the
+		# landing too rather than half a second before it.
+		Audio.play(&"book_open", global_position)
+
+
+## How far off the desk the ledger still is. Read by the suite, which asserts
+## that it is airborne on the frame it is handed its lines and down afterwards.
+func lift() -> float:
+	return _lift
+
+
+func has_landed() -> bool:
+	return _landed
 
 
 # ------------------------------------------------------------------ layout
@@ -153,10 +232,18 @@ func _line_height(l: Dictionary, width: float) -> float:
 # ----------------------------------------------------------------- drawing
 
 func _draw() -> void:
-	var lift := (1.0 - ease(_arrived, 0.3)) * 40.0
-	var r := Rect2(-SIZE * 0.5 - Vector2(0, lift), SIZE)
+	# Boards take the hit: a book landing compresses very slightly and spreads,
+	# and recovers over about two tenths of a second. Without it the fall stops
+	# dead, which is the one thing mass never does.
+	var squash := _impact * _impact
+	var size := SIZE + Vector2(SIZE.x * 0.012 * squash, -SIZE.y * 0.020 * squash)
+	var r := Rect2(-size * 0.5 - Vector2(0, _lift), size)
 
-	draw_soft_shadow(r)
+	# A shadow directly under a falling book is smaller and harder the closer it
+	# gets, which is most of what sells the height it is falling from.
+	var near := 1.0 - clampf(_lift / DROP_HEIGHT, 0.0, 1.0)
+	draw_soft_shadow(Rect2(r.position + Vector2(0, _lift * 0.86),
+		r.size * lerpf(1.06, 1.0, near)))
 	draw_rect(r.grow(8.0), Color(0.20, 0.13, 0.09))
 	draw_rect(r.grow(5.0), Color(0.29, 0.19, 0.12))
 

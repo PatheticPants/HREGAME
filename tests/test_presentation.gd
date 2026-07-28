@@ -1238,6 +1238,31 @@ func _test_complete_ledger(desk: Desk) -> void:
 	desk.bring_to_front(desk.ledger)
 	_is_true(desk.ledger.spread_count() >= 2,
 		"the full day paginates into a turnable physical ledger")
+
+	# THE THUD BELONGS TO THE LANDING.
+	#
+	# open_with() used to play ledger_thud on the frame the book was PLACED,
+	# while it was still forty pixels up with four tenths of a second of travel
+	# left — the same "event is the request, not the arrival" bug that had
+	# already been found and fixed twice on the door, on the heaviest object in
+	# the game and the last thing a player sees each day.
+	_is_true(desk.ledger.lift() > 1.0,
+		"the ledger is still in the air on the frame it is handed its lines")
+	_is_true(not desk.ledger.has_landed(),
+		"and has not announced itself landing yet")
+	# It must not start writing itself mid-drop either.
+	_is_true(desk.ledger.revealed <= 0.0,
+		"and no line is scratched while it is still falling")
+	var airborne := 0
+	while not desk.ledger.has_landed() and airborne < 240:
+		airborne += 1
+		await get_tree().process_frame
+	_is_true(desk.ledger.has_landed() and airborne > 1,
+		"it lands under its own weight, over %d frames" % airborne)
+	for i in 60:
+		await get_tree().process_frame
+	_is_true(absf(desk.ledger.lift()) < 0.01,
+		"and comes to rest flat on the desk rather than settling forever")
 	for i in 30:
 		await get_tree().process_frame
 
