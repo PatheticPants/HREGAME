@@ -77,6 +77,14 @@ capture before theorising.
 Review it, disagree with it, expand it. It is ordered so that each phase makes
 the next one cheaper — do not reorder without a reason.
 
+**Phase 2 is deliberately not split into "the refactor" and "the fun part".** An
+earlier draft of this plan did split them, and that was a mistake twice over: a
+big-bang migration of ten objects' `_draw` producing no visible change is exactly
+when things quietly get worse, because nobody looks at pixels while they are deep
+in an abstraction — and it concentrates all the unrewarding work into one block
+that a session is tempted to skip. Per-object passes that do material and motion
+together are slower to describe and much harder to get wrong.
+
 ### Phase 0 — MEASURED. Mostly already done. (an hour)
 
 **Do not spend a day here. The previous session's brief called this a blocker and
@@ -111,65 +119,80 @@ So your actual Phase 0 is:
 Then measure again after Phase 1. **If a materials pass pushes it past about
 10 ms, fix the dirty flag then** — `desk_ledge.gd` has the pattern. Not before.
 
-### Phase 1 — Give the game a material vocabulary (1–2 days)
+### Phase 1 — EXTRACT a material helper. Do not design one. (half a day)
 
-**This is the headline change and the reason the graphics work has not scaled.**
+The reason the graphics work has not scaled is that every object invents its own
+lighting from scratch. `Sheet` has a banded gradient. `ReferenceBook` has
+`_lit`/`_toward_light`, a lit lip and a dark trough, board thickness and a
+tracking specular. `SignetRing` has an engraved device drawn as two offset
+passes. `RingStand` has bone inlay. `WaxShape` has nested silhouettes. **They
+share nothing**, so every new prop starts at zero and every existing one drifts.
 
-Every object invents its own lighting from scratch. `Sheet` has a banded
-gradient. `ReferenceBook` has `_lit`/`_toward_light`, a lit lip and a dark
-trough. `SignetRing` has a specular that tracks the flame. `RingStand` has
-inlay. `WaxShape` has nested silhouettes. **They share nothing**, so every new
-prop starts at zero and every existing one drifts apart from the others.
+**Extract the helper from the code that already works — do not invent an API and
+then bend ten objects to fit it.** `ReferenceBook._draw` and `SignetRing._draw`
+between them already contain most of the vocabulary; lift it out and name it.
 
-Build a `Material` helper beside `WaxShape` and `Ink` that owns:
+A `Material` class beside `WaxShape` and `Ink`, owning roughly:
 
-- `tint(base, light_level, light_strength)` — the warm/cool response
-- `toward(node)` — the flame direction in local space, the thing half these
-  objects recompute by hand
+- `toward(node)` — flame direction in local space, which half these objects
+  recompute by hand today
+- `lit(node)` — the `light_level x light_strength` product, same clamp everywhere
+- `tint(base, lit)` — the warm-near/grey-away response
 - `engrave(node, path, toward, lit)` — the lit-lip / dark-trough pair
-- `specular(node, at, toward, lit)` — a moving highlight
+- `specular(node, at, toward, lit)` — the moving highlight
 - `bevel(node, rect, toward, lit)` — a raised or sunken edge
-- and re-export `draw_soft_shadow` / `draw_shade` so there is one place to look
 
-Then rewrite `Sheet`, `ReferenceBook`, `SignetRing`, `RingStand`, `WaxSpoon`,
-`Lens`, `WaxTablet`, `DeskLedge`, `DocketTray` and `DeskPlaneView` against it —
-each `_draw` becoming a description of a shape rather than a re-derivation of how
-light works.
+Ship it with **nothing migrated**. The commit should change no pixels. Then:
 
-**Capture before and after, object by object.** The success condition is that
-nothing looks worse and every surface has gained at least the missing third of
-the minimum material (see `docs/GRAPHICS.md` §3). Expect to find two or three
-objects that were quietly better than the rest and must not be levelled down.
+### Phase 2 — One object at a time, material AND motion together (2–3 days)
 
-### Phase 2 — Then, and only then, shaders (1 day, exploratory)
+**This replaces what was previously two separate phases, and the reason is that
+the split was a mistake.** A big-bang refactor that touches ten objects' `_draw`
+and produces no visible change is exactly the kind of work that quietly makes
+things worse, because nobody is looking at pixels while they are deep in an
+abstraction — and it puts all the boring work in one block that a session is
+tempted to skip in favour of the visible wins.
+
+So there is no boring phase. Each object gets **one pass that does everything**,
+and lands as its own commit:
+
+1. migrate its `_draw` onto `Material`
+2. give it whatever the material table in `docs/GRAPHICS.md` §3 says it still owes
+3. fix its motion at the same time — phases, easing, variance, audio hooks
+4. **capture before and after, and put both in the commit message**
+5. add the assertion or the capture frame that would catch a regression
+
+Order by visibility, worst first. A suggested order, which you should challenge:
+
+- **`PressController` + `SignetRing` + `WaxPool`.** The money moment, and
+  `feel-critic` has never once been pointed at `press_controller.gd`. Biggest
+  single win available.
+- **`ReferenceBook`'s page turn.** `_draw_turning_page` is a rectangle whose width
+  sweeps across the gutter; its own comment calls it crude. Books are open for
+  most of every case.
+- **`Ledger`.** It arrives, and writes itself with a sound and no pen. It is the
+  last thing a player sees each day.
+- **`WaxSpoon` and `Lens`.** Metal that should catch the flame as it moves.
+- **`DeskPlaneView` and `DeskLedge`.** The surfaces everything else sits on.
+- **`Desk._tick_sweep`.** Papers freed on a flat 1.5 s timer.
+- **`ViewController`.** The spring works; nothing in the room reacts to the head
+  coming up except parallax.
+
+Re-measure frame time after the third object and again at the end (see Phase 0).
+
+### Phase 3 — Shaders, gated and optional (1 day, exploratory)
 
 The project has **zero `.gdshader` files and zero `CanvasItemMaterial`s**, and
 `gl_compatibility` supports canvas shaders. Ask `godot-reviewer` what is actually
 available on this renderer *before* committing.
 
-The two best candidates, both of which would replace a lot of banded-rect faking:
+Two candidates, both of which would replace a lot of banded-rect faking:
+**parchment translucency** (the backlit sheet, the candle's molten cup, the thin
+lip of a pool) and **wax subsurface** (the sealing wax and the candle share
+`WaxShape`, so one shader serves both).
 
-- **Parchment translucency** — the backlit sheet, the candle's molten cup, the
-  thin lip of wax at a pool's edge.
-- **Wax subsurface** — the sealing wax and the candle share `WaxShape`, so one
-  shader serves both.
-
-Do not shader anything that currently looks right. Budget one day; if it fights
-the pixel-art anchor, abandon it and say so in CONTINUITY.
-
-### Phase 3 — The animation holes the beats pass never reached (1 day)
-
-The door, the petitioner's walk, the between-case timing and the candle have all
-had a pass. These have not:
-
-- **The press.** The money moment, and `feel-critic` has never been pointed at
-  `press_controller.gd`. Start here.
-- **The page turn.** `reference_book.gd` `_draw_turning_page` is a rectangle whose
-  width sweeps across the gutter. Its own comment calls it crude.
-- **The ledger arriving and writing itself.** It writes with a sound and no pen.
-- **The sweep.** `Desk._tick_sweep` frees papers on a flat 1.5s timer.
-- **The view transition.** The spring works, but nothing in the room reacts to
-  the head coming up except parallax.
+Do not shader anything that currently looks right. If it fights the pixel-art
+anchor, abandon it and write that down in CONTINUITY so nobody tries again.
 
 ### Phase 4 — Atmosphere as systems (half a day)
 
@@ -183,20 +206,52 @@ Dust and the shade veil landed. Still open, from a cold `feel-critic` sweep:
   `tools/make_placeholder_audio.py`'s idiom.
 - The day's-end lighting turn has no geometry to turn on.
 
-### Phase 5 — Put the content decision to the owner (their call, not yours)
+### Phase 5 — The Kalendar decision. **Yours to make.** (half a day)
 
-**The Kalendar of the Dead convicts nobody.** Four rolls, thirty-odd obits, its
-own model classes, a generated book, one of four pigeonholes — and no shipped
-case turns on it, so a player who consults it twice correctly concludes it never
-will. The fix is a witness edit on `case_04_second_lion` so it convicts exactly
-once. That also fires the `DEFECT -> REFER` policy row, which **has never once
-executed in play** — verify it yourself, there is no `defect:` line anywhere in
-`.tools/derived_findings.json`, so REFER is currently only ever taught as "two
-laws disagree" and never as "this is broken, send it back".
+The owner has explicitly handed this one to you. Make the call, do the work, and
+say clearly in the commit what you decided and why so they can disagree
+afterwards. Do not ask first.
 
-It changes that case's verdict from CONFIRM to REFER. **Ask before doing it.**
+**The problem.** The Kalendar of the Dead has four rolls, thirty-odd obits, its
+own model classes, a generated book and one of the four pigeonholes — and no
+shipped case turns on it. A player who consults it twice correctly infers it
+never matters and stops opening it, which inverts the exact lesson it was built
+to teach. Separately, there is not one finding at the `defect:` tier anywhere in
+`.tools/derived_findings.json`, so the `DEFECT -> REFER` row of
+`data/tuning/verdict_policy.tres` **has never once executed in play**, and REFER
+is only ever taught as "two laws disagree" and never as "this is broken, send it
+back".
 
----
+**The obvious fix** is a witness edit on `case_04_second_lion` — a man on its
+list who the Thurn chapel's roll records as dead before the charter's date. That
+makes the Kalendar decisive exactly once, fires the unused policy row, and turns
+the day's acknowledged sag into the case that teaches the third ring. It changes
+that case's verdict from CONFIRM to REFER, which means rewriting its three
+outcome branches and its `_design` note, and re-checking `PrecedentCheck` on
+Thursday.
+
+**Decide it against these, which are the game's actual philosophy:**
+
+- *Everything the ledger says was findable must have been renderable on the desk.*
+  Non-negotiable, violated three times, every one treated as critical.
+- *An anomaly is not a crime.* Case 1 exists to unteach the denying reflex. Any
+  new defect must not make suspicion the correct default.
+- *The question is "which authority am I choosing to satisfy", not "is this
+  correct".* Verification is the floor, not the ceiling.
+- *A system the player correctly concludes never matters is worse than no system*,
+  because it also teaches them to stop investigating.
+- *Absence is never evidence.* Whatever you do, the Kalendar's silences must stay
+  worth nothing — a roll that convicts by omission is the hole this whole
+  subsystem was built to close.
+- *Soundness, Favour and Craft are three columns and never one number.*
+- *The correct answer is often cruel, and that is allowed.* What is not allowed is
+  a wrong answer that the desk gave the player no way to avoid.
+- *Content is data.* If this needs a code change beyond one `Check`, you have
+  probably picked the wrong fix.
+
+Alternatives worth weighing before you take the obvious one: author a ninth case
+rather than change a shipped verdict; or put the defect on a Thursday matter that
+is already weak instead of case_04. Say which you rejected and why.
 
 ## The reviewers
 
@@ -234,15 +289,16 @@ deliberately adversarial. Do not soften them.
 ## Known and deliberately not done
 
 Full list with reasoning in CONTINUITY under "Known and deliberately not fixed".
-The three that matter beyond Phase 5:
+The two that matter beyond Phase 5:
 
 1. **Favour is stored and inert.** `Register.favor_totals()` is written and never
    called. It is the least systemic of the three judgement columns.
 2. **Thursday closes on three consecutive "nothing is wrong, confirm it"
    matters**, one of which is Tuesday's matrix lookup with the answer inverted.
    This is the repetition risk, and it is content work.
-3. **`WitnessCheck` fires no defect in any shipped case.** Proven by synthetic
-   packets in the rules suite and by nothing the player will ever be handed.
+
+`WitnessCheck` firing no defect in any shipped case is the same problem as Phase
+5 and is solved by it.
 
 ---
 
@@ -260,3 +316,9 @@ with a test or a capture frame that fails if it regresses.
 
 **Look at the pixels.** Three times now the owner has seen something in a
 screenshot that no test could see.
+
+**Decide things.** The owner reviews after, and would rather see a decision made
+with the philosophy applied than a question sent back up. Phase 5 is explicitly
+yours. Where you do make a judgement call, put the reasoning in the commit
+message so it can be argued with rather than reverse-engineered — and record it
+in CONTINUITY if it is the kind of thing the next session would otherwise redo.
