@@ -1,0 +1,40 @@
+{
+  "id": "almanac",
+  "title": "Almanac of Reigns",
+  "subtitle": "Of the reckoning of years",
+  "cover_color": "#3b3524",
+  "page_color": "#e9e2cb",
+  "size": [320, 430],
+  "start_offset": [405, 230],
+  "start_angle_deg": 3.0,
+
+  "pages": [
+    {
+      "kind": "text",
+      "heading": "Almanac of Reigns",
+      "subheading": "third desk, second floor",
+      "body": "A regnal year is not a date. It becomes a date only when you know which chancery wrote it down, because chanceries do not agree about when a reign begins.\n\nThis is not a dispute anybody expects to settle. It is simply the case, and it has been the case since before this office had a roof.",
+      "marginalia": "Everyone learns this page twice. Once when they are told, and once when they get it wrong. — R.V."
+    },
+    {
+      "kind": "styles",
+      "heading": "The three reckonings",
+      "body": "Which reckoning applies is not written beside the date. It is decided by the chancery that drew the instrument, and that chancery is named in the closing formula, at the foot of the parchment, in the smallest hand on the page.\n\nNo chancery of the seven now dates from the coronation. Instruments older than Otbert's crown sometimes do, and they are a trap for a clerk who has learnt only two of the three."
+    },
+    {
+      "kind": "reigns",
+      "heading": "The reigns"
+    },
+    {
+      "kind": "text",
+      "heading": "On Aldric particularly",
+      "body": "Aldric was chosen King of the Romans in 1201, while Otbert was still living and holding court at Verd. He acceded in 1204 when Otbert died. He was crowned Emperor at Rome in 1206. He died at Marchfeld in 1215.\n\nSo he reigned twelve years, and fifteen years, and ten years, and every one of those numbers is correct.\n\nAn instrument of his thirteenth year is impossible to an imperial notary and unremarkable to a monk. Both of them are doing their job.",
+      "marginalia": "Referred the Ford at Lenz on exactly this and was told I had wasted the Bishop's morning. That was the office's rule. It did not make either reckoning vanish. — R.V."
+    },
+    {
+      "kind": "text",
+      "heading": "What each ring says",
+      "body": "CONFIRM says the authority admitting the instrument governs here.\n\nDENY says the authority refusing it governs here.\n\nREFER says this desk will not choose between them. It is the Chancery's standing procedure where two authorities reach two ends, but procedure is not a third law and does not make either old law false.\n\nThe ring does not discover a neutral answer. It records which consequence this office is willing to own."
+    }
+  ]
+}

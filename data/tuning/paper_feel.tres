@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="PaperFeel" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/model/paper_feel.gd" id="1_paper_feel"]
+
+[resource]
+script = ExtResource("1_paper_feel")
+stiffness = 210.0
+damping = 21.0
+torque_gain = 1.35
+inverse_inertia = 8.5e-05
+angular_damping = 9.5
+max_lean_deg = 15.0
+release_damping = 0.012
+release_angular_damping = 0.004
+settle_spring = 26.0
+sleep_speed = 9.0
+sleep_spin = 0.22
+edge_spring = 15.0
+edge_allowance = 120.0
+pickup_scale = 1.035
+pickup_scale_speed = 14.0
+pickup_shadow_lift = 22.0
+shadow_base_throw = 5.0
+shadow_throw_per_layer = 0.9
+shadow_alpha = 0.34
+shadow_layers = 4
+slide_audible_speed = 55.0
+slide_full_speed = 850.0

@@ -1,0 +1,546 @@
+#!/usr/bin/env python3
+"""Validate data/ without launching Godot.
+
+This is a second implementation of the rules in scripts/rules/, written from the
+same spec and deliberately NOT sharing code with it. Running both against the
+same content is how a data mistake gets caught: if the GDScript adjudicator and
+this script disagree about a case, one of them has a bug and you find out in a
+second rather than in a playtest.
+
+    python tools/verify_content.py
+
+Checks performed:
+  * every JSON file parses
+  * cross-references resolve (emperors, polities, matrices)
+  * seal legends are length-compatible with the dies they claim
+  * each static case's authored correct_verdict is what the rules produce
+  * dynamic precedent cases react correctly to representative Register states
+  * day manifests and fallback case references resolve
+  * each case has all three outcomes and at least one arrival line
+
+Exit code is nonzero if anything failed, so it can go in CI later.
+"""
+
+import json
+import os
+import sys
+
+ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+DATA = os.path.join(ROOT, "data")
+
+WILDCARDS = "·.?*_"
+
+CLEAN, NOTE, DEFECT, CONTESTED, FATAL = range(5)
+SEV_NAME = {CLEAN: "clean", NOTE: "note", DEFECT: "defect",
+            CONTESTED: "contested", FATAL: "fatal"}
+
+problems = []
+notes = []
+
+
+def fail(msg):
+    problems.append(msg)
+
+
+def load(*parts):
+    path = os.path.join(DATA, *parts)
+    if not os.path.exists(path):
+        fail("missing file: %s" % os.path.relpath(path, ROOT))
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError as e:
+            fail("%s: JSON error line %d col %d: %s"
+                 % (os.path.relpath(path, ROOT), e.lineno, e.colno, e.msg))
+            return None
+
+
+# ------------------------------------------------------------------ regnal
+
+def epoch(reign, style):
+    return {"election": reign["election_year"],
+            "coronation": reign["coronation_year"]}.get(style, reign["accession_year"])
+
+
+def to_absolute(reign, year, style):
+    return epoch(reign, style) + year - 1
+
+
+def max_regnal(reign, style, present):
+    e = epoch(reign, style)
+    if e <= 0:
+        return 0
+    last = reign["end_year"] if reign["end_year"] >= 0 else present
+    return last - e + 1
+
+
+def admissible(reign, year, style, present):
+    if epoch(reign, style) <= 0 or year < 1:
+        return False
+    if year > max_regnal(reign, style, present):
+        return False
+    return to_absolute(reign, year, style) <= present
+
+
+# -------------------------------------------------------------------- seal
+
+def legend_compatible(worn, reference):
+    a, b = worn.strip().upper(), reference.strip().upper()
+    if len(a) != len(b):
+        return False
+    return all(c in WILDCARDS or c == b[i] for i, c in enumerate(a))
+
+
+def hex_to_rgb(s):
+    s = s.lstrip("#")
+    return tuple(int(s[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+
+
+def color_close(a, b, tol=0.17):
+    return all(abs(x - y) < tol for x, y in zip(hex_to_rgb(a), hex_to_rgb(b)))
+
+
+def seal_findings(charter, world, matrices, present):
+    out = []
+    seal = charter.get("seal")
+    if not seal:
+        return out
+
+    polity = world["polities"].get(seal["claims_polity"])
+    if polity and not polity.get("seals_used", True):
+        return [(FATAL, "seal_where_none_used")]
+
+    reign = world["reigns"].get(charter["date_emperor"])
+    chancery = world["polities"][charter["drawn_by_polity"]].get(
+        "dating_style", "accession")
+    year = to_absolute(reign, charter["date_regnal_year"], chancery) if reign else None
+
+    candidates = [m for m in matrices
+                  if m["owner_name"].strip().lower()
+                  == seal["claims_owner"].strip().lower()]
+    if not candidates:
+        return [(FATAL, "matrix_unknown")]
+
+    visual = [m for m in candidates
+              if m["device"] == seal["device"]
+              and m["shape"] == seal["shape"]
+              and color_close(m["wax_color"], seal["wax_color"])
+              and legend_compatible(seal["legend"], m["legend"])]
+    if not visual:
+        return [(FATAL, "seal_mismatch")]
+    if year is None:
+        return [(NOTE, "seal_date_unresolved")]
+
+    live = [m for m in visual
+            if m["cut_year"] <= year
+            and (m["broken_year"] < 0 or year <= m["broken_year"])]
+    if not live:
+        out.append((FATAL, "matrix_not_live"))
+        for m in candidates:
+            if m is not visual[0] and m["cut_year"] > visual[0]["cut_year"]:
+                out.append((NOTE, "superseded_legend"))
+        return out
+
+    if seal.get("wear", 0.0) > 0.14:
+        out.append((NOTE, "wear_but_sound"))
+    out.append((CLEAN, "seal_sound"))
+    return out
+
+
+# -------------------------------------------------------------------- date
+
+def date_findings(charter, world, present):
+    out = []
+    reign = world["reigns"].get(charter["date_emperor"])
+    if reign is None:
+        return [(DEFECT, "emperor_unknown")]
+    style = world["polities"][charter["drawn_by_polity"]].get(
+        "dating_style", "accession")
+    if epoch(reign, style) <= 0:
+        return [(DEFECT, "style_inapplicable")]
+    year = charter["date_regnal_year"]
+    if year < 1:
+        return [(DEFECT, "date_absurd")]
+
+    absolute = to_absolute(reign, year, style)
+    if absolute > present:
+        out.append((DEFECT, "date_in_future"))
+    elif year > max_regnal(reign, style, present):
+        out.append((DEFECT, "date_beyond_reign"))
+
+    for w in charter.get("witnesses", []):
+        if not w.get("died_emperor") or not w.get("died_regnal_year"):
+            continue
+        wr = world["reigns"].get(w["died_emperor"])
+        if wr is None:
+            continue
+        died = to_absolute(wr, w["died_regnal_year"],
+                           w.get("died_dating_style", "accession"))
+        if died < absolute:
+            out.append((DEFECT, "witness_dead"))
+        elif died == absolute:
+            out.append((NOTE, "witness_died_that_year"))
+
+    if style != "accession":
+        out.append((NOTE, "unusual_reckoning"))
+    if not out:
+        out.append((CLEAN, "date_sound"))
+    return out
+
+
+# --------------------------------------------------------------- authority
+
+def authority_findings(charter, world, present):
+    reign = world["reigns"].get(charter["date_emperor"])
+    if reign is None:
+        return []
+    chancery = world["polities"][charter["drawn_by_polity"]].get(
+        "dating_style", "accession")
+    styles = {"imperial": "accession", "church": "election"}
+    drawing = world["polities"][charter["drawn_by_polity"]]
+    if drawing.get("authority") == "custom":
+        styles["custom"] = chancery
+    verdicts = {}
+    for auth, style in styles.items():
+        if epoch(reign, style) <= 0:
+            continue
+        verdicts[auth] = "CONFIRM" if admissible(
+            reign, charter["date_regnal_year"], style, present) else "DENY"
+    if len(verdicts) < 2 or len(set(verdicts.values())) < 2:
+        return []
+    return [(CONTESTED, "reckoning_contested"), (NOTE, "which_authority")]
+
+
+POLICY = [(FATAL, "DENY"), (CONTESTED, "REFER"), (DEFECT, "REFER")]
+
+
+def adjudicate(charter, world, matrices, present):
+    findings = (seal_findings(charter, world, matrices, present)
+                + date_findings(charter, world, present)
+                + authority_findings(charter, world, present))
+    for sev, verdict in POLICY:
+        for f in findings:
+            if f[0] == sev:
+                return verdict, f[1], findings
+    return "CONFIRM", "nothing_against", findings
+
+
+def invert(verdict):
+    return {"CONFIRM": "DENY", "DENY": "CONFIRM"}.get(verdict, verdict)
+
+
+def precedent_positions(current, prior, world):
+    """Independent mirror of PrecedentCheck's contest construction."""
+    same = prior["claimant_id"] == current["claimant_id"]
+    drawing = world["polities"][current["drawn_by_polity"]].get(
+        "authority", "imperial")
+    if same:
+        if prior["verdict"] == "CONFIRM":
+            return {}
+        if current.get("supersedes_prior_instrument", False):
+            return {}
+        return {"office": prior["verdict"], drawing: "CONFIRM"}
+
+    old_positions = prior.get("authority_verdicts", {})
+    if old_positions:
+        positions = {a: invert(v) for a, v in old_positions.items()}
+        positions["office"] = invert(prior["verdict"])
+        positions[drawing] = "CONFIRM"
+        return positions
+    if prior["verdict"] == "DENY":
+        return {}
+    return {"office": invert(prior["verdict"]), drawing: "CONFIRM"}
+
+
+def procedural_with_precedent(current, prior, world, matrices, present):
+    base, reason, findings = adjudicate(current, world, matrices, present)
+    positions = precedent_positions(current, prior, world)
+    if len(set(positions.values())) > 1 and not any(
+            severity in (FATAL, DEFECT) for severity, _code in findings):
+        return "REFER", "precedent_contested", positions
+    return base, reason, positions
+
+
+# ------------------------------------------------------------------- main
+
+def main():
+    world_raw = load("world", "world.json")
+    matrices_raw = load("world", "matrices.json")
+    order_raw = load("cases", "_order.json")
+    if not (world_raw and matrices_raw and order_raw):
+        report()
+        return
+
+    world = {
+        "reigns": {r["id"]: r for r in world_raw["reigns"]},
+        "polities": {p["id"]: p for p in world_raw["polities"]},
+    }
+    matrices = matrices_raw["matrices"]
+    present = world_raw["present_year"]
+
+    # --- world sanity
+    for r in world_raw["reigns"]:
+        if not (r["election_year"] <= r["accession_year"] <= r["coronation_year"]):
+            fail("reign '%s': election <= accession <= coronation does not hold"
+                 % r["id"])
+        if r["end_year"] >= 0 and r["end_year"] < r["accession_year"]:
+            fail("reign '%s': ends before it starts" % r["id"])
+    if len(world_raw["polities"]) > 9:
+        fail("more than nine polities; learnability is the whole game")
+
+    for m in matrices:
+        if m["polity_id"] not in world["polities"]:
+            fail("matrix '%s': unknown polity '%s'" % (m["id"], m["polity_id"]))
+        if m["broken_year"] >= 0 and m["broken_year"] < m["cut_year"]:
+            fail("matrix '%s': broken before it was cut" % m["id"])
+
+    # --- books
+    for book_file in sorted(os.listdir(os.path.join(DATA, "world", "books"))):
+        if not book_file.endswith(".json"):
+            continue
+        b = load("world", "books", book_file)
+        if b is None:
+            continue
+        for p in b.get("pages", []):
+            if p.get("kind") == "matrix":
+                if not any(m["id"] == p.get("matrix_id") for m in matrices):
+                    fail("%s: page names unknown matrix '%s'"
+                         % (book_file, p.get("matrix_id")))
+            if p.get("kind") == "plate" and p.get("polity_id") not in world["polities"]:
+                fail("%s: page names unknown polity '%s'"
+                     % (book_file, p.get("polity_id")))
+
+    load("world", "register_seed.json")
+
+    check_encodings()
+
+    # --- cases
+    cases_by_id = {}
+    print("Present year: %d\n" % present)
+    for case_id in order_raw["order"]:
+        c = load("cases", case_id + ".json")
+        if c is None:
+            continue
+        cases_by_id[case_id] = c
+        charters = [d for d in c["documents"] if d["kind"] == "charter"]
+        if not charters:
+            fail("case '%s': no charter" % case_id)
+            continue
+        ch = charters[0]
+        if not ch.get("subject_id") or not ch.get("claimant_id"):
+            fail("case '%s': charter lacks stable subject_id/claimant_id" % case_id)
+
+        for key, table in (("date_emperor", world["reigns"]),
+                           ("drawn_by_polity", world["polities"])):
+            if ch[key] not in table:
+                fail("case '%s': unknown %s '%s'" % (case_id, key, ch[key]))
+
+        verdicts = {o["verdict"] for o in c.get("outcomes", [])}
+        for v in ("CONFIRM", "DENY", "REFER"):
+            if v not in verdicts:
+                fail("case '%s': no outcome for %s" % (case_id, v))
+        if not any(l.get("beat", "arrival") == "arrival" and not l.get("requires_case")
+                   for l in c.get("lines", [])):
+            fail("case '%s': no unconditional arrival line" % case_id)
+
+        derived, reason, findings = adjudicate(ch, world, matrices, present)
+        authored = c["correct_verdict"]
+        dynamic = bool(c.get("dynamic_precedent", False))
+
+        reign = world["reigns"][ch["date_emperor"]]
+        chancery = world["polities"][ch["drawn_by_polity"]]["dating_style"]
+        years = {s: to_absolute(reign, ch["date_regnal_year"], s)
+                 for s in ("accession", "election", "coronation")}
+
+        ok = dynamic or derived == authored
+        print("%s  %s" % ("PASS" if ok else "FAIL", case_id))
+        if dynamic:
+            print("     authored DYNAMIC  baseline %-8s (%s)" % (derived, reason))
+        else:
+            print("     authored %-8s derived %-8s (%s)" % (authored, derived, reason))
+        print("     %s yr %d, drawn by %s (%s)  ->  acc %d / elec %d / coron %d"
+              % (reign["name"], ch["date_regnal_year"],
+                 ch["drawn_by_polity"], chancery,
+                 years["accession"], years["election"], years["coronation"]))
+        print("     findings: %s" % ", ".join(
+            "%s:%s" % (SEV_NAME[s], code) for s, code in findings))
+        positions = authority_positions(ch, world, present)
+        if positions and len(set(positions.values())) > 1:
+            defensible = sorted(set(positions.values()) | {"REFER"})
+            print("     positions: %s; defensible: %s" % (
+                ", ".join("%s=%s" % item for item in positions.items()),
+                ", ".join(defensible)))
+        if not ok:
+            fail("case '%s': authored %s but the documents produce %s"
+                 % (case_id, authored, derived))
+
+        seal = ch.get("seal")
+        if seal:
+            owned = [m for m in matrices
+                     if m["owner_name"].strip().lower()
+                     == seal["claims_owner"].strip().lower()]
+            if not owned:
+                notes.append("case '%s': seal claims '%s', which is in no die "
+                             "record (intentional only if this is the puzzle)"
+                             % (case_id, seal["claims_owner"]))
+            for m in owned:
+                if len(seal["legend"]) != len(m["legend"]):
+                    notes.append("case '%s': legend length %d vs die '%s' length %d"
+                                 % (case_id, len(seal["legend"]), m["id"],
+                                    len(m["legend"])))
+        print()
+
+    verify_days(cases_by_id)
+    verify_precedent(cases_by_id, world, matrices, present)
+
+    report()
+
+
+def authority_positions(charter, world, present):
+    reign = world["reigns"].get(charter["date_emperor"])
+    if reign is None:
+        return {}
+    chancery = world["polities"][charter["drawn_by_polity"]].get(
+        "dating_style", "accession")
+    styles = {"imperial": "accession", "church": "election"}
+    if world["polities"][charter["drawn_by_polity"]].get("authority") == "custom":
+        styles["custom"] = chancery
+    verdicts = {}
+    for auth, style in styles.items():
+        if epoch(reign, style) > 0:
+            verdicts[auth] = "CONFIRM" if admissible(
+                reign, charter["date_regnal_year"], style, present) else "DENY"
+    return verdicts
+
+
+def verify_days(cases_by_id):
+    manifest = load("days", "_order.json")
+    if manifest is None:
+        return
+    for day_name in manifest.get("order", []):
+        day = load("days", day_name + ".json")
+        if day is None:
+            continue
+        if day.get("selection_mode") not in ("fixed", "tray"):
+            fail("day '%s': invalid selection_mode" % day_name)
+        for slot in day.get("case_slots", []):
+            for key in ("case_id", "fallback_case_id", "requires_ruled"):
+                target = slot.get(key)
+                if target and target not in cases_by_id:
+                    fail("day '%s': unknown %s '%s'" % (day_name, key, target))
+        for opening in day.get("opening_documents", []):
+            required = opening.get("requires_case")
+            if required and required not in cases_by_id:
+                fail("day '%s': opening letter requires unknown case '%s'"
+                     % (day_name, required))
+
+
+def verify_precedent(cases_by_id, world, matrices, present):
+    needed = (
+        "case_01_kufergasse", "case_02_grellwater",
+        "case_03_kesselholt", "case_05_grellwater_regrant",
+        "case_06_kesselholt_writ", "case_07_daughters_portion",
+    )
+    if not all(case_id in cases_by_id for case_id in needed):
+        return
+    charter = lambda case_id: next(
+        d for d in cases_by_id[case_id]["documents"] if d["kind"] == "charter")
+
+    grell = charter("case_02_grellwater")
+    regrant = charter("case_05_grellwater_regrant")
+    for prior_verdict, expected in (
+            ("DENY", "CONFIRM"), ("CONFIRM", "REFER"), ("REFER", "REFER")):
+        prior = {
+            "verdict": prior_verdict,
+            "claimant_id": grell["claimant_id"],
+            "authority_verdicts": {},
+        }
+        got, _reason, _positions = procedural_with_precedent(
+            regrant, prior, world, matrices, present)
+        if got != expected:
+            fail("Grellwater regrant after %s: got %s, wanted %s"
+                 % (prior_verdict, got, expected))
+
+    kessel = charter("case_03_kesselholt")
+    writ = charter("case_06_kesselholt_writ")
+    old_positions = authority_positions(kessel, world, present)
+    for prior_verdict in ("CONFIRM", "DENY", "REFER"):
+        prior = {
+            "verdict": prior_verdict,
+            "claimant_id": kessel["claimant_id"],
+            "authority_verdicts": old_positions,
+        }
+        got, _reason, positions = procedural_with_precedent(
+            writ, prior, world, matrices, present)
+        if got != "REFER":
+            fail("Kesselholt writ after %s: got %s, wanted REFER"
+                 % (prior_verdict, got))
+        if positions.get("imperial") != "CONFIRM" \
+                or positions.get("church") != "DENY":
+            fail("Kesselholt writ failed to invert stored authority positions")
+
+    kufer = charter("case_01_kufergasse")
+    portion = charter("case_07_daughters_portion")
+    prior = {
+        "verdict": "DENY",
+        "claimant_id": kufer["claimant_id"],
+        "authority_verdicts": {},
+    }
+    got, _reason, positions = procedural_with_precedent(
+        portion, prior, world, matrices, present)
+    if got != "CONFIRM" or positions:
+        fail("superseding Küfergasse instrument did not cure the prior refusal")
+
+
+def check_encodings():
+    """Every text file: UTF-8, no BOM, LF, and no double-encoded characters.
+
+    The last one is the nasty case. Rewriting a source file with a tool that
+    round-trips through cp1252 turns every em dash into 'aEUR"' and nothing
+    complains — Godot still runs, the diff looks enormous, and the damage only
+    shows up when somebody opens the file on the other machine. It costs
+    milliseconds to check and it has already happened once.
+    """
+    moji = [b"\xc3\xa2\xe2\x82\xac", b"\xc3\xa2\xc2\x80", b"\xc3\x82\xc2"]
+    roots = ("scripts", "tests", "tools", "data", "scenes")
+    checked = 0
+    for root in roots:
+        base = os.path.join(ROOT, root)
+        if not os.path.isdir(base):
+            continue
+        for dirpath, _dirs, names in os.walk(base):
+            for name in names:
+                if not name.endswith((".gd", ".json", ".tres", ".tscn",
+                                      ".py", ".cfg", ".md")):
+                    continue
+                path = os.path.join(dirpath, name)
+                rel = os.path.relpath(path, ROOT).replace("\\", "/")
+                raw = open(path, "rb").read()
+                checked += 1
+                if any(m in raw for m in moji):
+                    fail("%s: double-encoded text (cp1252 round-trip damage)" % rel)
+                if raw[:3] == b"\xef\xbb\xbf":
+                    fail("%s: has a UTF-8 BOM" % rel)
+                if b"\r\n" in raw:
+                    fail("%s: has CRLF line endings" % rel)
+                try:
+                    raw.decode("utf-8")
+                except UnicodeDecodeError as e:
+                    fail("%s: not valid UTF-8 (%s)" % (rel, e))
+    print("Encoding: %d text files checked.\n" % checked)
+
+
+def report():
+    for n in notes:
+        print("note: %s" % n)
+    if problems:
+        print("\n%d PROBLEM(S):" % len(problems))
+        for p in problems:
+            print("  - %s" % p)
+        sys.exit(1)
+    print("All content checks passed.")
+
+
+if __name__ == "__main__":
+    main()

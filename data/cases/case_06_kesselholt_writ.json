@@ -1,0 +1,133 @@
+{
+  "id": "case_06_kesselholt_writ",
+  "title": "The Writ at Kesselholt",
+  "_design": "Day 2's central plural-law consequence. The old Church/Empire positions invert for an Imperial claimant to the same wood, while the player's own prior ring remains visible as office precedent.",
+  "correct_verdict": "DYNAMIC",
+  "dynamic_precedent": true,
+  "correct_reason": "precedent_contested",
+  "correct_reason_text": "The Imperial writ is clean. The Church's admitted abbey title supports denial; Imperial law supports confirmation; office procedure directs referral.",
+  "petitioner": {
+    "id": "matthias_erken",
+    "name": "Matthias Erken",
+    "style": "Imperial bailiff of the Nether March",
+    "polity_id": "aachen_verd",
+    "portrait_path": "res://art/petitioners/matthias_erken_bust.png",
+    "height": 266,
+    "build": 108,
+    "cloth": "#3b392e",
+    "restlessness": 0.35
+  },
+  "documents": [
+    {
+      "kind": "docket",
+      "id": "docket_06",
+      "title": "Passage docket",
+      "size": [330, 235],
+      "tint": "#d5c6a3",
+      "start_offset": [-350, -88],
+      "start_angle_deg": 5.0,
+      "petitioner_name": "Matthias Erken",
+      "petitioner_style": "Imperial bailiff, the Nether March",
+      "claim_summary": "Presents a writ taking Kesselholt into Imperial hand and suspending felling by Saint Wend. Produces one Chancery instrument, sealed.",
+      "received_note": "Called from the Thursday tray.",
+      "doorkeeper_note": "Brought two men. Told him the passage admits one voice at a time."
+    },
+    {
+      "kind": "charter",
+      "id": "charter_kesselholt_writ",
+      "title": "Imperial Writ for Kesselholt",
+      "size": [430, 585],
+      "tint": "#dfd0ad",
+      "start_offset": [-35, 65],
+      "start_angle_deg": -1.0,
+      "takes_seal": true,
+      "body_text": "Kunrad, by divine favour Emperor of the Romans, ever august, to Matthias Erken our bailiff in the Nether March, greeting.\n\nBecause no title to the woodland called Kesselholt has been admitted under the reckoning of our Chancery, take the said wood into our hand. Suspend all felling by the house of Saint Wend until our further command and answer for the timber at the next account.\n\nGiven at Verd under the seal of our Chancery.",
+      "date_emperor": "kunrad_iv",
+      "date_regnal_year": 7,
+      "drawn_by_polity": "aachen_verd",
+      "grantor": "Kunrad IV, Emperor",
+      "claimant": "The Imperial demesne",
+      "property": "The woodland called Kesselholt",
+      "subject_id": "kesselholt_wood",
+      "claimant_id": "imperial_demesne",
+      "witnesses": [
+        { "name": "Liutger von Ahr", "title": "vice-chancellor" },
+        { "name": "Matthias Erken", "title": "bailiff in the Nether March" }
+      ],
+      "seal": {
+        "id": "seal_kesselholt_writ",
+        "claims_owner": "The Imperial Chancery",
+        "claims_polity": "aachen_verd",
+        "device": "double_eagle",
+        "legend": "SIGILLVM CANCELLARIE IMPERII",
+        "shape": "round",
+        "wax_color": "#c9a227",
+        "wear": 0.03,
+        "shape_seed": 6601,
+        "note": "The Chancery's own die, struck this year."
+      }
+    }
+  ],
+  "lines": [
+    {
+      "beat": "arrival",
+      "text": "I have an Imperial writ for Kesselholt. The abbey's cutters are in the wood now. This paper determines whether I bar them or watch."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_03_kesselholt",
+      "requires_verdict": "CONFIRM",
+      "priority": 5,
+      "text": "On Tuesday you admitted Saint Wend's title under church reckoning. Today the Emperor requires the wood in his hand. Your old wax is already in the Register."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_03_kesselholt",
+      "requires_verdict": "DENY",
+      "priority": 5,
+      "text": "On Tuesday you refused the abbey under Imperial reckoning. This writ is what follows from that refusal. Do not become surprised by your own hand."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_03_kesselholt",
+      "requires_verdict": "REFER",
+      "priority": 5,
+      "text": "On Tuesday you chose neither law. The Emperor has chosen his. The Church has not abandoned hers. I need a ring, not another description of the quarrel."
+    },
+    {
+      "beat": "consult_register",
+      "text": "There is your old hand. I will not tell you whether it helps me; I am here to learn whether you will."
+    },
+    {
+      "beat": "inspect_seal",
+      "text": "Your own eagle. I have no argument about the wax and neither should you."
+    },
+    {
+      "beat": "waiting",
+      "text": "Every moment you keep the writ here is a tree the abbey may already have on a cart."
+    }
+  ],
+  "outcomes": [
+    {
+      "verdict": "CONFIRM",
+      "favor": { "imperial": 2, "church": -2 },
+      "reaction": "Then I bar the road before terce. Your Register will finally point in one direction, even if it points against itself.",
+      "register_note": "Imperial writ for Kesselholt confirmed. Wood taken into the Emperor's hand.",
+      "aftermath": "The bailiff barred Saint Wend's cutters. The Church reads the act as seizure of land whose title it already admitted."
+    },
+    {
+      "verdict": "DENY",
+      "favor": { "church": 1, "imperial": -2 },
+      "reaction": "An Imperial writ refused at an Imperial desk. Keep the book open. The Chancellor will wish to see the line.",
+      "register_note": "Imperial writ for Kesselholt denied in view of the admitted church title.",
+      "aftermath": "The cutters remained. The Chancellor now has a copy of the denial and the name of the hand that struck it."
+    },
+    {
+      "verdict": "REFER",
+      "favor": { "imperial": -1, "church": -1 },
+      "reaction": "While it goes up, the timber goes down. I will tell both offices which journey was quicker.",
+      "register_note": "Competing Imperial writ and church title to Kesselholt referred.",
+      "aftermath": "Cutting continued while both authorities blamed the desk for preserving the dispute."
+    }
+  ]
+}

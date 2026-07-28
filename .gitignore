@@ -1,0 +1,48 @@
+# Godot 4 ------------------------------------------------------------------
+# Editor caches and imported asset binaries. Never commit these; they are
+# machine-specific and are the usual cause of Mac<->Windows churn.
+.godot/
+/android/
+
+# Export artifacts. export_presets.cfg can contain machine-local output paths
+# and signing details, so it stays out until we actually ship.
+export_presets.cfg
+/build/
+/exports/
+*.translation
+
+# Local QA tools and logs. The portable Godot binary used by automated review is
+# intentionally workspace-local and far too large (and too platform-specific)
+# to belong in the project.
+/.tools/
+/.godot-*.log
+
+# Scratch from asset generation. The finished portraits live in art/petitioners/;
+# these are the pre-chroma-removal sources and alpha passes, ~12 MB of
+# intermediates that nothing in the project loads.
+/tmp/
+
+# Godot editor data directories. These are created in the project folder as a
+# side effect of running the editor with an explicit --path, and belong in the
+# user's own editor data, not in the repository.
+/export_templates/
+/feature_profiles/
+/script_templates/
+/text_editor_themes/
+
+# OS -----------------------------------------------------------------------
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+
+# Editors ------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+
+# NOTE: *.uid files ARE committed on purpose. Godot 4.4+ writes a .gd.uid next to
+# every script; if those are missing, the other machine generates different UIDs
+# and every scene referencing a script shows as modified. Do not add them here.

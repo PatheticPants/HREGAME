@@ -1,0 +1,150 @@
+{
+  "id": "case_01_kufergasse",
+  "title": "The Plot on Küfergasse",
+
+  "_design": "Teaches the verbs and one lesson: an anomaly is not a crime. The seal is rubbed to the point where four letters of the legend are gone, and a witness died in the very year of the charter. Both are alarming and both are fine. A player who denies this one has learned the wrong reflex, and the ledger tells them so plainly.",
+
+  "correct_verdict": "CONFIRM",
+  "correct_reason": "nothing_against",
+  "correct_reason_text": "The die is the Marchfeld commune's, which belongs to the office and has never been broken. What survives of the legend agrees with it. The date reduces to 1217 and nothing in the packet stands against it.",
+
+  "petitioner": {
+    "id": "wilhelm_ott",
+    "name": "Wilhelm Ott",
+    "style": "cooper, of Marchfeld",
+    "polity_id": "marchfeld",
+    "portrait_path": "res://art/petitioners/wilhelm_ott_bust.png",
+    "height": 244,
+    "build": 98,
+    "cloth": "#5c4a33",
+    "restlessness": 0.85
+  },
+
+  "documents": [
+    {
+      "kind": "docket",
+      "id": "docket_01",
+      "title": "Docket",
+      "size": [330, 235],
+      "tint": "#ddd2b4",
+      "start_offset": [-345, -95],
+      "start_angle_deg": 5.5,
+      "petitioner_name": "Wilhelm Ott",
+      "petitioner_style": "cooper, of the Free City of Marchfeld",
+      "claim_summary": "Claims a house plot on Küfergasse by inheritance from his father Heinrich Ott, deceased. Produces one charter of the Commune, sealed.",
+      "received_note": "Received at the door, the eleventh of October.",
+      "doorkeeper_note": "Waited three hours in the passage. Would not sit down."
+    },
+    {
+      "kind": "charter",
+      "id": "charter_kufergasse",
+      "title": "Grant of the Commune of Marchfeld",
+      "size": [430, 585],
+      "tint": "#e0d4b2",
+      "start_offset": [-45, 55],
+      "start_angle_deg": -3.0,
+      "takes_seal": true,
+
+      "body_text": "To all who shall see or hear this present writing, the Council and Commune of the city of Marchfeld send greeting in the Lord.\n\nKnow that we have granted, and by this our charter confirmed, to Heinrich Ott, cooper, and to his heirs after him, one plot of ground lying in the Küfergasse within our walls, of twenty-two feet by forty, together with the right of the well that stands upon it.\n\nAnd that this may stand firm we have caused our common seal to be appended.",
+
+      "date_emperor": "kunrad_iv",
+      "date_regnal_year": 3,
+      "drawn_by_polity": "marchfeld",
+
+      "grantor": "The Council and Commune of Marchfeld",
+      "claimant": "Heinrich Ott, cooper, and his heirs",
+      "property": "A plot on Küfergasse, 22 feet by 40, with the well-right",
+      "subject_id": "kufergasse_plot",
+      "claimant_id": "ott_household",
+
+      "witnesses": [
+        {
+          "name": "Reinmar Vogt",
+          "title": "master cooper of the guild",
+          "died_emperor": "kunrad_iv",
+          "died_regnal_year": 3,
+          "died_dating_style": "accession",
+          "note": "Died the same year the charter was drawn. Alarming, and nothing at all."
+        },
+        { "name": "Aldebrand Stoss", "title": "of the lesser council" },
+        { "name": "Gerhoh Lamp", "title": "sworn measurer of the city" }
+      ],
+
+      "seal": {
+        "id": "seal_kufergasse",
+        "claims_owner": "The Commune of Marchfeld",
+        "claims_polity": "marchfeld",
+        "device": "three_towers",
+        "legend": "SIGILLVM CIVITATIS MARCHFELDE····",
+        "shape": "round",
+        "wax_color": "#2f6b3f",
+        "wear": 0.34,
+        "shape_seed": 4417,
+        "note": "Four letters gone at the rim. Four winters in a chest under a bad roof."
+      }
+    }
+  ],
+
+  "lines": [
+    {
+      "beat": "arrival",
+      "text": "Notary. Sir. I brought everything — I wasn't sure what you'd want, so I brought all of it and the rest is with the doorkeeper."
+    },
+    {
+      "beat": "arrival",
+      "text": "My father held the plot on Küfergasse. Heinrich Ott, cooper, same as me. He's two years dead and the council won't enter me in the book until the charter's been shown."
+    },
+    {
+      "beat": "arrival",
+      "text": "The seal's damaged. I know it's damaged. It sat in a chest under a leaking roof for four years and I didn't know it was in there. It's still the city's seal, sir. It's just old."
+    },
+    {
+      "beat": "inspect_seal",
+      "text": "The rain came through on that side of the chest. You can see where the rim went soft. My father wrapped the rest in his winter apron, but the seal hung out below it. Four winters of that."
+    },
+    {
+      "beat": "inspect_closing",
+      "text": "The small writing? That'll be the city clerk. He does them all like that — he says the big hand is for the grant and the small hand is for the office, and nobody's ever thanked him for either."
+    },
+    {
+      "beat": "waiting",
+      "text": "Sorry — is it meant to take this long? I don't mean to hurry you. I've nothing else on today. I've nothing else on at all, really, until this is settled."
+    },
+    {
+      "beat": "waiting_long",
+      "text": "My father used to say a thing was only truly yours once a clerk had written it down twice. I never knew what he meant by it. I'm starting to."
+    },
+    {
+      "beat": "consult_matrix_book",
+      "text": "The council still uses that same die. I watched them seal my guild letter with it last month. I know watching is not proving, sir. I only thought I should say."
+    },
+    {
+      "beat": "consult_almanac",
+      "text": "Third year of Kunrad. The year the south well froze in September. I remember the cooperage splitting. Dates are easier when they ruin something."
+    }
+  ],
+
+  "outcomes": [
+    {
+      "verdict": "CONFIRM",
+      "favor": { "custom": 1 },
+      "reaction": "That's — thank you. Thank you, sir. My daughter's to be married at Whitsun and the plot is her portion, so. Thank you.",
+      "register_note": "Marchfeld commune die, live and never broken. Rim rubbed, legend short four letters; what survives agrees. Confirmed.",
+      "aftermath": "Entered in the city book at Marchfeld on the twentieth. Nothing further, and nothing further wanted."
+    },
+    {
+      "verdict": "DENY",
+      "favor": { "custom": -2 },
+      "reaction": "...Right. Right, of course. It's the wax, isn't it. I should have brought it in something. I'm sorry to have taken your morning.",
+      "register_note": "Seal of the Marchfeld commune, rubbed at the rim. Refused on the state of the wax.",
+      "aftermath": "The die was live and had never been broken; the commune seals with it still. The damage was six winters under a bad roof. There is no second charter and there is not another one to be had, and the council has entered the plot as vacant."
+    },
+    {
+      "verdict": "REFER",
+      "favor": { "custom": -1 },
+      "reaction": "Referred. That's — how long is referred, usually? No. No, of course not. Thank you, sir.",
+      "register_note": "Marchfeld commune, damaged impression. Sent up rather than decided.",
+      "aftermath": "Still with the Bishop's court. He came back twice in November and was told both times to wait. The wedding is at Whitsun."
+    }
+  ]
+}

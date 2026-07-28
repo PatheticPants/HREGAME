@@ -1,0 +1,85 @@
+{
+  "id": "day_02",
+  "entry_label": "THURSDAY",
+  "heading": "The fourteenth day of October, in the seventh year of Kunrad IV. Third desk, second floor. Four dockets in the passage.",
+  "day_seconds": 720,
+  "burnt_out_text": "The second candle drowned with dockets still in the tray. The doorkeeper copied their names into tomorrow's passage list.",
+  "selection_mode": "tray",
+  "opening_documents": [
+    {
+      "requires_case": "case_03_kesselholt",
+      "requires_verdict": "CONFIRM",
+      "document": {
+        "kind": "letter",
+        "id": "letter_kesselholt_confirm",
+        "title": "Memorandum on a Foreign Reckoning",
+        "size": [360, 455],
+        "tint": "#d8c79f",
+        "start_offset": [430, 90],
+        "start_angle_deg": 3.0,
+        "takes_seal": false,
+        "sender": "Liutger von Ahr, Vice-Chancellor",
+        "recipient": "The third desk, second floor",
+        "body": "It is reported that this desk admitted the Saint Wend instrument for Kesselholt by election reckoning.\n\nThe Chancery records regnal years from accession. A notary may choose to serve another authority, but he may not call that choice Imperial law. Enter the positions distinctly in the Register and be prepared to account for the consequence.",
+        "closing": "The eagle has not changed the year from which it counts.",
+        "endorsements": ["IMPERIAL"]
+      }
+    },
+    {
+      "requires_case": "case_03_kesselholt",
+      "requires_verdict": "DENY",
+      "document": {
+        "kind": "letter",
+        "id": "letter_kesselholt_deny",
+        "title": "Notice of Appeal from Saint Wend",
+        "size": [360, 455],
+        "tint": "#d7c8ad",
+        "start_offset": [430, 90],
+        "start_angle_deg": -2.5,
+        "takes_seal": false,
+        "sender": "The Cathedral Chapter of Saint Wend",
+        "recipient": "The notary of the third desk",
+        "body": "Your denial of the Kesselholt grant has been entered before the Bishop's court.\n\nThe instrument was drawn by our chancery and dated according to the election from which we count. The Church does not accept that a later Imperial habit can make an earlier episcopal act impossible. The abbey's cutters remain under our protection pending appeal.",
+        "closing": "What your office refused, our law continues to admit.",
+        "endorsements": ["CHAPTER"]
+      }
+    },
+    {
+      "requires_case": "case_03_kesselholt",
+      "requires_verdict": "REFER",
+      "document": {
+        "kind": "letter",
+        "id": "letter_kesselholt_refer",
+        "title": "Joint Covering Sheet — Kesselholt",
+        "size": [380, 470],
+        "tint": "#d3c39f",
+        "start_offset": [430, 90],
+        "start_angle_deg": 1.5,
+        "takes_seal": false,
+        "sender": "The offices named below",
+        "recipient": "The third desk, for immediate return",
+        "body": "The referred instrument has arrived under both seals.\n\nThe Imperial Chancery requires the wood secured while accession reckoning is examined. The Chapter of Saint Wend requires felling to continue while election reckoning is defended.\n\nBoth offices direct this desk to move the matter without delay. Neither agrees what movement means.",
+        "closing": "Two endorsements do not make one command.",
+        "endorsements": ["IMPERIAL", "CHAPTER"]
+      }
+    }
+  ],
+  "case_slots": [
+    { "case_id": "case_04_second_lion" },
+    {
+      "case_id": "case_05_grellwater_regrant",
+      "requires_ruled": "case_02_grellwater",
+      "fallback_case_id": "case_02_grellwater"
+    },
+    {
+      "case_id": "case_06_kesselholt_writ",
+      "requires_ruled": "case_03_kesselholt",
+      "fallback_case_id": "case_03_kesselholt"
+    },
+    {
+      "case_id": "case_07_daughters_portion",
+      "requires_ruled": "case_01_kufergasse",
+      "fallback_case_id": "case_01_kufergasse"
+    }
+  ]
+}

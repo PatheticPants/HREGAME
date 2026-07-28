@@ -1,0 +1,41 @@
+{
+  "_comment": "Entries already in the Register when the player sits down. The desk had somebody at it before. Two of these are a clerk doing his job; one of them is not, and the difference is a single phrase. Nothing in the slice explains it. That is the point.",
+
+  "entries": [
+    {
+      "case_id": "prior_ohlen",
+      "case_title": "The Fishery at Ohlen",
+      "petitioner_name": "the Prior of Ohlen",
+      "verdict": "CONFIRM",
+      "was_sound": true,
+      "reason_code": "seal_sound",
+      "register_note": "Instrument sound in every particular. Die live, date reduces clean. — R.V.",
+      "hand_name": "R.V."
+    },
+    {
+      "case_id": "prior_lenz",
+      "case_title": "The Ford at Lenz",
+      "petitioner_name": "the men of Lenz",
+      "verdict": "REFER",
+      "lawful_verdict": "REFER",
+      "was_sound": true,
+      "authority_verdicts": {
+        "imperial": "DENY",
+        "church": "CONFIRM"
+      },
+      "reason_code": "reckoning_contested",
+      "register_note": "Two reckonings on one date. Sent up. See the Almanac, fol. 4, and mind whose chancery drew it. — R.V.",
+      "hand_name": "R.V."
+    },
+    {
+      "case_id": "prior_kirchwald",
+      "case_title": "The Tithes of Kirchwald",
+      "petitioner_name": "Herr Emmerich, steward",
+      "verdict": "CONFIRM",
+      "was_sound": true,
+      "reason_code": "nothing_against",
+      "register_note": "Nothing found against it. Fee for the writing, two marks, received of the party. — R.V.",
+      "hand_name": "R.V."
+    }
+  ]
+}

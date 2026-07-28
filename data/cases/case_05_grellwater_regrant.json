@@ -1,0 +1,133 @@
+{
+  "id": "case_05_grellwater_regrant",
+  "title": "The Regrant at Grellwater",
+  "_design": "The first generic precedent collision. A clean Imperial regrant stands alone if Adelheid was denied, but conflicts with an admitted or unresolved Vesser title.",
+  "correct_verdict": "DYNAMIC",
+  "dynamic_precedent": true,
+  "correct_reason": "precedent_contested",
+  "correct_reason_text": "The current instrument and Imperial seal are clean. The Adjudicator may additionally find a contested Register position from Day 1.",
+  "petitioner": {
+    "id": "emmerich_hove",
+    "name": "Herr Emmerich Hove",
+    "style": "steward of the Imperial household",
+    "polity_id": "aachen_verd",
+    "portrait_path": "res://art/petitioners/emmerich_hove_bust.png",
+    "height": 258,
+    "build": 92,
+    "cloth": "#5a4a25",
+    "restlessness": 0.06
+  },
+  "documents": [
+    {
+      "kind": "docket",
+      "id": "docket_05",
+      "title": "Passage docket",
+      "size": [330, 235],
+      "tint": "#ded0ad",
+      "start_offset": [-355, -90],
+      "start_angle_deg": -4.5,
+      "petitioner_name": "Herr Emmerich Hove",
+      "petitioner_style": "steward, the Imperial household",
+      "claim_summary": "Presents an Imperial regrant of the mill at Grellwater after escheat. Produces one Chancery instrument under the Imperial seal.",
+      "received_note": "Called from the Thursday tray.",
+      "doorkeeper_note": "Knew which stair to take without asking."
+    },
+    {
+      "kind": "charter",
+      "id": "charter_grellwater_regrant",
+      "title": "Imperial Regrant of Grellwater",
+      "size": [430, 585],
+      "tint": "#e3d5b4",
+      "start_offset": [-30, 68],
+      "start_angle_deg": 1.5,
+      "takes_seal": true,
+      "body_text": "Kunrad, by divine favour Emperor of the Romans, ever august, to all present and future, greeting.\n\nThe mill at Grellwater having returned to our hand for want of a title admitted before our Chancery, we grant it with its weir and upper fishery to our faithful steward Emmerich Hove, to hold during our pleasure for the accustomed service.\n\nGiven at Verd under the seal of our Chancery.",
+      "date_emperor": "kunrad_iv",
+      "date_regnal_year": 6,
+      "drawn_by_polity": "aachen_verd",
+      "grantor": "Kunrad IV, Emperor",
+      "claimant": "Emmerich Hove, household steward",
+      "property": "The mill at Grellwater, with its weir and upper fishery",
+      "subject_id": "grellwater_mill",
+      "claimant_id": "emmerich_hove",
+      "witnesses": [
+        { "name": "Liutger von Ahr", "title": "vice-chancellor" },
+        { "name": "Rudolf Gern", "title": "master of the household" }
+      ],
+      "seal": {
+        "id": "seal_grellwater_regrant",
+        "claims_owner": "The Imperial Chancery",
+        "claims_polity": "aachen_verd",
+        "device": "double_eagle",
+        "legend": "SIGILLVM CANCELLARIE IMPERII",
+        "shape": "round",
+        "wax_color": "#c9a227",
+        "wear": 0.04,
+        "shape_seed": 5911,
+        "note": "The Chancery's own double eagle, fresh and unambiguous."
+      }
+    }
+  ],
+  "lines": [
+    {
+      "beat": "arrival",
+      "text": "The mill at Grellwater has been treated as escheated and regranted to the household. I am here for the entry, not for a lesson about the widow who stood here Tuesday."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_02_grellwater",
+      "requires_verdict": "CONFIRM",
+      "priority": 5,
+      "text": "Your Register admits the Vesser title. The Emperor's instrument now places the same mill in another hand. One of those hands will have to open."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_02_grellwater",
+      "requires_verdict": "DENY",
+      "priority": 5,
+      "text": "You refused the Vesser copy. The household has acted on that refusal. Here is the instrument your own entry made possible."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_02_grellwater",
+      "requires_verdict": "REFER",
+      "priority": 5,
+      "text": "You sent the Vesser title upward. The household did not wait for it to come down. Decide whether your earlier uncertainty binds the Emperor."
+    },
+    {
+      "beat": "consult_register",
+      "text": "Yes. Read your own hand. I did before I came upstairs."
+    },
+    {
+      "beat": "inspect_seal",
+      "text": "Your own Chancery's wax. If you distrust that, the argument is larger than Grellwater."
+    },
+    {
+      "beat": "waiting",
+      "text": "The mill turns while clerks deliberate. The only question is whose grain is beneath the stone."
+    }
+  ],
+  "outcomes": [
+    {
+      "verdict": "CONFIRM",
+      "favor": { "imperial": 2 },
+      "reaction": "The household expected no less. Whether your Register did is your concern.",
+      "register_note": "Imperial regrant of Grellwater, current seal live. Confirmed to Emmerich Hove.",
+      "aftermath": "Household men took possession. Any Vesser title now has to dislodge an Imperial grantee already at the mill."
+    },
+    {
+      "verdict": "DENY",
+      "favor": { "imperial": -2 },
+      "reaction": "You have refused the Emperor's own hand at the Emperor's own desk. I will make certain the sentence is copied exactly.",
+      "register_note": "Imperial regrant of Grellwater refused against the prior position of this desk.",
+      "aftermath": "The Chancellor asked why a live Imperial seal was denied. Where the Register supported the refusal, he asked who had allowed that entry."
+    },
+    {
+      "verdict": "REFER",
+      "favor": { "imperial": -1 },
+      "reaction": "Another ribbon around the mill. Very well. Water is patient.",
+      "register_note": "Competing positions on Grellwater sent up.",
+      "aftermath": "The household remained in practical possession pending review. Referral preserved the dispute, not the widow's control."
+    }
+  ]
+}

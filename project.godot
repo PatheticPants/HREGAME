@@ -1,0 +1,37 @@
+; Hand and Seal — Godot 4 project configuration.
+;
+; Targeting 4.3 in config/features on purpose: a project that declares an OLDER
+; version opens with a mild notice in newer editors, whereas one declaring a NEWER
+; version can genuinely break in an older one. Only 4.2-era APIs are used, so this
+; opens clean in 4.3, 4.4 and 4.5. If you want to pin to your exact version, this
+; is the one line to change.
+
+config_version=5
+
+[application]
+
+config/name="Hand and Seal"
+config/description="A notary of the Imperial Chancery rules on claims to land and title."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Audio="*res://scripts/audio/audio_director.gd"
+Lore="*res://scripts/world/lore.gd"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/window_width_override=1600
+window/size/window_height_override=900
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.043, 0.036, 0.031, 1)

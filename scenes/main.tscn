@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/presentation/desk.gd" id="1_desk"]
+[ext_resource type="Script" path="res://scripts/presentation/view_controller.gd" id="2_view"]
+
+[node name="main" type="Node2D"]
+
+[node name="desk" type="Node2D" parent="."]
+position = Vector2(960, 640)
+script = ExtResource("1_desk")
+
+[node name="camera" type="Camera2D" parent="."]
+position = Vector2(960, 590)
+enabled = true
+
+[node name="view_controller" type="Node" parent="."]
+script = ExtResource("2_view")

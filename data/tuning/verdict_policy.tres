@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="VerdictPolicy" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/rules/verdict_policy.gd" id="1_policy"]
+[ext_resource type="Script" path="res://scripts/rules/verdict_rule.gd" id="2_rule"]
+
+[sub_resource type="Resource" id="Resource_fatal"]
+script = ExtResource("2_rule")
+severity = 4
+verdict = 2
+grounds = "The instrument is false."
+
+[sub_resource type="Resource" id="Resource_contested"]
+script = ExtResource("2_rule")
+severity = 3
+verdict = 3
+grounds = "Two authorities are in contention. Referred upward."
+
+[sub_resource type="Resource" id="Resource_defect"]
+script = ExtResource("2_rule")
+severity = 2
+verdict = 3
+grounds = "The instrument is defective. Referred for correction."
+
+[resource]
+script = ExtResource("1_policy")
+rules = [SubResource("Resource_fatal"), SubResource("Resource_contested"), SubResource("Resource_defect")]
+default_verdict = 1
+default_grounds = "Nothing in the packet stands against the claim."

@@ -1,0 +1,37 @@
+---
+name: canon-locations
+description: Where Hand and Seal canon actually lives on disk — read these before answering any lore question, they are authoritative over memory
+metadata:
+  type: reference
+---
+
+Canon for *Hand and Seal* lives in the repo, not in memory. Memory holds the
+index, the derived arithmetic, and the open questions. Always verify against
+these files before asserting a fact.
+
+- `C:\HREGAME\data\world\world.json` — polities (7), reigns (3), present year,
+  chancery name, day heading, practice documents. The `_comment` at the top
+  restates the 6–9 polity cap.
+- `C:\HREGAME\data\world\matrices.json` — every seal die: owner, device, legend,
+  shape, wax colour, `cut_year`, `broken_year`. **No genuineness flag.** Forgery
+  is derived by asking whether any die alive on the charter's date could have
+  made the impression.
+- `C:\HREGAME\data\world\register_seed.json` — the predecessor R.V.'s three
+  entries already in the Register at game start. See [[canon-rv-plot-seed]].
+- `C:\HREGAME\data\world\books\almanac.json` — player-facing Almanac of Reigns
+  (the three reckonings). `books\matrix_book.json` — player-facing Book of
+  Matrices, includes R.V. marginalia that is load-bearing plot.
+- `C:\HREGAME\data\cases\` — 7 authored cases. `data\days\` — day_01, day_02,
+  `_order.json`.
+- `C:\HREGAME\scripts\rules\` — what the engine can actually adjudicate.
+  `adjudicator.gd` lists the active checks and names the planned ones.
+- `C:\HREGAME\docs\CAMPAIGN_IMPLEMENTATION.md` — the game as implemented.
+  `docs\CONTINUITY.md` — conventions that are decisions, not habits.
+
+Hard project conventions that constrain lore proposals:
+- No `is_forged` flag anywhere in data. Every defect must be derivable by
+  cross-reference.
+- "Everything the ledger says was findable must have been renderable on the
+  desk." Violated twice; both treated as critical.
+- Diegetic only. No HUD, no panels. A new reference is a physical book.
+- Content is JSON under `data/`; tuning is `.tres`.

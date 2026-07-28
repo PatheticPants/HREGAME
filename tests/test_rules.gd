@@ -1,0 +1,384 @@
+extends SceneTree
+
+## Headless test of the rules layer. Run from the project root:
+##
+##     godot --headless --script tests/test_rules.gd
+##
+## Deliberately does NOT touch the scene tree, the autoloads, or any node. The
+## checks take a CheckContext and return findings; that is the entire reason they
+## were built that way, and this file is what cashes it in.
+##
+## The important assertion is the last one: every case's AUTHORED correct_verdict
+## must equal the verdict the documents actually produce. When those disagree the
+## content is broken, and the failure should arrive here rather than in a
+## playtest three weeks later.
+
+var failures := 0
+var checks := 0
+
+
+func _initialize() -> void:
+	print("\n=== Hand and Seal — rules ===\n")
+
+	var lore := ContentLoader.load_all()
+	for e in lore.errors:
+		_fail("content: %s" % e)
+
+	_test_regnal_math(lore)
+	_test_legend_matching()
+	_test_cases(lore)
+	_test_policy()
+	_test_plural_authority(lore)
+	_test_precedent(lore)
+	_test_campaign_data(lore)
+
+	print("\n%d checks, %d failure(s)\n" % [checks, failures])
+	quit(1 if failures > 0 else 0)
+
+
+# ------------------------------------------------------------------ regnal
+
+func _test_regnal_math(lore: LoreData) -> void:
+	_section("regnal arithmetic")
+	var aldric := lore.reign(&"aldric_i")
+	if aldric == null:
+		_fail("no reign 'aldric_i'")
+		return
+
+	# Year 1 is the epoch year itself. Off by one here breaks every case.
+	_eq(RegnalMath.to_absolute(aldric, 1, Lex.Dating.ACCESSION),
+		aldric.accession_year, "year 1 is the accession year")
+	_eq(RegnalMath.to_absolute(aldric, 14, Lex.Dating.ACCESSION), 1217,
+		"14 Aldric by accession")
+	_eq(RegnalMath.to_absolute(aldric, 14, Lex.Dating.ELECTION), 1214,
+		"14 Aldric by election")
+
+	# The same phrase, admissible under one law and not the other. This is the
+	# entire premise of the game expressed as two booleans.
+	_is_true(not RegnalMath.is_admissible(aldric, 14, Lex.Dating.ACCESSION,
+		lore.present_year), "14 Aldric is impossible to the Empire")
+	_is_true(RegnalMath.is_admissible(aldric, 14, Lex.Dating.ELECTION,
+		lore.present_year), "14 Aldric is ordinary to the Church")
+
+	_eq(RegnalMath.max_regnal_year(aldric, Lex.Dating.ACCESSION,
+		lore.present_year), 12, "Aldric reigned 12 years by accession")
+
+	var round_trip := RegnalMath.from_absolute(aldric,
+		RegnalMath.to_absolute(aldric, 7, Lex.Dating.CORONATION),
+		Lex.Dating.CORONATION)
+	_eq(round_trip, 7, "absolute conversion round-trips")
+
+
+# ----------------------------------------------------------------- legends
+
+func _test_legend_matching() -> void:
+	_section("worn legends")
+	_is_true(SealCheck.legend_compatible("SIGILLVM CIVITATIS MARCHFELDE····",
+		"SIGILLVM CIVITATIS MARCHFELDENSIS"), "dots match lost letters")
+	_is_true(not SealCheck.legend_compatible("DIETRICVS MARCHIO TVRNENSIS",
+		"DIETRICVS DEI GRATIA MARCHIO TVRNENSIS"),
+		"a shorter legend is a different legend")
+	_is_true(not SealCheck.legend_compatible("SIGILLVM CIVITATIS MARCHFELDENSIX",
+		"SIGILLVM CIVITATIS MARCHFELDENSIS"), "a wrong letter is a wrong letter")
+	_is_true(SealCheck.legend_compatible("  sigillvm cancellarie imperii  ",
+		"SIGILLVM CANCELLARIE IMPERII"), "case and edge whitespace are ignored")
+
+
+# ------------------------------------------------------------------- cases
+
+func _test_cases(lore: LoreData) -> void:
+	_section("cases")
+	if lore.cases.is_empty():
+		_fail("no cases loaded")
+		return
+
+	for c in lore.cases:
+		if c.dynamic_precedent:
+			print("   note  %s: verdict depends on the Register" % c.id)
+			continue
+		var a := Adjudicator.adjudicate_case(c, lore, null)
+		_eq(a.verdict, c.correct_verdict,
+			"%s: documents produce the authored verdict (%s)"
+			% [c.id, Lex.verdict_name(c.correct_verdict)])
+		if a.reason_code() != c.correct_reason:
+			print("      note  %s: authored reason '%s', derived '%s'"
+				% [c.id, c.correct_reason, a.reason_code()])
+		for f in a.findings:
+			print("      · %-9s %s" % [_sev(f.severity), f.code])
+
+	# The specific shape of each case, asserted by name. If someone retunes the
+	# content these should be updated deliberately, not silently.
+	_case_has(lore, &"case_02_grellwater", &"matrix_not_live",
+		"the widow's seal fails on the die's lifetime, not its appearance")
+	_case_has(lore, &"case_03_kesselholt", &"reckoning_contested",
+		"the abbey's date is contested rather than defective")
+	_case_lacks(lore, &"case_01_kufergasse", Lex.Severity.FATAL,
+		"a worn seal is not a forgery")
+	_case_lacks(lore, &"case_01_kufergasse", Lex.Severity.DEFECT,
+		"a witness dying that year is not a defect")
+
+
+func _case_has(lore: LoreData, id: StringName, code: StringName, why: String) -> void:
+	var c := lore.case_by_id(id)
+	if c == null:
+		_fail("no case '%s'" % id)
+		return
+	var a := Adjudicator.adjudicate_case(c, lore, null)
+	_is_true(a.codes().has(code), why)
+
+
+func _case_lacks(lore: LoreData, id: StringName, severity: int, why: String) -> void:
+	var c := lore.case_by_id(id)
+	if c == null:
+		_fail("no case '%s'" % id)
+		return
+	var a := Adjudicator.adjudicate_case(c, lore, null)
+	_is_true(not a.has_severity(severity), why)
+
+
+# ------------------------------------------------------------------ policy
+
+func _test_policy() -> void:
+	_section("verdict policy")
+	var p := VerdictPolicy.fallback()
+
+	var fatal: Array[Finding] = [
+		Finding.make(&"x", Lex.Severity.FATAL, "forged"),
+		Finding.make(&"y", Lex.Severity.CONTESTED, "contested"),
+	]
+	_eq(p.decide(fatal)["verdict"], Lex.Verdict.DENY,
+		"forgery outranks contention")
+
+	var contested: Array[Finding] = [
+		Finding.make(&"y", Lex.Severity.CONTESTED, "contested"),
+		Finding.make(&"z", Lex.Severity.DEFECT, "defect"),
+	]
+	_eq(p.decide(contested)["verdict"], Lex.Verdict.REFER,
+		"contention outranks defect")
+
+	var clean: Array[Finding] = [Finding.make(&"c", Lex.Severity.CLEAN, "fine")]
+	_eq(p.decide(clean)["verdict"], Lex.Verdict.CONFIRM,
+		"nothing against means confirm")
+
+	var empty: Array[Finding] = []
+	_eq(p.decide(empty)["verdict"], Lex.Verdict.CONFIRM,
+		"an empty packet confirms rather than crashing")
+
+
+func _test_plural_authority(lore: LoreData) -> void:
+	_section("plural authority")
+
+	var kessel := lore.case_by_id(&"case_03_kesselholt")
+	var contested := Adjudicator.adjudicate_case(kessel, lore, null)
+	_is_true(contested.is_pure_authority_contest(),
+		"Kesselholt is a pure authority contest")
+	_is_true(contested.is_defensible(Lex.Verdict.CONFIRM),
+		"Church-backed confirmation is legally defensible")
+	_is_true(contested.is_defensible(Lex.Verdict.DENY),
+		"Empire-backed denial is legally defensible")
+	_is_true(contested.is_defensible(Lex.Verdict.REFER),
+		"referral follows office procedure")
+	_eq(contested.defensible_verdicts(),
+		[Lex.Verdict.CONFIRM, Lex.Verdict.DENY, Lex.Verdict.REFER],
+		"Kesselholt exposes all three defensible dispositions")
+	_eq(contested.supporting_authorities(Lex.Verdict.CONFIRM),
+		[Lex.Authority.CHURCH], "the Church sustains confirmation")
+	_eq(contested.supporting_authorities(Lex.Verdict.DENY),
+		[Lex.Authority.IMPERIAL], "the Empire sustains denial")
+
+	var worn := Adjudicator.adjudicate_case(
+		lore.case_by_id(&"case_01_kufergasse"), lore, null)
+	_is_true(worn.is_defensible(Lex.Verdict.CONFIRM),
+		"the worn but live seal confirms")
+	_is_true(not worn.is_defensible(Lex.Verdict.DENY),
+		"a clean packet does not make denial defensible")
+
+	var dead_die := Adjudicator.adjudicate_case(
+		lore.case_by_id(&"case_02_grellwater"), lore, null)
+	_is_true(dead_die.is_defensible(Lex.Verdict.DENY),
+		"the dead die sustains denial")
+	_is_true(not dead_die.is_defensible(Lex.Verdict.CONFIRM),
+		"a fatal seal defect does not sustain confirmation")
+
+	var split := Finding.make(&"split", Lex.Severity.CONTESTED, "split")
+	split.authority_verdicts = {
+		Lex.Authority.IMPERIAL: Lex.Verdict.DENY,
+		Lex.Authority.CHURCH: Lex.Verdict.CONFIRM,
+	}
+	var fatal := Finding.make(&"fatal", Lex.Severity.FATAL, "fatal")
+	var mixed := Adjudication.new()
+	mixed.findings = [split, fatal]
+	mixed.decisive = split
+	mixed.verdict = Lex.Verdict.DENY
+	_is_true(not mixed.is_pure_authority_contest(),
+		"a factual fatality prevents pluralizing the answer")
+	_is_true(not mixed.is_defensible(Lex.Verdict.CONFIRM),
+		"authority support cannot excuse a fatal instrument defect")
+
+
+func _test_precedent(lore: LoreData) -> void:
+	_section("precedent")
+	var grell := lore.case_by_id(&"case_02_grellwater")
+	var regrant := lore.case_by_id(&"case_05_grellwater_regrant")
+
+	var denied_register := Register.new()
+	denied_register.add(_prior_record(grell, Lex.Verdict.DENY))
+	var after_denial := Adjudicator.adjudicate_case(regrant, lore, denied_register)
+	_eq(after_denial.verdict, Lex.Verdict.CONFIRM,
+		"a refused old title leaves a clean regrant standing")
+	_is_true(not after_denial.is_pure_authority_contest(),
+		"denial alone leaves no recognized competitor")
+
+	var admitted_register := Register.new()
+	admitted_register.add(_prior_record(grell, Lex.Verdict.CONFIRM))
+	var after_admission := Adjudicator.adjudicate_case(
+		regrant, lore, admitted_register)
+	_eq(after_admission.verdict, Lex.Verdict.REFER,
+		"an admitted competing title contests the regrant")
+	_eq(after_admission.supporting_authorities(Lex.Verdict.CONFIRM),
+		[Lex.Authority.IMPERIAL], "the clean Imperial instrument supports regrant")
+	_eq(after_admission.supporting_authorities(Lex.Verdict.DENY),
+		[Lex.Authority.OFFICE], "the office's admitted Vesser title supports denial")
+
+	var referred_register := Register.new()
+	referred_register.add(_prior_record(grell, Lex.Verdict.REFER))
+	var after_referral := Adjudicator.adjudicate_case(
+		regrant, lore, referred_register)
+	_is_true(after_referral.is_defensible(Lex.Verdict.CONFIRM),
+		"the new authority can support confirmation after referral")
+	_is_true(after_referral.is_defensible(Lex.Verdict.REFER),
+		"the unresolved Register position supports continued referral")
+	_is_true(not after_referral.is_defensible(Lex.Verdict.DENY),
+		"referral alone does not invent support for denial")
+
+	var kessel := lore.case_by_id(&"case_03_kesselholt")
+	var old_positions := Adjudicator.adjudicate_case(kessel, lore, null)
+	for prior_verdict in [
+			Lex.Verdict.CONFIRM, Lex.Verdict.DENY, Lex.Verdict.REFER]:
+		var callback_register := Register.new()
+		var prior := _prior_record(kessel, prior_verdict)
+		prior.authority_verdicts = old_positions.authority_split()
+		callback_register.add(prior)
+		var writ := Adjudicator.adjudicate_case(
+			lore.case_by_id(&"case_06_kesselholt_writ"), lore,
+			callback_register)
+		_eq(writ.verdict, Lex.Verdict.REFER,
+			"Kesselholt writ is procedurally referred after %s"
+			% Lex.verdict_name(prior_verdict).to_lower())
+		_eq(writ.supporting_authorities(Lex.Verdict.CONFIRM).has(
+			Lex.Authority.IMPERIAL), true,
+			"the Empire supports its competing writ")
+		_eq(writ.supporting_authorities(Lex.Verdict.DENY).has(
+			Lex.Authority.CHURCH), true,
+			"the Church's admitted abbey title supports denial")
+
+	var cured_register := Register.new()
+	cured_register.add(_prior_record(
+		lore.case_by_id(&"case_01_kufergasse"), Lex.Verdict.DENY))
+	var cured := Adjudicator.adjudicate_case(
+		lore.case_by_id(&"case_07_daughters_portion"), lore, cured_register)
+	_eq(cured.verdict, Lex.Verdict.CONFIRM,
+		"a superseding instrument is judged on its own merits")
+	_is_true(cured.codes().has(&"instrument_cures_prior"),
+		"the cured packet explains why precedent does not bind it")
+
+	# Feedback is composed after entries have been added, but it must reason
+	# from the history that existed at judgment. The current entry and later
+	# entries are not precedent for themselves.
+	var second_lion := lore.case_by_id(&"case_04_second_lion")
+	var temporal := Register.new()
+	var current := _prior_record(second_lion, Lex.Verdict.DENY)
+	temporal.add(current)
+	temporal.add(_prior_record(second_lion, Lex.Verdict.CONFIRM))
+	var as_decided := Adjudicator.adjudicate_case(
+		second_lion, lore, temporal.before(current))
+	_is_true(not as_decided.codes().has(&"precedent_contested"),
+		"a ruling cannot manufacture precedent for its own feedback")
+
+
+func _test_campaign_data(lore: LoreData) -> void:
+	_section("campaign data")
+	var thursday := lore.day_by_id(&"day_02")
+	_is_true(thursday != null and thursday.entry_label == "THURSDAY",
+		"the next-day ledger label comes from day content")
+	if thursday == null:
+		return
+
+	var kessel := lore.case_by_id(&"case_03_kesselholt")
+	var letter_ids := {}
+	for verdict in [Lex.Verdict.CONFIRM, Lex.Verdict.DENY, Lex.Verdict.REFER]:
+		var history := Register.new()
+		history.add(_prior_record(kessel, verdict))
+		var letters := thursday.resolve_opening_documents(history)
+		_is_true(letters.size() == 1,
+			"one Kesselholt letter arrives after %s"
+			% Lex.verdict_name(verdict).to_lower())
+		if letters.size() == 1:
+			letter_ids[letters[0].id] = true
+	_eq(letter_ids.size(), 3,
+		"all three Kesselholt choices produce distinct correspondence")
+
+	var unresolved_ids := PackedStringArray()
+	for c in thursday.resolve_cases(lore, Register.new()):
+		unresolved_ids.append(String(c.id))
+	_is_true(unresolved_ids.has("case_01_kufergasse")
+			and unresolved_ids.has("case_02_grellwater")
+			and unresolved_ids.has("case_03_kesselholt"),
+		"unheard Tuesday matters return instead of spawning follow-ups")
+
+	var completed := Register.new()
+	for id in [&"case_01_kufergasse", &"case_02_grellwater",
+			&"case_03_kesselholt"]:
+		completed.add(_prior_record(lore.case_by_id(id), Lex.Verdict.REFER))
+	var followup_ids := PackedStringArray()
+	for c in thursday.resolve_cases(lore, completed):
+		followup_ids.append(String(c.id))
+	_is_true(followup_ids.has("case_05_grellwater_regrant")
+			and followup_ids.has("case_06_kesselholt_writ")
+			and followup_ids.has("case_07_daughters_portion"),
+		"ruled Tuesday matters unlock their authored Thursday follow-ups")
+
+
+func _prior_record(c: CaseData, verdict: int) -> RulingRecord:
+	var record := RulingRecord.new()
+	record.case_id = c.id
+	record.day_id = &"day_01"
+	record.case_title = c.title
+	record.verdict = verdict
+	record.lawful_verdict = c.correct_verdict
+	var charter := c.charter()
+	record.subject_id = charter.subject_id
+	record.claimant_id = charter.claimant_id
+	return record
+
+
+# ----------------------------------------------------------------- harness
+
+func _section(title: String) -> void:
+	print("-- %s" % title)
+
+
+func _eq(got, want, why: String) -> void:
+	checks += 1
+	if got == want:
+		print("   ok    %s" % why)
+	else:
+		_fail("%s  (got %s, wanted %s)" % [why, str(got), str(want)])
+
+
+func _is_true(cond: bool, why: String) -> void:
+	checks += 1
+	if cond:
+		print("   ok    %s" % why)
+	else:
+		_fail(why)
+
+
+func _fail(why: String) -> void:
+	failures += 1
+	printerr("   FAIL  %s" % why)
+	print("   FAIL  %s" % why)
+
+
+func _sev(s: int) -> String:
+	return ["clean", "note", "defect", "contested", "fatal"][clampi(s, 0, 4)]

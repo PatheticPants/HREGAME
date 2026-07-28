@@ -1,0 +1,149 @@
+{
+  "id": "case_02_grellwater",
+  "title": "The Mill at Grellwater",
+
+  "_design": "The forgery, and the whole point is that denying it is correct and cruel. She is not the forger. Her charter burnt in a real fire and she paid a man in Thurnstadt four marks to draw it again; he worked from an old impression and used Dietrich's first die, which was defaced in 1207. The instrument is dated 1213. No die of Dietrich's existed by then — the second was broken at his death in 1211.\n\nTwo routes to the truth, one easy and one hard. Easy: the body text styles him DEI GRATIA but the legend does not, and the book shows he changed the legend when he took the style. Hard: the die was dead. Both land on the same answer.\n\nAnd confirming it out of pity does not save her. It turns her charter into evidence.",
+
+  "correct_verdict": "DENY",
+  "correct_reason": "matrix_not_live",
+  "correct_reason_text": "The impression answers exactly to Dietrich's first die, which was defaced in 1207. The instrument is dated 1213. His second die was broken at his death in 1211. On the day this charter claims to have been sealed, no die of Dietrich of Thurn existed anywhere in the Empire.",
+
+  "petitioner": {
+    "id": "adelheid_vesser",
+    "name": "Frau Adelheid Vesser",
+    "style": "widow, of Grellwater in Thurn",
+    "polity_id": "thurn",
+    "portrait_path": "res://art/petitioners/adelheid_vesser_bust.png",
+    "height": 232,
+    "build": 88,
+    "cloth": "#3b3238",
+    "restlessness": 0.22
+  },
+
+  "documents": [
+    {
+      "kind": "docket",
+      "id": "docket_02",
+      "title": "Docket",
+      "size": [330, 235],
+      "tint": "#d9cdae",
+      "start_offset": [-350, -85],
+      "start_angle_deg": -6.0,
+      "petitioner_name": "Frau Adelheid Vesser",
+      "petitioner_style": "widow of Konrad Vesser, ministerialis of Thurn",
+      "claim_summary": "Claims the mill at Grellwater by her late husband's tenure. Produces one charter of the Margrave, sealed. States the original was lost in the fire of 1218 and this is a restoration.",
+      "received_note": "Received at the door, the eleventh of October.",
+      "doorkeeper_note": "Third time she has been here. Told her the answer would be the same. She came anyway."
+    },
+    {
+      "kind": "charter",
+      "id": "charter_grellwater",
+      "title": "Grant of Dietrich, Margrave of Thurn",
+      "size": [430, 585],
+      "tint": "#ddd0ad",
+      "start_offset": [-30, 70],
+      "start_angle_deg": 2.5,
+      "takes_seal": true,
+
+      "body_text": "Dietrich, by the grace of God Margrave of Thurn, to all his faithful men, greeting.\n\nBe it known that we have given and granted to Konrad Vesser, our ministerialis, and to his heirs after him, the mill at Grellwater with the weir belonging to it and the fishing in the water above the weir, to hold of us for the service of one armed man forty days in the year.\n\nIn witness whereof we have set our seal.",
+
+      "date_emperor": "aldric_i",
+      "date_regnal_year": 10,
+      "drawn_by_polity": "thurn",
+
+      "grantor": "Dietrich, Margrave of Thurn",
+      "claimant": "Konrad Vesser, ministerialis, and his heirs",
+      "property": "The mill at Grellwater, with the weir and the fishing above it",
+      "subject_id": "grellwater_mill",
+      "claimant_id": "vesser_household",
+
+      "witnesses": [
+        {
+          "name": "Eckhard von Melle",
+          "title": "marshal of Thurn",
+          "died_emperor": "aldric_i",
+          "died_regnal_year": 12,
+          "died_dating_style": "accession"
+        },
+        { "name": "Hugo Wend", "title": "of Grellwater" },
+        { "name": "Berthold Kalp", "title": "miller of the lower weir" }
+      ],
+
+      "seal": {
+        "id": "seal_grellwater",
+        "claims_owner": "Dietrich, Margrave of Thurn",
+        "claims_polity": "thurn",
+        "device": "lion_rampant",
+        "legend": "DIETRICVS MARCHIO TVRNENSIS",
+        "shape": "round",
+        "wax_color": "#8c1c2b",
+        "wear": 0.07,
+        "shape_seed": 8823,
+        "note": "Crisp. Far crisper than a seal of 1213 has any right to be, and the legend is the one he gave up in 1207."
+      }
+    }
+  ],
+
+  "lines": [
+    {
+      "beat": "arrival",
+      "text": "My husband was Konrad Vesser. He held the mill at Grellwater of the Margrave and he held it eight years, and anyone at Grellwater will tell you so, and I know that isn't what you need."
+    },
+    {
+      "beat": "arrival",
+      "text": "The charter burnt. The whole of the lower town burnt in the year eighteen and our house with it. This is the charter drawn again — restored — by a man in Thurnstadt who does that work."
+    },
+    {
+      "beat": "arrival",
+      "text": "He said it would be as good as the first. He took four marks for it. I have wondered since whether four marks was a great deal of money or very little."
+    },
+    {
+      "beat": "inspect_seal",
+      "text": "He never had the metal die. Only an older piece of wax, black at the edges, that he kept wrapped in wool. He said a careful copy was the same thing. I believed him."
+    },
+    {
+      "beat": "inspect_closing",
+      "text": "He copied that line too. He copied everything. I watched him do it and I thought it was skill."
+    },
+    {
+      "beat": "waiting",
+      "text": "Take whatever time you need. The last two men looked at it for about as long as it takes to say no."
+    },
+    {
+      "beat": "waiting_long",
+      "text": "You keep going back to the wax. ... I would rather you told me now, if you are going to tell me. I have made this journey three times and I would like to know which of them was the last one."
+    },
+    {
+      "beat": "consult_matrix_book",
+      "text": "There were two dies? No. He did not tell me that. He said Dietrich's lion was Dietrich's lion, as though a lion could not grow older."
+    },
+    {
+      "beat": "consult_almanac",
+      "text": "The year is the one my husband took the mill. That much is true even if nothing else in front of you is. Ask anyone at Grellwater. I know you cannot."
+    }
+  ],
+
+  "outcomes": [
+    {
+      "verdict": "DENY",
+      "favor": { "imperial": 1 },
+      "reaction": "I see. ... Might I ask — is it the man in Thurnstadt who has done wrong, or is it me? I would like to know which it is before I go home.",
+      "register_note": "Impression of Dietrich's first die, defaced 1207. Instrument dated 1213; his second die broken 1211. No die of his existed. Refused.",
+      "aftermath": "She did not appeal. The mill stays with the Margrave's widow's household, which is where the Chancery's friends would have put it in any case — so this once the correct answer and the convenient one were the same answer. Do not expect that twice."
+    },
+    {
+      "verdict": "CONFIRM",
+      "favor": { "imperial": -1 },
+      "reaction": "Thank you. Thank you, sir, truly. I did not think it would be so quick.",
+      "register_note": "Thurn seal, lion rampant, legend agrees with the recorded die. Confirmed.",
+      "aftermath": "Entered, and then read at Thurnstadt by a clerk who knew to the month when Dietrich's dies were broken. The instrument is now evidence. She has been called to answer for it, the man who drew it cannot be found, and the four marks were his fee for making her a criminal. She came here with a mill she could not prove and she leaves with a charge she cannot answer."
+    },
+    {
+      "verdict": "REFER",
+      "favor": {},
+      "reaction": "Up. Yes. How long does up take, usually? ... No. I understand. Thank you.",
+      "register_note": "Thurn seal; die not live at the date of the instrument. Sent up rather than refused outright.",
+      "aftermath": "With the Margrave's court since November, where it will be refused in the end by somebody who does not have to say it to her face. They are in no hurry. She is."
+    }
+  ]
+}

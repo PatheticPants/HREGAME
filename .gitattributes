@@ -1,0 +1,22 @@
+# Normalise line endings so switching between the Mac laptop and the Windows
+# desktop does not produce whole-file diffs. Without this, Godot rewrites .tscn
+# and .tres with the host platform's endings and every pull looks like a rewrite.
+* text=auto eol=lf
+
+*.gd    text eol=lf
+*.tres  text eol=lf
+*.tscn  text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.cfg   text eol=lf
+*.svg   text eol=lf
+*.uid   text eol=lf
+.gitattributes text eol=lf
+.gitignore     text eol=lf
+
+*.wav   binary
+*.ogg   binary
+*.png   binary
+*.jpg   binary
+*.ttf   binary
+*.import text eol=lf

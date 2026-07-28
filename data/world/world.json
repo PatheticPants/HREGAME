@@ -1,0 +1,200 @@
+{
+  "_comment": "The Empire. Seven polities, three reigns. Cap the polity list at nine forever: learnability is the whole game, and each one must carry exactly one mechanical habit a player can hold in their head.",
+
+  "present_year": 1221,
+  "present_reign": "kunrad_iv",
+  "chancery_name": "The Imperial Chancery at Aachen-Verd",
+  "notary_name": "the notary",
+  "day_heading": "The eleventh day of October, in the seventh year of Kunrad IV. Third desk, second floor. Three matters heard.",
+
+  "_day_note": "One candle is one working day. Listening is free until the notary first handles a matter. From that physical engagement onward it burns through thought and speech until judgment. It does not burn between callers or while the ledger is open.",
+  "day_seconds": 1200,
+
+  "day_burnt_out": "The candle went before the queue did. The doorkeeper turned the rest of them out into the passage and told them to come back on Thursday.",
+
+  "desk_note": {
+    "kind": "docket",
+    "id": "third_desk_memorandum",
+    "title": "Memorandum",
+    "size": [330, 430],
+    "tint": "#d5c6a1",
+    "start_offset": [300, -45],
+    "start_angle_deg": -5.0,
+    "takes_seal": false,
+    "petitioner_name": "TO THE THIRD HAND",
+    "petitioner_style": "left beneath the Register, in R.V.'s hand",
+    "claim_summary": "Read the wax with the glass, and the small hand at the foot of a charter with it. Read the years against the Almanac. A live die can leave a bad mark; a dead die cannot leave any mark at all.",
+    "received_note": "There is a tablet in the rack and a stylus by your left hand. Scratch down what you cannot hold in your head, and rest the nib on the wax to take it out again. Nobody will ever read it but you.\n\nMelt the resin cake in the brass spoon, lift it clear of the flame, and pour. One ring. When the wax gives, judgment is made. Hold for the device, then lift cleanly. There is no second impression.\n\nOnce you disturb a matter, the candle waits on neither thought nor tongue.",
+    "doorkeeper_note": "When two laws disagree, CONFIRM or DENY names the law you chose. REFER follows this office's procedure without choosing. Do not confuse procedure with truth. — R.V."
+  },
+
+  "practice_documents": [
+    {
+      "kind": "docket",
+      "id": "practice_instruction",
+      "title": "Before the door opens",
+      "size": [305, 250],
+      "tint": "#cdbd98",
+      "start_offset": [-350, -82],
+      "start_angle_deg": 4.5,
+      "takes_seal": false,
+      "petitioner_name": "PRACTICE",
+      "petitioner_style": "discarded office leaf; no party is bound",
+      "claim_summary": "Read the memorandum. Melt, pour, choose a ring, and hold until the wax gives. The first knock waits.",
+      "received_note": "",
+      "doorkeeper_note": "Afterward, hold the glass over your impression until the door opens."
+    },
+    {
+      "kind": "charter",
+      "id": "practice_leaf",
+      "title": "Discarded Practice Leaf",
+      "size": [390, 500],
+      "tint": "#d8caa9",
+      "start_offset": [-20, 52],
+      "start_angle_deg": -2.0,
+      "takes_seal": true,
+      "body_text": "THIS LEAF TRANSFERS NOTHING.\n\nStrike one complete office device below. Feel the resistance before the wax yields. Once it gives, the judgment cannot be changed; continue to hold for a clean device, then lift without dragging.",
+      "date_emperor": "kunrad_iv",
+      "date_regnal_year": 7,
+      "drawn_by_polity": "aachen_verd",
+      "grantor": "No grantor",
+      "claimant": "No claimant",
+      "property": "No property",
+      "subject_id": "practice_only",
+      "claimant_id": "practice_only",
+      "witnesses": []
+    }
+  ],
+
+  "_reigns_note": "election_year is when he was chosen King of the Romans, in his predecessor's lifetime. accession_year is when the predecessor died. coronation_year is the imperial crown at Rome. The gaps between these three are what make a regnal date ambiguous, and they are the engine of every date puzzle in the game.",
+
+  "reigns": [
+    {
+      "id": "otbert_ii",
+      "name": "Otbert",
+      "regnal_number": "II",
+      "election_year": 1176,
+      "accession_year": 1178,
+      "coronation_year": 1181,
+      "end_year": 1204,
+      "epithet": "who held the crown twenty-six years and left it contested",
+      "note": "Two years between his election and his accession. The Church counts them; the Chancery does not."
+    },
+    {
+      "id": "aldric_i",
+      "name": "Aldric",
+      "regnal_number": "I",
+      "election_year": 1201,
+      "accession_year": 1204,
+      "coronation_year": 1206,
+      "end_year": 1215,
+      "epithet": "chosen young, crowned late, dead at Marchfeld",
+      "note": "Elected King of the Romans three years before Otbert died. His eleventh, twelfth and thirteenth years exist by one reckoning and not by another."
+    },
+    {
+      "id": "kunrad_iv",
+      "name": "Kunrad",
+      "regnal_number": "IV",
+      "election_year": 1214,
+      "accession_year": 1215,
+      "coronation_year": 1219,
+      "end_year": -1,
+      "epithet": "reigns",
+      "note": "Elected in Aldric's lifetime, as is now the custom. Crowned four years after."
+    }
+  ],
+
+  "polities": [
+    {
+      "id": "aachen_verd",
+      "name": "The Crown of Aachen-Verd",
+      "short_name": "the Crown",
+      "color": "#c9a227",
+      "device": "double_eagle",
+      "succession": "Elective. Seven electors, and never yet a quiet one.",
+      "authority": "imperial",
+      "dating_style": "accession",
+      "matrix_dies_with_holder": true,
+      "seals_used": true,
+      "note": "The Chancery's own authority. Its notaries count an emperor's years from the day the last one died, and regard every other reckoning as a courtesy."
+    },
+    {
+      "id": "thurn",
+      "name": "The Margraviate of Thurn",
+      "short_name": "Thurn",
+      "color": "#8c1c2b",
+      "device": "lion_rampant",
+      "succession": "Male primogeniture. The eldest son takes all of it.",
+      "authority": "imperial",
+      "dating_style": "accession",
+      "matrix_dies_with_holder": true,
+      "seals_used": true,
+      "note": "A Thurn matrix is defaced before witnesses on the day its holder dies, so that no man may seal in a dead man's name. They are proud of this."
+    },
+    {
+      "id": "marchfeld",
+      "name": "The Free City of Marchfeld",
+      "short_name": "Marchfeld",
+      "color": "#2f6b3f",
+      "device": "three_towers",
+      "succession": "An elected council. The Burgomaster serves three years and then goes back to his trade.",
+      "authority": "imperial",
+      "dating_style": "accession",
+      "matrix_dies_with_holder": false,
+      "seals_used": true,
+      "note": "The city's seal belongs to the office and not the man. It has outlasted eleven Burgomasters and will outlast the twelfth. A Marchfeld die is almost never dead."
+    },
+    {
+      "id": "saint_wend",
+      "name": "The Prince-Bishopric of Saint Wend",
+      "short_name": "Saint Wend",
+      "color": "#5b3a8c",
+      "device": "crossed_keys",
+      "succession": "By election of the cathedral chapter. No heirs, by definition.",
+      "authority": "church",
+      "dating_style": "election",
+      "matrix_dies_with_holder": false,
+      "seals_used": true,
+      "note": "Dates its instruments from the day an emperor was chosen, not the day he acceded. This is not an error and they will not be corrected."
+    },
+    {
+      "id": "ostmark",
+      "name": "The Duchy of Ostmark",
+      "short_name": "Ostmark",
+      "color": "#2d4f8c",
+      "device": "stag",
+      "succession": "Partible. The land is divided among all sons, and among all their sons after.",
+      "authority": "custom",
+      "dating_style": "accession",
+      "matrix_dies_with_holder": true,
+      "seals_used": true,
+      "note": "Ostmark charters cite fractions, and two brothers may hold perfectly valid claims to the same mill. Nothing about this is a forgery. It is simply how they inherit."
+    },
+    {
+      "id": "hallenstein",
+      "name": "The County of Hallenstein",
+      "short_name": "Hallenstein",
+      "color": "#3a3540",
+      "device": "wolf_head",
+      "succession": "Agnatic. No woman inherits, and no claim passes through one.",
+      "authority": "custom",
+      "dating_style": "accession",
+      "matrix_dies_with_holder": true,
+      "seals_used": true,
+      "note": "A widow of Hallenstein holds nothing. She may live on her husband's land at the pleasure of his heir, which is not the same as holding it, as the heirs are careful to explain."
+    },
+    {
+      "id": "nether_march",
+      "name": "The Wends of the Nether March",
+      "short_name": "the Nether March",
+      "color": "#a5762e",
+      "device": "knot_ring",
+      "succession": "By the agreement of the elders, recorded in nobody's hand.",
+      "authority": "custom",
+      "dating_style": "accession",
+      "matrix_dies_with_holder": true,
+      "seals_used": false,
+      "note": "They keep no seals. A grant is witnessed by oath and by named men standing in a field, and holds for as long as those men live and can be found. Wax on a Wendish instrument was put there by somebody who wanted it to look like ours."
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "_comment": "Every die known to this Chancery. NOTE what is NOT here: no field saying whether a seal is genuine. A forgery is derived by asking whether any die that existed on the charter's date could have produced the impression in front of you. Store the answer and the rules stop being rules.",
+
+  "_legend_note": "Legends are compared letter for letter against the impression. An impression may carry the characters . ? * _ or the middle dot for letters that have rubbed away; those match anything. Lengths must still agree — letters do not vanish, they only become unreadable.",
+
+  "matrices": [
+    {
+      "id": "imperial_chancery",
+      "owner_name": "The Imperial Chancery",
+      "polity_id": "aachen_verd",
+      "device": "double_eagle",
+      "legend": "SIGILLVM CANCELLARIE IMPERII",
+      "shape": "round",
+      "wax_color": "#c9a227",
+      "cut_year": 1180,
+      "broken_year": -1,
+      "note": "Our own. Kept in the iron press on the second floor and signed out by name."
+    },
+    {
+      "id": "thurn_dietrich_i",
+      "owner_name": "Dietrich, Margrave of Thurn",
+      "polity_id": "thurn",
+      "device": "lion_rampant",
+      "legend": "DIETRICVS MARCHIO TVRNENSIS",
+      "shape": "round",
+      "wax_color": "#8c1c2b",
+      "cut_year": 1194,
+      "broken_year": 1207,
+      "note": "His first die. Set aside in 1207 when he took the style DEI GRATIA, and defaced at the same hour. Impressions of it survive on older instruments all over the March."
+    },
+    {
+      "id": "thurn_dietrich_ii",
+      "owner_name": "Dietrich, Margrave of Thurn",
+      "polity_id": "thurn",
+      "device": "lion_rampant",
+      "legend": "DIETRICVS DEI GRATIA MARCHIO TVRNENSIS",
+      "shape": "round",
+      "wax_color": "#8c1c2b",
+      "cut_year": 1207,
+      "broken_year": 1211,
+      "note": "His second and last. Broken before witnesses on the day of his death, as Thurn custom requires. After 1211 there is no die of Dietrich anywhere in the Empire.",
+      "_marginalia_lives_in_the_book": true
+    },
+    {
+      "id": "marchfeld_commune",
+      "owner_name": "The Commune of Marchfeld",
+      "polity_id": "marchfeld",
+      "device": "three_towers",
+      "legend": "SIGILLVM CIVITATIS MARCHFELDENSIS",
+      "shape": "round",
+      "wax_color": "#2f6b3f",
+      "cut_year": 1189,
+      "broken_year": -1,
+      "note": "Seal of the office. It has outlasted eleven Burgomasters. Worn to softness at the rim from thirty years of use — expect damage, and do not mistake it for anything else."
+    },
+    {
+      "id": "wend_abbey",
+      "owner_name": "The Abbey of Saint Wend's-in-the-Wood",
+      "polity_id": "saint_wend",
+      "device": "crozier",
+      "legend": "SIGILLVM ABBATIE SANCTI WENDELINI IN SILVA",
+      "shape": "vesica",
+      "wax_color": "#5b3a8c",
+      "cut_year": 1187,
+      "broken_year": -1,
+      "note": "A house seal, pointed oval as the religious use. Abbots come and go beneath it."
+    },
+    {
+      "id": "wend_chapter",
+      "owner_name": "The Cathedral Chapter of Saint Wend",
+      "polity_id": "saint_wend",
+      "device": "crossed_keys",
+      "legend": "SIGILLVM CAPITVLI SANCTI WENDELINI",
+      "shape": "vesica",
+      "wax_color": "#5b3a8c",
+      "cut_year": 1198,
+      "broken_year": -1,
+      "note": "Not to be confused with the Abbey's. Keys, not a crook — the chapter, not the house."
+    },
+    {
+      "id": "ostmark_duke",
+      "owner_name": "Berthold, Duke of Ostmark",
+      "polity_id": "ostmark",
+      "device": "stag",
+      "legend": "BERTHOLDVS DVX ORIENTALIS MARCHIE",
+      "shape": "round",
+      "wax_color": "#2d4f8c",
+      "cut_year": 1209,
+      "broken_year": -1,
+      "note": "Berthold has four sons and the land will be in quarters before the die is broken."
+    },
+    {
+      "id": "hallenstein_count",
+      "owner_name": "Ulrich, Count of Hallenstein",
+      "polity_id": "hallenstein",
+      "device": "wolf_head",
+      "legend": "VLRICVS COMES DE HALLENSTEIN",
+      "shape": "round",
+      "wax_color": "#3a3540",
+      "cut_year": 1202,
+      "broken_year": -1,
+      "note": "Ulrich seals a great deal and reads very little of it."
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "matrix_book",
+  "title": "Book of Matrices",
+  "subtitle": "Dies known to this Chancery",
+  "cover_color": "#4a2f1e",
+  "page_color": "#e6ddc4",
+  "size": [320, 430],
+  "start_offset": [-430, 205],
+  "start_angle_deg": -2.5,
+
+  "_comment": "Pages are typed, not free text, so a matrix plate draws the actual device and a polity plate draws the actual arms. Adding a page kind is a branch in reference_book.gd; adding a page is a line here.",
+
+  "pages": [
+    {
+      "kind": "text",
+      "heading": "Book of Matrices",
+      "subheading": "kept at the third desk",
+      "body": "Herein the seal dies known to this Chancery, with the years each was cut and, where it applies, the year it was defaced.\n\nA die is a thing of metal. It is cut in one year and destroyed in another, and between those two years and no others it can leave a mark in wax.",
+      "marginalia": "Nine tenths of the work is on this page and the rest is looking things up. — R.V."
+    },
+    {
+      "kind": "text",
+      "heading": "How a seal is read",
+      "body": "Four things are compared, and all four must agree:\n\n   the device\n   the legend, letter by letter\n   the shape\n   the tincture of the wax\n\nAnd then a fifth, which is not on the wax at all:\n\n   was the die alive on the day of the instrument?\n\nA legend may be rubbed away by honest years. Letters lost are written here as dots and count as agreeing with whatever the die had. Wear is not dishonesty. Half the false denials in this office have been a clerk frightened of a chipped rim."
+    },
+    { "kind": "plate", "heading": "The Crown of Aachen-Verd", "polity_id": "aachen_verd" },
+    { "kind": "matrix", "heading": "Chancery of the Empire", "matrix_id": "imperial_chancery" },
+
+    { "kind": "plate", "heading": "The Margraviate of Thurn", "polity_id": "thurn" },
+    {
+      "kind": "matrix",
+      "heading": "Dietrich of Thurn — the first die",
+      "matrix_id": "thurn_dietrich_i"
+    },
+    {
+      "kind": "matrix",
+      "heading": "Dietrich of Thurn — the second",
+      "matrix_id": "thurn_dietrich_ii",
+      "marginalia": "Two dies, one man, and the old one is on half the parchment in the March. Anybody wanting a Thurn seal has an impression to copy from and no die to copy it with. Check the year. Always check the year. — R.V."
+    },
+
+    { "kind": "plate", "heading": "The Free City of Marchfeld", "polity_id": "marchfeld" },
+    {
+      "kind": "matrix",
+      "heading": "The Commune of Marchfeld",
+      "matrix_id": "marchfeld_commune",
+      "marginalia": "Never dead. Do not go looking for a break year on this one; there isn't one and you will talk yourself into something."
+    },
+
+    { "kind": "plate", "heading": "The Prince-Bishopric of Saint Wend", "polity_id": "saint_wend" },
+    { "kind": "matrix", "heading": "The Abbey in the Wood", "matrix_id": "wend_abbey" },
+    {
+      "kind": "matrix",
+      "heading": "The Cathedral Chapter",
+      "matrix_id": "wend_chapter",
+      "marginalia": "Keys are the chapter. A crook is the house. They are not interchangeable and the abbey will write to you about it if you say they are."
+    },
+
+    { "kind": "plate", "heading": "The Duchy of Ostmark", "polity_id": "ostmark" },
+    { "kind": "matrix", "heading": "Berthold of Ostmark", "matrix_id": "ostmark_duke" },
+
+    { "kind": "plate", "heading": "The County of Hallenstein", "polity_id": "hallenstein" },
+    { "kind": "matrix", "heading": "Ulrich of Hallenstein", "matrix_id": "hallenstein_count" },
+
+    { "kind": "plate", "heading": "The Wends of the Nether March", "polity_id": "nether_march" },
+    {
+      "kind": "text",
+      "heading": "Of the Wends",
+      "body": "They keep no seal. There is no die of the Nether March in this book because there is no die of the Nether March.\n\nA Wendish grant is made by oath before named men in the place itself, and it holds for as long as those men live and can be found. When the last of them dies the grant becomes a thing that people remember, and after that it becomes a thing that people say.\n\nWax on a Wendish instrument was put there by somebody who knew that we would want to see wax.",
+      "marginalia": "The archive at Lenz burnt in '18 and took forty years of oath-rolls with it. Nobody has worked out yet what that means for the Nether March. It will not be pretty when they do. — R.V."
+    }
+  ]
+}

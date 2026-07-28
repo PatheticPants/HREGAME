@@ -1,0 +1,13 @@
+{
+  "id": "day_01",
+  "entry_label": "TUESDAY",
+  "heading": "The eleventh day of October, in the seventh year of Kunrad IV. Third desk, second floor. Three matters heard.",
+  "day_seconds": 1200,
+  "burnt_out_text": "The candle went before the queue did. The doorkeeper turned the rest of them out into the passage and told them to come back on Thursday.",
+  "selection_mode": "fixed",
+  "case_slots": [
+    { "case_id": "case_01_kufergasse" },
+    { "case_id": "case_02_grellwater" },
+    { "case_id": "case_03_kesselholt" }
+  ]
+}

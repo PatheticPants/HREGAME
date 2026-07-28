@@ -1,0 +1,133 @@
+{
+  "id": "case_07_daughters_portion",
+  "title": "A Daughter's Portion",
+  "_design": "A short humane follow-up and a cure, not a trap. Marchfeld has issued a fresh exemplification for the same household and the same plot. Prior refusal or referral explains the new instrument but does not poison it.",
+  "correct_verdict": "CONFIRM",
+  "correct_reason": "nothing_against",
+  "correct_reason_text": "The fresh Marchfeld exemplification is clean and uses the live communal die.",
+  "petitioner": {
+    "id": "elsbeth_ott",
+    "name": "Elsbeth Ott",
+    "style": "daughter of Wilhelm Ott, of Marchfeld",
+    "polity_id": "marchfeld",
+    "portrait_path": "res://art/petitioners/elsbeth_ott_bust.png",
+    "height": 238,
+    "build": 82,
+    "cloth": "#355044",
+    "restlessness": 0.62
+  },
+  "documents": [
+    {
+      "kind": "docket",
+      "id": "docket_07",
+      "title": "Passage docket",
+      "size": [330, 235],
+      "tint": "#dcd0b2",
+      "start_offset": [-345, -95],
+      "start_angle_deg": -3.5,
+      "petitioner_name": "Elsbeth Ott",
+      "petitioner_style": "daughter of Wilhelm Ott, cooper",
+      "claim_summary": "Presents a fresh communal exemplification of the Küfergasse plot and well-right for entry as her marriage portion.",
+      "received_note": "Called from the Thursday tray.",
+      "doorkeeper_note": "Asked how much candle a small matter takes. Was not given an answer."
+    },
+    {
+      "kind": "charter",
+      "id": "charter_daughters_portion",
+      "title": "Exemplification of the Küfergasse Grant",
+      "size": [430, 585],
+      "tint": "#e2d6b8",
+      "start_offset": [-38, 63],
+      "start_angle_deg": 2.0,
+      "takes_seal": true,
+      "body_text": "To all who shall see this writing, the Council and Commune of Marchfeld send greeting.\n\nAt the request of Wilhelm Ott and his daughter Elsbeth we have inspected our city book and found entered there the grant to Heinrich Ott and his heirs of the plot on Küfergasse with its well-right. We exemplify and confirm the same for the entry of Elsbeth's marriage portion.\n\nGiven under our common seal.",
+      "date_emperor": "kunrad_iv",
+      "date_regnal_year": 7,
+      "drawn_by_polity": "marchfeld",
+      "grantor": "The Council and Commune of Marchfeld",
+      "claimant": "The household of Wilhelm Ott",
+      "property": "The Küfergasse plot and well-right",
+      "subject_id": "kufergasse_plot",
+      "claimant_id": "ott_household",
+      "supersedes_prior_instrument": true,
+      "witnesses": [
+        { "name": "Aldebrand Stoss", "title": "of the lesser council" },
+        { "name": "Gerhoh Lamp", "title": "sworn measurer" }
+      ],
+      "seal": {
+        "id": "seal_daughters_portion",
+        "claims_owner": "The Commune of Marchfeld",
+        "claims_polity": "marchfeld",
+        "device": "three_towers",
+        "legend": "SIGILLVM CIVITATIS MARCHFELDENSIS",
+        "shape": "round",
+        "wax_color": "#2f6b3f",
+        "wear": 0.18,
+        "shape_seed": 7721,
+        "note": "The same communal die, worn at the rim but fully legible."
+      }
+    }
+  ],
+  "lines": [
+    {
+      "beat": "arrival",
+      "text": "I am Elsbeth Ott. The plot is my marriage portion. My father said you would remember the old parchment, so the council has made a new one for you to remember instead."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_01_kufergasse",
+      "requires_verdict": "CONFIRM",
+      "priority": 5,
+      "text": "You admitted the old charter. The council wanted a clean copy before they entered the portion. This should be the easy version of the same truth."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_01_kufergasse",
+      "requires_verdict": "DENY",
+      "priority": 5,
+      "text": "You refused the old wax. The council was offended enough to draw the whole grant again. I hope indignation makes a sounder instrument."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_01_kufergasse",
+      "requires_verdict": "REFER",
+      "priority": 5,
+      "text": "The Bishop's court sent the old packet back and demanded an exemplification. The council has supplied one. I would like it not to begin another journey."
+    },
+    {
+      "beat": "inspect_seal",
+      "text": "It is still worn. It is also still the city's. They struck it in front of me because my father insisted."
+    },
+    {
+      "beat": "consult_register",
+      "text": "That is the old entry. This parchment is why the date at the top is Thursday, not Tuesday."
+    },
+    {
+      "beat": "waiting",
+      "text": "Whitsun sounds distant until people begin counting the papers a marriage requires."
+    }
+  ],
+  "outcomes": [
+    {
+      "verdict": "CONFIRM",
+      "favor": { "custom": 1 },
+      "reaction": "Thank you. I will tell my father the office can recognize the same house twice.",
+      "register_note": "Fresh Marchfeld exemplification of the Küfergasse plot. Commune die live. Portion confirmed.",
+      "aftermath": "The portion was entered before Whitsun. No further instrument was required."
+    },
+    {
+      "verdict": "DENY",
+      "favor": { "custom": -2 },
+      "reaction": "Then I do not know what a city is meant to bring you after it brings its own book and its own seal.",
+      "register_note": "Fresh exemplification of the Küfergasse title refused.",
+      "aftermath": "A second sound instrument was refused. Marchfeld entered a formal protest beside the blank portion."
+    },
+    {
+      "verdict": "REFER",
+      "favor": { "custom": -1 },
+      "reaction": "Up again. I will tell the wedding to wait at the same stair.",
+      "register_note": "Fresh Marchfeld exemplification sent up.",
+      "aftermath": "The marriage proceeded with the portion unresolved and the city unwilling to draw a third copy."
+    }
+  ]
+}

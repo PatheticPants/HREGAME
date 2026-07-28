@@ -1,0 +1,132 @@
+{
+  "id": "case_04_second_lion",
+  "title": "The Meadow Above the Vech",
+  "_design": "A fast Day 2 mastery case. Dietrich's second lion is not the dead first die from Grellwater: it carries DEI GRATIA, was cut in 1207, and is live at this instrument's date in 1210.",
+  "correct_verdict": "CONFIRM",
+  "correct_reason": "nothing_against",
+  "correct_reason_text": "Dietrich's second die was live in 1210, and the seventh year of Aldric reduces cleanly by accession.",
+  "petitioner": {
+    "id": "gero_kalt",
+    "name": "Gero Kalt",
+    "style": "household serjeant of Thurn",
+    "polity_id": "thurn",
+    "portrait_path": "res://art/petitioners/gero_kalt_bust.png",
+    "height": 252,
+    "build": 104,
+    "cloth": "#4a2830",
+    "restlessness": 0.18
+  },
+  "documents": [
+    {
+      "kind": "docket",
+      "id": "docket_04",
+      "title": "Passage docket",
+      "size": [330, 235],
+      "tint": "#d8c9aa",
+      "start_offset": [-350, -92],
+      "start_angle_deg": 4.0,
+      "petitioner_name": "Gero Kalt",
+      "petitioner_style": "serjeant, the household of Thurn",
+      "claim_summary": "Claims the meadow above the Vech by grant of Dietrich, Margrave of Thurn. Produces one sealed charter.",
+      "received_note": "Called from the Thursday tray.",
+      "doorkeeper_note": "Has waited in more campaigns than passages. Appears to consider both the same thing."
+    },
+    {
+      "kind": "charter",
+      "id": "charter_second_lion",
+      "title": "Grant of Dietrich, Margrave of Thurn",
+      "size": [430, 585],
+      "tint": "#dfd1ae",
+      "start_offset": [-25, 65],
+      "start_angle_deg": -2.0,
+      "takes_seal": true,
+      "body_text": "Dietrich, by the grace of God Margrave of Thurn, to all his faithful men, greeting.\n\nFor the long service of Gero Kalt in our household we grant him the meadow above the Vech, between the alder bank and the old road, to hold for his life free of every service except the keeping of one horse.\n\nIn witness whereof we have set our seal.",
+      "date_emperor": "aldric_i",
+      "date_regnal_year": 7,
+      "drawn_by_polity": "thurn",
+      "grantor": "Dietrich, Margrave of Thurn",
+      "claimant": "Gero Kalt, household serjeant",
+      "property": "The meadow above the Vech",
+      "subject_id": "vech_meadow",
+      "claimant_id": "gero_kalt",
+      "witnesses": [
+        { "name": "Eckhard von Melle", "title": "marshal of Thurn" },
+        { "name": "Hugo Wend", "title": "of Grellwater" }
+      ],
+      "seal": {
+        "id": "seal_second_lion",
+        "claims_owner": "Dietrich, Margrave of Thurn",
+        "claims_polity": "thurn",
+        "device": "lion_rampant",
+        "legend": "DIETRICVS DEI GRATIA MARCHIO TVRNENSIS",
+        "shape": "round",
+        "wax_color": "#8c1c2b",
+        "wear": 0.12,
+        "shape_seed": 2407,
+        "note": "The second lion, with DEI GRATIA in full."
+      }
+    }
+  ],
+  "lines": [
+    {
+      "beat": "arrival",
+      "text": "Gero Kalt, of the Margrave's old household. The meadow is not a great matter. That is why I would prefer not to lose a day to it."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_02_grellwater",
+      "requires_verdict": "DENY",
+      "priority": 5,
+      "text": "The widow's wax bore Dietrich's first words. Mine bears the words he used after 1207. A lion can grow older, whatever her copyist believed."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_02_grellwater",
+      "requires_verdict": "CONFIRM",
+      "priority": 5,
+      "text": "You admitted the first lion on Tuesday. I have brought you the second. I hope the extra words still matter."
+    },
+    {
+      "beat": "arrival",
+      "requires_case": "case_02_grellwater",
+      "requires_verdict": "REFER",
+      "priority": 5,
+      "text": "The widow's packet is tied upstairs. Mine need not join it. This die was alive when it touched the wax."
+    },
+    {
+      "beat": "inspect_seal",
+      "text": "DEI GRATIA. Those are the words he added when the second die was cut. Men change titles more often than lions."
+    },
+    {
+      "beat": "consult_matrix_book",
+      "text": "There are the two of them. Mine is the later entry, and the date sits between its cutting and its breaking."
+    },
+    {
+      "beat": "waiting",
+      "text": "I said it was a small matter. Small matters have a way of taking exactly as long as large ones in this building."
+    }
+  ],
+  "outcomes": [
+    {
+      "verdict": "CONFIRM",
+      "favor": { "imperial": 1 },
+      "reaction": "Good. I had begun to fear a second lion required a second morning.",
+      "register_note": "Dietrich's second die, with DEI GRATIA, live at the date. Meadow confirmed to Gero Kalt.",
+      "aftermath": "The meadow was entered without objection. A routine instrument remained routine."
+    },
+    {
+      "verdict": "DENY",
+      "favor": { "imperial": -1 },
+      "reaction": "Then write down which part died before Dietrich did. I would like to know what I am meant to mourn.",
+      "register_note": "Second die of Dietrich refused despite a date within its life.",
+      "aftermath": "Thurn requested an explanation for the refusal of its live die. None in the packet supplied one."
+    },
+    {
+      "verdict": "REFER",
+      "favor": { "imperial": -1 },
+      "reaction": "Upstairs. For a meadow and a live seal. Very well.",
+      "register_note": "Routine Thurn household grant sent up.",
+      "aftermath": "The meadow stood vacant while a clean household grant waited behind harder disputes."
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="WaxFeel" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/model/wax_feel.gd" id="1_wax_feel"]
+
+[resource]
+script = ExtResource("1_wax_feel")
+heat_radius = 54.0
+heat_steady_speed = 42.0
+heat_time = 1.35
+soften_temperature = 0.24
+melt_time = 1.15
+melt_ready = 0.82
+carry_cool_time = 11.0
+pour_temperature = 0.42
+pour_steady_speed = 34.0
+slot_radius = 82.0
+tilt_time = 0.55
+untilt_time = 0.28
+spoon_tilt_deg = 48.0
+drip_interval = 0.17
+drop_volume = 0.135
+good_low = 0.52
+good_high = 1.06
+blot_at = 1.3
+radius_at_unit = 42.0
+spread_speed = 4.2
+blob_jitter = 0.22
+blob_points = 38
+cool_time = 7.5
+press_radius = 62.0
+press_steady_speed = 30.0
+descend_time = 0.34
+resistance_time = 0.3
+resistance_creep = 0.055
+resistance_shudder = 1.7
+seat_time = 0.3
+shallow_below = 0.55
+smear_distance = 17.0
+peel_time = 0.3
+peel_stretch = 13.0
+ring_jitter_deg = 2.0
+opacity_jitter = 0.13
+seat_time_jitter = 0.22
+resistance_jitter = 0.3
