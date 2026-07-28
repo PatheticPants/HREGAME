@@ -50,8 +50,29 @@ static func build(necrology: Necrology, lore: LoreData) -> BookData:
 	front.heading = necrology.title
 	front.subheading = necrology.subtitle
 	front.body = necrology.front_matter
-	front.marginalia = necrology.marginalia
 	pages.append(front)
+
+	# A SECOND FRONT LEAF, because the first one did not fit.
+	#
+	# The front matter was one 680-character block on one board and overran it by
+	# 37 px — and nothing in a ReferenceBook clips, so the tail was drawn on the
+	# desk underneath the book, unlit. What fell off the end was the paragraph
+	# saying that a man absent from a roll is not thereby living, which is the
+	# single most important sentence in this book and the entire reason the
+	# subsystem is built the way it is.
+	#
+	# It now has a leaf of its own, with R.V.'s note under it, which is better
+	# bookmaking than a fix — the covering rule deserves to be the thing a reader
+	# turns to rather than the thing crushed against the foot of a page.
+	if not necrology.front_matter_two.is_empty():
+		var covering := BookPage.new()
+		covering.kind = &"text"
+		covering.heading = "What a roll undertakes"
+		covering.body = necrology.front_matter_two
+		covering.marginalia = necrology.marginalia
+		pages.append(covering)
+	else:
+		front.marginalia = necrology.marginalia
 
 	# The silences come SECOND, before any roll — because the most important
 	# thing this book has to teach is what it does not know, and a player who

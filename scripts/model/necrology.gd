@@ -15,6 +15,11 @@ extends Resource
 @export var cover_color: Color = Color(0.165, 0.184, 0.161)
 @export var page_color: Color = Color(0.894, 0.863, 0.761)
 @export_multiline var front_matter: String = ""
+## The second front leaf. The front matter used to be one 680-character block on
+## one page, which overran its board by 37 px and lost the end of itself onto
+## the desk. The paragraph that fell off was the one saying absence from a roll
+## is not evidence of life, which is the single most important idea in the book.
+@export_multiline var front_matter_two: String = ""
 @export_multiline var marginalia: String = ""
 
 @export var rolls: Array[ObitRoll] = []

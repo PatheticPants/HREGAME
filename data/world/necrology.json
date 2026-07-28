@@ -5,7 +5,8 @@
     "subtitle": "obits returned to this Chancery, and by whom",
     "cover_color": "#2a2f2a",
     "page_color": "#e4dcc2",
-    "front_matter": "This Chancery keeps no roll of its own dead and never has. What it keeps is this book, which is not a necrology but a binding of extracts: what the houses that do keep such rolls have returned to us, copied in the order their own books were written, with the hand named at the head of each.\n\nRead the head before you read the names. Every hand counts an emperor's years as its own chancery counts them, and says so on its own page, and one of these four does not count as we do.\n\nRead the covering line also. It says whose dead that house undertook to keep, and no more than that. A man who is not in a roll is not thereby living; he may only be a man that roll was never keeping.",
+    "front_matter": "This Chancery keeps no roll of its own dead and never has. What it keeps is this book, which is not a necrology but a binding of extracts: what the houses that do keep such rolls have returned to us, copied in the order their own books were written, with the hand named at the head of each.\n\nRead the head before you read the names. Every hand counts an emperor's years as its own chancery counts them, and says so on its own page, and one of these four does not count as we do.",
+    "front_matter_two": "Read the covering line also. It says whose dead that house undertook to keep, and no more than that. A man who is not in a roll is not thereby living; he may only be a man that roll was never keeping.",
     "marginalia": "Four houses answer and three do not. In eleven years at this desk I have never once been able to write down that a man was living — only that nobody has sent word he was dead. — R.V."
   },
   "rolls": [

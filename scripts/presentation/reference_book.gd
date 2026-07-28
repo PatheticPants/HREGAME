@@ -487,6 +487,49 @@ func _draw_corners(left: Rect2, right: Rect2) -> void:
 
 # ----------------------------------------------------------------- page kinds
 
+## The leaf a page is drawn into, as _draw_open computes it when fully open.
+##
+## This and page_bottom() below exist so the suite can check that every leaf the
+## content generates actually FITS the board it is printed on. Nothing in this
+## book clips: Ink.block passes max_lines = -1, there is no clip_children, and
+## the shade veil only covers the boards — so a page that overruns is simply
+## drawn onto the desk underneath, unlit and unreadable, and the game silently
+## loses whatever was on the end of it. The Almanac's ring doctrine lost its
+## entire FALSE-versus-DEFECTIVE half that way, which is the only place the game
+## explains why a defective instrument is REFERRED rather than DENIED.
+##
+## KEEP THESE TWO IN STEP WITH _draw_page AND _draw_open. They are deliberately
+## adjacent to it for that reason.
+func leaf_rect() -> Rect2:
+	var full := Rect2(-data.size.x, -data.size.y * 0.5,
+		data.size.x * 2.0, data.size.y)
+	var pw := full.size.x * 0.5
+	return Rect2(full.position + Vector2(6, 6),
+		Vector2(pw - 9, full.size.y - 12))
+
+
+## How far down the leaf a text page's content reaches, including its marginalia.
+## Only meaningful for `text` pages; the generated kinds size themselves.
+func page_bottom(index: int) -> float:
+	if data == null or index >= data.pages.size():
+		return 0.0
+	var page: BookPage = data.pages[index]
+	var r := leaf_rect()
+	var w := r.size.x - MARGIN * 2.0
+	var y := r.position.y + MARGIN * 0.9
+	if not page.heading.is_empty():
+		y += Ink.line_height(13) + 9.0
+	if not page.subheading.is_empty():
+		y += Ink.line_height(11)
+	y += 5.0
+	if not page.body.is_empty():
+		y += Ink.measure(page.body, 11, w).y + 11 * 0.25
+	if not page.marginalia.is_empty():
+		var note_h := Ink.measure(page.marginalia, 10, w).y + 6.0
+		y = maxf(y + 6.0, r.end.y - MARGIN - note_h) + note_h
+	return y
+
+
 func _draw_page(r: Rect2, index: int) -> void:
 	if index >= data.pages.size():
 		return
@@ -522,8 +565,18 @@ func _draw_page(r: Rect2, index: int) -> void:
 		at.y += Ink.block(self, at, page.body, 11, Ink.CHANCERY, w)
 
 	if not page.marginalia.is_empty():
+		# THE HOLE IS SIZED FROM THE NOTE, NOT FROM A GUESS.
+		#
+		# This reserved a flat 54 px however long the note was, and nothing in the
+		# book clips or elides — Ink.block passes max_lines = -1 — so a longer
+		# hand simply ran off the bottom board and was drawn on the desk. The
+		# senior clerk's correction in the Register is 147 px in that 54 px hole,
+		# so half of it, including the sentence naming the point at issue, was
+		# painted onto the blotter under the book. The Kalendar's own front
+		# matter did it on the first spread the player ever opens.
+		var note_h := Ink.measure(page.marginalia, 10, w).y + 6.0
 		var foot := Vector2(r.position.x + MARGIN,
-			maxf(at.y + 6.0, r.end.y - MARGIN - 54.0))
+			maxf(at.y + 6.0, r.end.y - MARGIN - note_h))
 		Ink.margin_note(self, foot, page.marginalia, 10, w, -3.5)
 
 	# Folio number, bottom outer corner.

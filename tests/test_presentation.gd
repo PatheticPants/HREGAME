@@ -51,6 +51,7 @@ func _run() -> void:
 	_test_surface_helper(desk)
 	_test_wax_is_darker_molten(desk)
 	_test_the_page_turn(desk)
+	_test_every_leaf_fits(desk)
 	_test_reachability(desk)
 	await _test_view_transition(main, desk)
 	await _test_candle_light(desk)
@@ -68,6 +69,49 @@ func _run() -> void:
 	main.queue_free()
 	await get_tree().process_frame
 	_finish()
+
+
+## EVERY LEAF FITS THE BOARD IT IS PRINTED ON.
+##
+## Nothing in a ReferenceBook clips. Ink.block passes max_lines = -1, there is no
+## clip_children anywhere in the book, and the shade veil covers only the boards
+## — so a page that overruns its leaf is drawn onto the DESK underneath it,
+## unlit, under the book, and the game silently loses whatever was on the end.
+##
+## The Almanac's ring-doctrine page overran by about 150 px of a 376 px column,
+## and what fell off was the entire FALSE-versus-DEFECTIVE standing instruction:
+## the only text in the game that explains why a defective instrument is
+## REFERRED rather than DENIED. case_04 is the build's only DEFECT case and only
+## REFER is sound on it, so a player who reasoned "a man on this list was two
+## years dead, the list is a fabrication, DENY" was marked unsound with the
+## rebuttal printed on the blotter under a book.
+##
+## This is the check that was missing. Note the Kalendar's existing assertion —
+## `page.entry_count <= ENTRIES_PER_PAGE` — is a tautology, because the
+## generator assigns exactly that value; it never tested fit at all.
+func _test_every_leaf_fits(desk: Desk) -> void:
+	print("-- every leaf fits its board")
+	var checked := 0
+	var books: Array[ReferenceBook] = desk.books
+	for book in books:
+		if book.data == null:
+			continue
+		var leaf := book.leaf_rect()
+		for i in book.data.pages.size():
+			var page: BookPage = book.data.pages[i]
+			# The generated kinds size themselves from their own data; this is
+			# about authored prose, which is where every overflow has been.
+			if page.kind != &"text" and page.marginalia.is_empty():
+				continue
+			checked += 1
+			var bottom := book.page_bottom(i)
+			if bottom > leaf.end.y:
+				_fail("%s leaf %d overruns its board by %.0f px (%s)"
+					% [book.data.id, i, bottom - leaf.end.y, page.heading])
+			else:
+				checks += 1
+	_is_true(checked >= 8,
+		"there are authored leaves to check (%d)" % checked)
 
 
 ## A TURNING LEAF IS WIDEST LYING FLAT AND INVISIBLE EDGE-ON.

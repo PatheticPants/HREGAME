@@ -129,6 +129,7 @@ static func _load_necrology(lore: LoreData) -> void:
 		n.cover_color = _color(book, "cover_color", Color(0.165, 0.184, 0.161))
 		n.page_color = _color(book, "page_color", Color(0.894, 0.863, 0.761))
 		n.front_matter = _s(book, "front_matter")
+		n.front_matter_two = _s(book, "front_matter_two")
 		n.marginalia = _s(book, "marginalia")
 
 	var rolls: Array[ObitRoll] = []
