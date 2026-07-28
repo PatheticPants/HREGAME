@@ -199,7 +199,11 @@ func _day_two_tray() -> void:
 			14.0)
 
 	await _await_stage(desk, SessionController.Stage.LEDGER, 20.0)
-	_is_true(session.register.entries_for_day(&"day_01").size() == 3,
+	# Derived from the day, not hardcoded. A count written into the test is a
+	# count that has to be edited every time the content changes, and the thing
+	# actually being asserted is "every matter heard reached the Register",
+	# which the day itself already knows the size of.
+	_is_true(session.register.entries_for_day(&"day_01").size() == day_one.size(),
 		"Tuesday's rulings are bound into the persistent Register")
 
 	# The folded Thursday corner, not an arbitrary empty click, advances.
@@ -249,7 +253,7 @@ func _day_two_tray() -> void:
 	_is_true(not day_two_ledger.contains("The Plot on Küfergasse")
 			and not day_two_ledger.contains("The Mill at Grellwater"),
 		"Thursday's ledger does not reprint Tuesday's judgments")
-	_is_true(session.register.entries_for_day(&"day_01").size() == 3,
+	_is_true(session.register.entries_for_day(&"day_01").size() == day_one.size(),
 		"the earlier Register survives the new day unchanged")
 
 	_close(main)

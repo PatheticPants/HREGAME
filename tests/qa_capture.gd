@@ -142,6 +142,7 @@ func _run() -> void:
 	await _show_reviewed_register()
 	await _inspect_own_seal()
 	await _show_day_two()
+	await _the_knife()
 	await _write_on_tablet()
 	await _burn_series()
 
@@ -314,6 +315,39 @@ func _inspect_pendant_seal() -> void:
 	_desk.lens.solver.place(Vector2(700, 250), deg_to_rad(-14.0))
 	_desk.lens.position = Vector2(700, 250)
 	await _settle(12)
+
+
+## The case the erasure mechanic exists for, against the flame.
+##
+## Its two patches are authored as fractions of the sheet, and a fraction that is
+## slightly wrong puts the ghost over the wrong paragraph — which is worse than no
+## patch, because it teaches the player to look in the wrong place. There is no
+## way to check that except to look, so this frame is the check.
+func _the_knife() -> void:
+	var case_data := Lore.data.case_by_id(&"case_08_mill_on_the_aue")
+	if case_data == null:
+		return
+	var camera := _main.get_node("camera") as Camera2D
+	_desk.sweep_packet_away()
+	_desk._finish_sweep()
+	_desk.lay_out_packet(case_data.documents)
+	await _settle(50)
+	var leaf := _desk.current_charter
+	if leaf == null:
+		return
+	_desk.bring_to_front(leaf)
+	leaf.is_held = true
+	var at := _desk.candle.position + Vector2(-90.0, 70.0)
+	leaf.solver.place(at, deg_to_rad(-1.0))
+	leaf.position = at
+	camera.zoom = Vector2(1.9, 1.9)
+	camera.position = _desk.to_global(at) + Vector2(0, 30)
+	await _settle(46)
+	await _shot("35_the_knife_against_the_flame")
+	leaf.is_held = false
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	await _settle(16)
 
 
 ## The fourth investigative verb, on the leaf that teaches it.

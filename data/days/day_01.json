@@ -1,13 +1,23 @@
 {
   "id": "day_01",
   "entry_label": "TUESDAY",
-  "heading": "The eleventh day of October, in the seventh year of Kunrad IV. Third desk, second floor. Three matters heard.",
+  "heading": "The eleventh day of October, in the seventh year of Kunrad IV. Third desk, second floor. Four matters heard.",
   "day_seconds": 1200,
   "burnt_out_text": "The candle went before the queue did. The doorkeeper turned the rest of them out into the passage and told them to come back on Thursday.",
   "selection_mode": "fixed",
   "case_slots": [
-    { "case_id": "case_01_kufergasse" },
-    { "case_id": "case_02_grellwater" },
-    { "case_id": "case_03_kesselholt" }
+    {
+      "case_id": "case_01_kufergasse"
+    },
+    {
+      "case_id": "case_02_grellwater"
+    },
+    {
+      "case_id": "case_03_kesselholt"
+    },
+    {
+      "_note": "The knife. Placed last on Tuesday deliberately: the player has just been handed a case where two laws disagree and told that referring is the only honest answer, and then one more man comes in with a packet where every check they have been taught comes back clean. It is the day's sting in the tail and it sets up Thursday.",
+      "case_id": "case_08_mill_on_the_aue"
+    }
   ]
 }
