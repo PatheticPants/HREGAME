@@ -577,6 +577,21 @@ func _ledger_entry(e: RulingRecord) -> Array[Dictionary]:
 			for h in missed:
 				out.append(Ledger.text("— %s. %s" % [h.headline, h.detail], 10,
 					Ink.CHANCERY, 12.0))
+		elif not e.review_headline.is_empty():
+			# A WRONG RULING ON A CLEAN PACKET STILL DESERVES ITS CORRECTION.
+			#
+			# A packet with nothing against it produces no hints, so the one case
+			# built to punish a wrong reflex — a live die denied because the last
+			# one was dead — used to be answered with "the law says CONFIRM" and
+			# nothing else. The specific correction was already captured into the
+			# record at the moment of judgment by the affirmative-finding fallback
+			# in _on_impression_finished; it was simply never printed. Being told
+			# what you failed to notice is instruction. Being told you were wrong
+			# is not.
+			out.append(Ledger.gap(4))
+			out.append(Ledger.text("It was there to be found:", 10, Ink.FADED))
+			out.append(Ledger.text("— %s. %s"
+				% [e.review_headline, e.review_detail], 10, Ink.CHANCERY, 12.0))
 
 	if e.impression != null:
 		out.append(Ledger.gap(4))

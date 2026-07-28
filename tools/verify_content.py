@@ -184,7 +184,15 @@ def date_findings(charter, world, present):
 
     if style != "accession":
         out.append((NOTE, "unusual_reckoning"))
-    if not out:
+    # Mirror of the guard in scripts/rules/date_check.gd. "The date reduces
+    # cleanly" must be suppressed only when something is actually WRONG, not
+    # merely when anything at all was said — hints live in the same list, and
+    # gating on emptiness silences the CLEAN finding on exactly the two cases
+    # where the arithmetic is the interesting part. That fix landed in GDScript
+    # and never landed here, so the two implementations have been disagreeing
+    # about the finding set on case_01 and case_03 ever since, and this tool
+    # could not see it because main() only ever compared the final verdict.
+    if not any(sev >= DEFECT for sev, _code in out):
         out.append((CLEAN, "date_sound"))
     return out
 

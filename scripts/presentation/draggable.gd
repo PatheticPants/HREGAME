@@ -47,6 +47,12 @@ var light_level := 1.0
 ## Round objects — rings, the lens, the candle dish — cast round shadows.
 @export var occluder_round := false
 
+## True once the flame is out and the room is lit by the shutter instead. Cold
+## morning is uniform and directional, so nothing is in shadow relative to
+## anything else and the whole falloff below has to switch off — otherwise the
+## ledger, which is read only after the candle has died, arrives veiled.
+var ambient_daylight := false
+
 ## How heavy this thing is in the hand, relative to a sheet of parchment. Above
 ## 1 follows tightly and settles fast; below 1 lags, drifts and overshoots.
 @export var weight := 1.0
@@ -330,6 +336,49 @@ func on_click(_local_point: Vector2) -> bool:
 
 
 # ------------------------------------------------------------------- shadows
+
+## How deep into shadow this object's FACE is, 0..1.
+##
+## The substrate already warmed and cooled with the flame — but the writing on it
+## did not, so a charter across the desk from the only light in the room drew its
+## text at full contrast and was exactly as readable as one under the wick. The
+## candle changed the colour of the desk and never once changed what could be
+## READ off it, which quietly cost the game its central claim: that the readable
+## desk contracts as the day goes and carrying the flame stops being optional.
+##
+## The fix is one veil drawn over the finished face — substrate, ink, rubric and
+## seal together — because that is what a page out of the light actually does.
+## One draw call, after everything else, and it cannot be forgotten by a new
+## document type that only overrides _draw_face().
+func shade_alpha() -> float:
+	if ambient_daylight:
+		return 0.0
+	var lit := clampf(light_level * clampf(light_strength, 0.7, 1.1), 0.0, 1.0)
+	# smoothstep rather than a linear ramp: within about a hand's width of the
+	# flame there should be no veil at all, and the fall to near-illegible should
+	# happen across the middle of the desk rather than at its far rim.
+	return (1.0 - smoothstep(0.0, 0.55, lit)) * SHADE_MAX
+
+
+## Never quite black. A sheet you cannot see at all is a lost sheet, and digging
+## for a buried charter has to stay a mechanic rather than becoming a chore.
+const SHADE_MAX := 0.56
+## Cold, so shadow separates from the warm light instead of reading as grey wash.
+const SHADE_COLOR := Color(0.045, 0.042, 0.075)
+
+
+## Veil the finished face. Called by whatever drew one, last.
+func draw_shade(over: Rect2, corner_ratio := 0.0) -> void:
+	var a := shade_alpha()
+	if a <= 0.01:
+		return
+	if corner_ratio > 0.0:
+		draw_circle(over.get_center(),
+			maxf(over.size.x, over.size.y) * 0.5 * corner_ratio,
+			Color(SHADE_COLOR, a))
+	else:
+		draw_rect(over, Color(SHADE_COLOR, a))
+
 
 func shadow_offset() -> Vector2:
 	var throw := _feel.shadow_base_throw + stack_depth * _feel.shadow_throw_per_layer

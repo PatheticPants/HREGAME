@@ -55,7 +55,18 @@ func _process(delta: float) -> void:
 	# across a crowded desk does not strobe.
 	_focus_amount = move_toward(_focus_amount, 1.0 if _focus != null else 0.0,
 		delta * 6.0)
-	if is_held and _focus != null:
+	# Dwell used to accumulate only while the glass was HELD — but the enlarged
+	# image draws whenever a subject is under the lens, held or not, so laying the
+	# glass down on a seal looks exactly like inspecting it and reads perfectly.
+	# A player who set the glass down to look at it comfortably had done the
+	# intended thing and never satisfied the check: in the practice leaf, where
+	# the only exit is the inspect_impression beat, that ended the game silently
+	# and with everything on screen looking correct. The model was right and only
+	# the grip was wrong, which is the worst way for a game to say no.
+	#
+	# `_reported` still dedupes per subject instance, so a glass left lying on a
+	# seal reports exactly once and cannot spam the petitioner's reactions.
+	if _focus != null:
 		_focus_dwell += delta
 	else:
 		_focus_dwell = 0.0

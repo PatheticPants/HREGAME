@@ -24,6 +24,13 @@ var _turn := 0.0            ## -1..1, raw page-turn progress
 var _turn_dir := 0
 var _open_t := 0.0          ## raw 0..1 cover progress
 var _open_amount := 0.0     ## eased, and what everything else reads
+
+## Leather is not a flat colour. Grain, scuffing and the worn patches where a
+## hand has opened the same board four hundred times are generated once per book
+## from its id and then never regenerated — the shape must not crawl, and this
+## draws every frame the book is on screen.
+var _grain: PackedVector3Array = PackedVector3Array()
+var _scuffs: PackedVector3Array = PackedVector3Array()
 ## A senior hand has inserted a correction since the player last ruled. This is
 ## deliberately a physical slip, not a notification overlay.
 var review_attention := false
@@ -43,8 +50,24 @@ func bind(book: BookData, desk_bounds: Rect2) -> void:
 	occluder_inset = 0.94
 	# Books are the biggest things on the desk and shrink furthest to fit a hole.
 	stow_scale = 0.34
+	_build_leather()
 	_update_hit_size()
 	setup(book.start_offset, deg_to_rad(book.start_angle_deg), desk_bounds)
+
+
+## Grain and wear, generated once from the book's own id. Two books never look
+## alike and neither one crawls, which is what a per-frame RNG would do.
+func _build_leather() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(String(data.id)) ^ 0x5eaf
+	_grain = PackedVector3Array()
+	for i in 74:
+		# x, y as fractions of the board; z is the fleck's length.
+		_grain.append(Vector3(rng.randf(), rng.randf(), rng.randf_range(2.0, 9.0)))
+	_scuffs = PackedVector3Array()
+	for i in 9:
+		_scuffs.append(Vector3(rng.randf_range(0.08, 0.92),
+			rng.randf_range(0.08, 0.92), rng.randf_range(9.0, 26.0)))
 
 
 ## Shelved books are shut. An open book will not go in a pigeonhole, and if it
@@ -146,22 +169,87 @@ func mark_review_attention() -> void:
 
 # --------------------------------------------------------------------- drawing
 
+## How much of the flame actually lands on these boards. The two books are the
+## largest silhouettes on the desk and were the only objects drawn at a fixed
+## cover colour regardless of where the candle stood — so the biggest things in
+## the room were the least material. Everything below reads from this.
+func _lit() -> float:
+	return clampf(light_level, 0.0, 1.0) * clampf(light_strength, 0.7, 1.1)
+
+
+## Unit vector toward the flame in the book's own space, so a highlight sits on
+## the side the light is actually on however the book has been dropped.
+func _toward_light() -> Vector2:
+	var away := (light_position - global_position).rotated(-global_rotation)
+	if away.length() < 1.0:
+		return Vector2(0.4, -1.0)
+	return away.normalized()
+
+
 func _draw() -> void:
 	if data == null:
 		return
 	var w := data.size.x * (1.0 + _open_amount)
 	var full := Rect2(-w * 0.5, -data.size.y * 0.5, w, data.size.y)
+	var glow := _lit()
+	var toward := _toward_light()
+
+	# Tanned hide near a flame goes distinctly red-brown and then falls away hard.
+	# Sheet already does this for parchment; a board that ignores it reads as a
+	# coloured rectangle sitting on a lit desk rather than a thing in the room.
+	# Only the warm tint lives here. The fall into shadow is the shared veil at the
+	# foot of this function, so a board and a charter lying beside each other go
+	# dark together instead of on two different curves.
+	var cover := data.cover_color.lerp(Color(0.98, 0.63, 0.34), glow * 0.30)
+	cover = cover.darkened((1.0 - glow) * 0.18)
 
 	draw_soft_shadow(full)
-	draw_rect(full.grow(5.0), data.cover_color.darkened(0.35))
-	draw_rect(full.grow(3.0), data.cover_color)
+
+	# THE BOARDS HAVE THICKNESS. A closed book is a brick — the one object here
+	# that genuinely stands proud of the desk — so the side of the block shows on
+	# whichever face is turned away from the candle, and swings round when the
+	# candle is carried past.
+	var rim := full.grow(5.0)
+	var thick := 6.0 * (1.0 - _open_amount * 0.55)
+	draw_rect(Rect2(rim.position - toward * thick, rim.size), cover.darkened(0.66))
+	draw_rect(rim, cover.darkened(0.34))
+	if _open_amount < 0.02:
+		_draw_text_block(full, glow)
+	draw_rect(full.grow(3.0), cover)
 
 	if _open_amount < 0.02:
-		_draw_closed(full)
+		_draw_closed(full, cover, toward, glow)
 	else:
-		_draw_open(full)
+		_draw_open(full, glow)
+	draw_shade(full.grow(5.0))
+	# The slip is vermilion and it is the office telling you something. It sits
+	# above the veil deliberately: a correction you cannot see because you left
+	# the candle at the other end of the desk is a correction that does not exist.
 	if review_attention:
 		_draw_review_slip(full)
+
+
+## The leaves themselves, showing past the boards along the fore-edge and foot.
+## Parchment is thick and never cut perfectly true, so the stack is uneven — the
+## fastest single cue that a closed book is made of pages rather than of paint.
+func _draw_text_block(r: Rect2, glow: float) -> void:
+	var leaf := data.page_color.lerp(Color(1.0, 0.86, 0.62), glow * 0.35)
+	leaf = leaf.darkened((1.0 - glow) * 0.45)
+	var block := Rect2(r.position + Vector2(2.0, 2.0),
+		r.size + Vector2(4.0, 4.0))
+	draw_rect(block, leaf.darkened(0.22))
+	# Individual leaf edges. Uneven lengths from the same seeded grain, so no two
+	# books show the same stack.
+	var count := mini(16, _grain.size())
+	for i in count:
+		var t := float(i) / float(count)
+		var jitter: float = _grain[i].z * 0.30
+		var y := block.position.y + 6.0 + t * (block.size.y - 12.0)
+		draw_line(Vector2(block.end.x - 5.0 - jitter, y),
+			Vector2(block.end.x, y), leaf.lightened(0.18), 1.0)
+		var x := block.position.x + 8.0 + t * (block.size.x - 16.0)
+		draw_line(Vector2(x, block.end.y - 4.0 - jitter * 0.5),
+			Vector2(x, block.end.y), leaf.lightened(0.10), 1.0)
 
 
 func _draw_review_slip(r: Rect2) -> void:
@@ -177,35 +265,101 @@ func _draw_review_slip(r: Rect2) -> void:
 		Color(0.96, 0.82, 0.57), slip.size.x - 10.0)
 
 
-func _draw_closed(r: Rect2) -> void:
-	# Blind-tooled border and a clasp. Enough to say "book" at a glance from the
-	# far side of the desk, buried under a charter.
-	draw_rect(r.grow(-14.0), data.cover_color.lightened(0.10), false, 2.0)
-	draw_rect(r.grow(-20.0), data.cover_color.darkened(0.25), false, 1.0)
+func _draw_closed(r: Rect2, cover: Color, toward: Vector2, glow: float) -> void:
+	_draw_hide(r, cover, glow)
+	_draw_spine(r, cover, toward, glow)
+
+	# BLIND TOOLING. A line stamped into damp leather with a hot iron has a lit
+	# lip and a dark trough, and which is which depends on where the flame is.
+	# One flat outline reads as a printed border; two offset ones read as a groove.
+	var lip := Color(1.0, 0.86, 0.62, 0.20 * glow)
+	var trough := Color(0.0, 0.0, 0.0, 0.30)
+	for inset in [14.0, 20.0]:
+		var box := r.grow(-inset)
+		draw_rect(Rect2(box.position - toward, box.size), trough, false, 1.5)
+		draw_rect(Rect2(box.position + toward, box.size), lip, false, 1.5)
 
 	var at := Vector2(r.position.x + MARGIN, r.position.y + r.size.y * 0.34)
 	var w := r.size.x - MARGIN * 2.0
-	Ink.line_centre(self, at, data.title.to_upper(), 15,
-		data.page_color.lightened(0.2), w)
+	# Gilt. Gold leaf on a board is the one thing in this room brighter than the
+	# parchment, and it is only bright while the candle is anywhere near it.
+	var gilt := data.page_color.lerp(Color(1.0, 0.84, 0.42), 0.30 + glow * 0.55)
+	gilt = gilt.darkened((1.0 - glow) * 0.42)
+	Ink.line_centre(self, at + toward * 1.0, data.title.to_upper(), 15,
+		Color(0, 0, 0, 0.42), w)
+	Ink.line_centre(self, at, data.title.to_upper(), 15, gilt, w)
 	Ink.line_centre(self, at + Vector2(0, 26), data.subtitle, 11,
-		data.page_color * Color(1, 1, 1, 0.75), w)
+		Color(gilt, 0.72), w)
 
-	# Clasp on the fore-edge.
-	draw_rect(Rect2(r.end.x - 6, r.get_center().y - 22, 14, 44),
-		Color(0.72, 0.64, 0.40))
-	draw_rect(Rect2(r.end.x - 4, r.get_center().y - 18, 10, 36),
-		Color(0.55, 0.48, 0.30))
+	_draw_clasp(r, toward, glow)
 
 
-func _draw_open(r: Rect2) -> void:
+## Flecking, and the patches worn pale where a hand takes hold of the same board
+## every time. Both come out of the cached grain, so this is a dozen draw calls
+## and no allocation.
+func _draw_hide(r: Rect2, cover: Color, glow: float) -> void:
+	var dark := Color(0, 0, 0, 0.10 + 0.05 * glow)
+	# Wear has to stay under the threshold where it reads as a stain rather than
+	# as leather. At the alpha this first ran at, the boards looked spilt on.
+	var pale := Color(cover.lightened(0.22), 0.030 + 0.045 * glow)
+	for scuff in _scuffs:
+		draw_circle(r.position + Vector2(scuff.x * r.size.x, scuff.y * r.size.y),
+			scuff.z, pale)
+	for fleck in _grain:
+		var at := r.position + Vector2(fleck.x * r.size.x, fleck.y * r.size.y)
+		draw_line(at, at + Vector2(fleck.z, fleck.z * 0.34), dark, 1.0)
+
+
+## The spine, with the raised cords the sections are sewn onto. Four ridges, each
+## with its own lit and shaded side — this is the detail that says "bound" rather
+## than "rectangle", and it is only three draw calls a band.
+func _draw_spine(r: Rect2, cover: Color, toward: Vector2, glow: float) -> void:
+	var spine := Rect2(r.position, Vector2(26.0, r.size.y))
+	draw_rect(spine, cover.darkened(0.16))
+	draw_rect(Rect2(spine.end.x - 2.0, spine.position.y, 3.0, spine.size.y),
+		Color(0, 0, 0, 0.24))
+	for i in 4:
+		var y := spine.position.y + spine.size.y * (0.18 + 0.215 * float(i))
+		var band := Rect2(spine.position.x - 3.0, y - 4.5,
+			spine.size.x + 6.0, 9.0)
+		draw_rect(band, cover.darkened(0.06))
+		# The cord catches the flame on the side facing it and shades on the other.
+		draw_line(Vector2(band.position.x, y - 4.0 + toward.y * 1.6),
+			Vector2(band.end.x, y - 4.0 + toward.y * 1.6),
+			Color(1.0, 0.84, 0.58, 0.22 * glow), 1.5)
+		draw_line(Vector2(band.position.x, y + 4.0),
+			Vector2(band.end.x, y + 4.0), Color(0, 0, 0, 0.26), 1.5)
+
+
+## Brass catches tarnish everywhere except where a thumb touches them. The
+## highlight tracks the flame, which is the cheapest specular in the game and the
+## one that most repays a player who carries the candle across the desk.
+func _draw_clasp(r: Rect2, toward: Vector2, glow: float) -> void:
+	var centre := Vector2(r.end.x - 1.0, r.get_center().y)
+	var plate := Rect2(centre.x - 7.0, centre.y - 24.0, 18.0, 48.0)
+	draw_rect(Rect2(plate.position - toward * 2.0, plate.size),
+		Color(0, 0, 0, 0.34))
+	draw_rect(plate, Color(0.44, 0.37, 0.21))
+	draw_rect(plate.grow(-3.0), Color(0.66, 0.57, 0.33))
+	# The strap running back onto the board, and the pin it hooks over.
+	draw_rect(Rect2(plate.position.x - 16.0, centre.y - 7.0, 18.0, 14.0),
+		Color(0.31, 0.22, 0.14))
+	draw_circle(centre + Vector2(1.0, 0.0), 4.2, Color(0.52, 0.44, 0.26))
+	var spec := centre + toward * 3.4
+	draw_circle(spec, 2.1 + glow * 1.1,
+		Color(1.0, 0.92, 0.70, 0.30 + 0.55 * glow))
+
+
+func _draw_open(r: Rect2, glow: float) -> void:
 	var pw := r.size.x * 0.5
 	var left := Rect2(r.position + Vector2(6, 6), Vector2(pw - 9, r.size.y - 12))
 	var right := Rect2(Vector2(r.position.x + pw + 3, r.position.y + 6),
 		Vector2(pw - 9, r.size.y - 12))
 
+	var leaf := data.page_color.lerp(Color(1.0, 0.87, 0.64), glow * 0.30)
 	for pr in [left, right]:
-		draw_rect(pr, data.page_color)
-		draw_rect(pr, data.page_color.darkened(0.20), false, 1.0)
+		draw_rect(pr, leaf)
+		draw_rect(pr, leaf.darkened(0.20), false, 1.0)
 
 	# Gutter shadow: pages curve down into the spine.
 	for i in 8:

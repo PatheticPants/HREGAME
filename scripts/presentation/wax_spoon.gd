@@ -123,7 +123,15 @@ func _draw() -> void:
 	var feel := Lore.wax_feel()
 	var angle := tilt_angle(feel)
 
-	draw_soft_shadow(Rect2(-94.0, -34.0, 190.0, 68.0))
+	# A spoon is a bowl on a stick, and it was throwing the shadow of a brick.
+	# Two shadows, drawn from the same light: a round one under the bowl and a
+	# thin one under the shaft. The rectangular version read as a grey slab lying
+	# across the parchment in every close capture of the press.
+	# Registered to what _draw_brass actually puts on screen: the bowl is an
+	# ellipse about BOWL_CENTER with radii near (38,30), and the handle runs back
+	# from there to about x=-84 in object space.
+	draw_soft_shadow(Rect2(BOWL_CENTER.x - 36.0, -30.0, 72.0, 60.0), 1.0)
+	draw_soft_shadow(Rect2(-84.0, -6.0, 116.0, 12.0))
 	# Rotate about the bowl, which the player holds over the work. The handle
 	# rises into the hand while the pouring lip stays spatially stable.
 	draw_set_transform(BOWL_CENTER, angle, Vector2.ONE)

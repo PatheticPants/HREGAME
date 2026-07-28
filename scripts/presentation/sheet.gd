@@ -85,6 +85,10 @@ func _draw() -> void:
 	draw_soft_shadow(r)
 	_draw_body(r)
 	_draw_face(r)
+	# Last, over everything the subclass drew. A page out of the candle's reach
+	# loses its writing before it loses its shape, and a new document type cannot
+	# forget to do this because it happens above _draw_face rather than inside it.
+	draw_shade(r)
 
 
 func _draw_body(r: Rect2) -> void:

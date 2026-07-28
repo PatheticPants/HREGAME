@@ -77,8 +77,6 @@ func look_up() -> void:
 		Audio.play(&"view_shift", camera.position)
 	target = 1.0
 	desk.cancel_hand_for_view()
-	if hint != null:
-		hint.note_used()
 
 
 func look_down() -> void:
@@ -86,8 +84,6 @@ func look_down() -> void:
 		_velocity += ANTICIPATION * 7.0
 		Audio.play(&"view_shift", camera.position, -3.0)
 	target = 0.0
-	if hint != null:
-		hint.note_used()
 
 
 func is_audience_view() -> bool:
@@ -131,3 +127,19 @@ func _process(delta: float) -> void:
 	desk.set_view_amount(settled)
 	if hint != null:
 		hint.set_view_amount(settled)
+		# RETIREMENT IS EARNED BY ARRIVING, NOT BY PRESSING.
+		#
+		# Both captions used to retire on any input to either handler. At t=0 the
+		# view is already down, so one stray wheel-down — which moves nothing,
+		# makes no sound and gives the player no feedback whatsoever — started the
+		# permanent fade on the only instruction in the game. The player lost
+		# "look up" without ever having looked up, and lost "return to desk"
+		# before ever needing it, which strands them on the audience plane where
+		# the desk is deliberately not interactive.
+		#
+		# Each caption now goes away only once the player has actually been to the
+		# plane it describes.
+		if amount > 0.94:
+			hint.note_looked_up()
+		elif amount < 0.06:
+			hint.note_returned()

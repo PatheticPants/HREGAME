@@ -227,6 +227,16 @@ func _test_storage(desk: Desk) -> void:
 	if desk.ledge == null or desk.books.is_empty():
 		return
 
+	# Anything the code claims begins racked has to actually be in a hole. The
+	# Register said so in a comment, in the README, and in nothing else: its
+	# BookData carried no start_offset, so it was placed at desk-local (0,0) and
+	# offered to a rack whose holes are all at y=-310. It has been starting in
+	# the dead centre of the blotter, under every charter, since it was written.
+	_is_true(desk.tablet != null and desk.tablet.stowed,
+		"the tablet begins in a pigeonhole, as the memorandum says it does")
+	_is_true(desk.register_book != null and desk.register_book.stowed,
+		"the Register begins in a pigeonhole rather than under the packet")
+
 	var book: ReferenceBook = desk.books[0]
 	book.is_open = true
 	var slot := 0

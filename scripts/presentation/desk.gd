@@ -260,7 +260,17 @@ func _build_register_book() -> void:
 	register_book.bind(RegisterBook.build(session_register(), Lore.data), DESK_RECT)
 	register_book.consulted.connect(_on_book_consulted)
 	books.append(register_book)
-	_try_rack(register_book)
+	# IT HAS TO BE STANDING AT THE HOLE BEFORE IT CAN GO IN.
+	#
+	# RegisterBook.build() never set start_offset, so bind() placed the book at
+	# desk-local (0,0) and _try_rack asked the ledge which hole catches a drop at
+	# the dead centre of the blotter. The answer is none, so this book has been
+	# starting in the middle of the desk — precisely where lay_out_packet drops
+	# every charter, and underneath it, because the packet is added afterwards.
+	# The comment above and the README have both claimed it starts racked since
+	# the day it was written. The tablet works only because desk.gd sets its
+	# position to a slot first; do the same here.
+	_park_in_rack(register_book, 3)
 
 
 ## The Register's live contents. The session owns it, but the desk builds the
@@ -609,6 +619,18 @@ func _try_hear_docket(slip: DocketSlip) -> void:
 	docket_selected.emit(id)
 
 
+## Start something already shelved. Only for construction: the player never puts
+## anything away except by carrying it, and this exists solely so a build-time
+## "it begins in the rack" is not silently a lie about where the object is.
+func _park_in_rack(who: Draggable, slot: int) -> void:
+	if ledge == null or who == null:
+		return
+	var at := ledge.slot_position(slot)
+	who.solver.place(at, 0.0)
+	who.position = at
+	_try_rack(who)
+
+
 ## Let go over a pigeonhole and the thing goes in it. Nothing else puts anything
 ## away, and nothing ever puts itself away.
 func _try_rack(who: Draggable) -> void:
@@ -826,6 +848,7 @@ func _update_lighting() -> void:
 			continue  # the candle does not stand in its own light
 		d.light_position = flame
 		d.light_strength = strength
+		d.ambient_daylight = spent
 		d.light_level = WINDOW_LEVEL if spent \
 			else candle.illumination_at(d.global_position)
 	petitioner.light_position = flame

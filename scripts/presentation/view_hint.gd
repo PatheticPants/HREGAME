@@ -16,9 +16,22 @@ const FADE_AFTER := 1.4
 const FADE_TIME := 2.6
 
 var amount := 0.0
-var has_used_view := false
 
-var _since_used := 0.0
+## THE TWO CAPTIONS RETIRE SEPARATELY, AND ONLY ON ARRIVAL.
+##
+## They used to share one flag set from the input handler, so any key or wheel
+## event in either direction retired both — including a wheel-down at t=0, which
+## moves nothing and gives no feedback at all. That silently deleted the only
+## instruction in the game before the player had followed it once, and took the
+## way back with it.
+##
+## Now each is set from the view amount itself, which means the caption goes away
+## exactly when the player has done the thing it was describing.
+var has_looked_up := false
+var has_returned := false
+
+var _up_since := 0.0
+var _back_since := 0.0
 
 
 func _ready() -> void:
@@ -32,36 +45,62 @@ func set_view_amount(value: float) -> void:
 	queue_redraw()
 
 
-func note_used() -> void:
-	has_used_view = true
+func note_looked_up() -> void:
+	if has_looked_up:
+		return
+	has_looked_up = true
 	queue_redraw()
 
 
-func _process(delta: float) -> void:
-	if not has_used_view:
+## Only meaningful once they have been up: coming "back" without having left is
+## not an accomplishment, and at the start of the day the view is already down.
+func note_returned() -> void:
+	if has_returned or not has_looked_up:
 		return
-	if _since_used <= FADE_AFTER + FADE_TIME:
-		_since_used += delta
+	has_returned = true
+	queue_redraw()
+
+
+## Retained for older callers and for the tests, which ask one question: has this
+## thing begun to go away yet.
+func note_used() -> void:
+	note_looked_up()
+
+
+func has_used_view() -> bool:
+	return has_looked_up
+
+
+func _process(delta: float) -> void:
+	if has_looked_up and _up_since <= FADE_AFTER + FADE_TIME:
+		_up_since += delta
+		queue_redraw()
+	if has_returned and _back_since <= FADE_AFTER + FADE_TIME:
+		_back_since += delta
 		queue_redraw()
 
 
-## 1 until the view has been used, then eased to 0 and gone for good.
-func retirement() -> float:
-	if not has_used_view:
+## 1 until the plane has actually been visited, then eased to 0 and gone for good.
+func _retirement(used: bool, since: float) -> float:
+	if not used:
 		return 1.0
 	# Curved, like everything else that moves here. If this is going to be the
 	# one screen-space element in the game, its single moment of motion should
 	# not be the one linear tween left in the build.
-	return 1.0 - ease(
-		clampf((_since_used - FADE_AFTER) / FADE_TIME, 0.0, 1.0), 0.5)
+	return 1.0 - ease(clampf((since - FADE_AFTER) / FADE_TIME, 0.0, 1.0), 0.5)
+
+
+func retirement() -> float:
+	return _retirement(has_looked_up, _up_since)
 
 
 func _draw() -> void:
-	var life := retirement()
-	if life <= 0.005:
+	var up_life := _retirement(has_looked_up, _up_since)
+	var back_life := _retirement(has_returned, _back_since)
+	if up_life <= 0.005 and back_life <= 0.005:
 		return
-	var work_alpha := (1.0 - amount) * 0.52 * life
-	var audience_alpha := amount * 0.40 * life
+	var work_alpha := (1.0 - amount) * 0.52 * up_life
+	var audience_alpha := amount * 0.40 * back_life
 	var at := Vector2(maxf(180.0, size.x - 190.0), 24.0)
 
 	if work_alpha > 0.01:

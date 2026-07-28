@@ -45,7 +45,15 @@ func _draw_face(r: Rect2) -> void:
 		at.y += Ink.block(self, at, d.received_note, 11, Ink.FADED, w)
 
 	# The doorkeeper writes in the bottom margin, at a slant, in his own ink.
+	#
+	# Pinned to the foot of the sheet, which is right until the flowed text above
+	# it is long enough to reach the foot as well — and then two paragraphs are
+	# drawn on top of each other and both become unreadable. On the desk memorandum
+	# that is R.V.'s instruction about CONFIRM and REFER printed over his
+	# instruction about the candle, i.e. the whole tutorial. CharterView._draw_closing
+	# already guards its own footer this way; this is the same guard.
 	if not d.doorkeeper_note.is_empty():
-		var foot := Vector2(r.position.x + MARGIN, r.end.y - MARGIN - 30.0)
+		var foot := Vector2(r.position.x + MARGIN,
+			maxf(at.y + 10.0, r.end.y - MARGIN - 30.0))
 		Ink.margin_note(self, foot, d.doorkeeper_note, 11, w, -2.5,
 			Color(0.36, 0.30, 0.22))

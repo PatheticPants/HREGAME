@@ -20,6 +20,10 @@ extends Node
 ##   24  the fresh pool settling before the signet descends
 ##   25  a received pendant seal filling the glass, at ordinary desk scale
 ##   26  the same optical detail close enough to inspect its circular legend
+##   27  the door mid-swing with somebody still walking out of the room's depth
+##   28  the audience view with a person actually standing in it
+##   29  the same, speaking
+##   30  the withdrawal, back toward the door they came in by
 
 const OUT := "res://.tools/"
 
@@ -98,6 +102,8 @@ func _run() -> void:
 		await _shot("09_audience_view")
 		view_up.look_down()
 		await _settle(80)
+
+	await _show_the_petitioner()
 
 	await _pour_and_strike(Vector2.ZERO, "04_strike_centre")
 	# Far enough out that the die genuinely hangs over the edge of the material:
@@ -306,6 +312,46 @@ func _inspect_pendant_seal() -> void:
 	_desk.lens.solver.place(Vector2(700, 250), deg_to_rad(-14.0))
 	_desk.lens.position = Vector2(700, 250)
 	await _settle(12)
+
+
+## The one thing this capture set never showed: a person in the room.
+##
+## Arrival, the open door behind them, the audience view with somebody actually
+## standing in it, and the withdrawal. The door and the approach are the two
+## motions that share a plane, so they have to be looked at in the same frame or
+## a mismatch between them is invisible.
+func _show_the_petitioner() -> void:
+	var view := _main.get_node_or_null("view_controller")
+	var who := Lore.data.cases[0].petitioner
+	_desk.petitioner.bind(who)
+	_desk.petitioner.arrive()
+	_desk.open_door()
+	# Early enough that the leaf is still swinging and the figure is still at the
+	# far end of its walk. A shot of either at rest proves nothing.
+	await _settle(14)
+	await _shot("27_door_and_approach")
+
+	if view != null and view.has_method("look_up"):
+		view.look_up()
+	await _settle(90)
+	await _shot("28_petitioner_at_the_desk")
+
+	_desk.petitioner.say(
+		"Wilhelm Ott, master cooper, of the Free City of Marchfeld.", who.name)
+	await _settle(46)
+	await _shot("29_petitioner_speaking")
+
+	_desk.open_door()
+	_desk.petitioner.depart()
+	await _settle(22)
+	await _shot("30_withdrawal")
+
+	_desk.close_door()
+	await _settle(70)
+	_desk.petitioner.clear()
+	if view != null and view.has_method("look_down"):
+		view.look_down()
+	await _settle(80)
 
 
 ## Scratch a note onto the tablet, the way a player would: drag the stylus
