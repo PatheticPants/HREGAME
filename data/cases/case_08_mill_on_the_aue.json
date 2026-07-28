@@ -1,0 +1,176 @@
+{
+  "id": "case_08_mill_on_the_aue",
+  "title": "The Mill on the Aue",
+
+  "_design": "THE KNIFE. The first rasura case, and the first failure mode a live die and a clean legend cannot catch.\n\nEvery check the player has been taught passes. Berthold's stag answers to the recorded die in device, legend, shape and tincture; the die was cut in 1209 and has never been broken, so it is live. Ostmark counts from accession like the Chancery, so the eighth year of Aldric reduces to 1211 with no reckoning quarrel and no authority contest. The witness list returns one clean silence from the Marchfeld roll and one honest 'we do not keep those rolls' from Ostmark. There is nothing here for the glass, the Almanac or the Book of Matrices to find, and a notary who works this packet the way he worked the first seven will confirm a forgery with a clear conscience.\n\nDECISIVE FACT: the date line has been scraped down to the nap and rewritten. Under the flame the skin transmits and the removed words feather back: 'in the eleventh year of Aldric I' — 1214. The instrument as it stands says the eighth year, 1211.\n\nONE ROUTE, and it is physical. Pick the charter up, carry it into the candle, and hold it there. Reading, the glass and the books cannot reach this. That is the point of the case.\n\nWHAT THE FORGER GAINED: the docket states, as office knowledge, that Berthold settled the eastern portions on his four sons in the ninth year of Aldric — 1212. The charter's own third clause ('we will that this grant bind our inheritance whole, and every portion of it hereafter') is genuine and was always there: in 1214 it was a dead letter, because the Duke could no longer bind portions he had already settled, so the grant reached one son's quarter and three brothers were free to dispute it. Move the year to 1211 and the same sentence binds the whole March. Four strokes of a knife turn a quarter-claim into a whole one. Note also that the forger stopped where the Chancery's own book would have stopped him: he did not go back past 1209, because that is the year the stag was cut, and he has read the Book of Matrices. The forger passes the tests you were taught. That is the lesson.\n\nTHE INNOCENT PATCH. There are TWO scrapes. The second sits on the second witness's style: the scribe gave a Marchfeld burgess a Marchfeld office he does not hold and corrected himself before the wax went on. It comes back under the same flame, glows the same amber, and is worth nothing — erasure_innocent, a NOTE. This is case one's lesson applied to the new verb: an anomaly is not a crime, and a rule that convicted on the presence of a scrape would convict most of the honest parchment in Europe. It also means the first thing the flame shows the player is harmless, so the second is earned.\n\nFAIRNESS AT REST. The patches render as a difference in the nap whether or not anybody lifts the sheet, so the evidence is on the desk from the first second. Three authored nudges, none of which says 'light': the doorkeeper noticed Zant asking twice whether the room had a window; his own arrival lines explain the uneven skin as flour and damp before anybody has asked him about it; and he insists, unprompted and too hard, on the one fact the knife manufactured — that the grant predates the settlement.\n\nDIFFICULTY: MID. The decisive fact itself costs no lookup at all, only a verb the player has never used, which is why this cannot be an opener. Making sense of it costs two cross-references — the Almanac to reduce the ghost year to 1214, and the docket's settlement year of 1212 to see what 1214 would have cost him — with a third available in the Book of Matrices, where the Ostmark plate explains partible inheritance and Berthold's plate gives the cutting year that set the forger's floor. The Kalendar closes the circle: Ostmark returns no rolls because four sons keep four books, and that same partition is the motive.\n\nPORTRAIT: reuses res://art/petitioners/gero_kalt_bust.png. No new bust exists; Kalt is the least load-bearing figure in the game and the weathered face fits a miller. Give this man his own art before shipping the two of them on the same day.",
+
+  "correct_verdict": "DENY",
+  "correct_reason": "erasure_dispositive",
+  "correct_reason_text": "The year of the grant has been scraped away and written over. Held against the flame the skin returns 'in the eleventh year of Aldric I' — 1214 — where the instrument now reads the eighth year, 1211. The wax is Berthold's, the stag answers to the die in every particular, the die was live and the date reduces cleanly. None of that survives the knife: what was sealed is not what is in front of us.",
+
+  "petitioner": {
+    "id": "reimbold_zant",
+    "name": "Reimbold Zant",
+    "style": "miller, of the Aue below Tanneck",
+    "polity_id": "ostmark",
+    "portrait_path": "res://art/petitioners/gero_kalt_bust.png",
+    "height": 248,
+    "build": 106,
+    "cloth": "#4a4230",
+    "restlessness": 0.54
+  },
+
+  "documents": [
+    {
+      "kind": "docket",
+      "id": "docket_08",
+      "title": "Passage docket",
+      "size": [330, 235],
+      "tint": "#d7c9a6",
+      "start_offset": [-348, -90],
+      "start_angle_deg": 4.5,
+      "petitioner_name": "Reimbold Zant",
+      "petitioner_style": "miller, of the Aue below Tanneck in Ostmark",
+      "claim_summary": "Claims the mill on the Aue below Tanneck, with the two meadows above the race, by grant of Berthold, Duke of Ostmark. Produces one charter, sealed. Office note: the Duke settled the eastern portions on his four sons in the ninth year of Aldric. A grant made after that settlement reaches one portion only.",
+      "received_note": "Called from the Thursday tray, with the winter entry of the Ostmark portions.",
+      "doorkeeper_note": "Asked what the room was like before he would come up, and asked twice whether it had a window. Would not put the packet down while he asked."
+    },
+    {
+      "kind": "charter",
+      "id": "charter_aue_mill",
+      "title": "Grant of Berthold, Duke of Ostmark",
+      "size": [430, 585],
+      "tint": "#ded1b0",
+      "start_offset": [-32, 66],
+      "start_angle_deg": -2.5,
+      "takes_seal": true,
+
+      "body_text": "Berthold, by the grace of God Duke of Ostmark, to all who shall see this writing, greeting.\n\nKnow that we have granted to Reimbold Zant and to his heirs the mill upon the Aue below Tanneck with the two meadows above the race, to hold of us for the yearly render of six measures of meal.\n\nAnd we will that this grant bind our inheritance whole, and every portion of it hereafter.\n\nIn witness whereof we have set our seal.",
+
+      "date_emperor": "aldric_i",
+      "date_regnal_year": 8,
+      "drawn_by_polity": "ostmark",
+
+      "grantor": "Berthold, Duke of Ostmark",
+      "claimant": "Reimbold Zant, miller, and his heirs",
+      "property": "The mill upon the Aue below Tanneck, with the two meadows above the race",
+      "subject_id": "aue_mill",
+      "claimant_id": "zant_household",
+
+      "witnesses": [
+        { "name": "Hartwig vom Aue", "person_id": "hartwig_vom_aue", "house": "ostmark", "title": "forester of the Duke on the Aue" },
+        { "name": "Bruno Halm", "person_id": "bruno_halm", "house": "marchfeld", "title": "burgess of Marchfeld" },
+        { "name": "Egilbert Roth", "person_id": "egilbert_roth", "house": "ostmark", "title": "chaplain of the Duke's chapel at Tanneck" }
+      ],
+
+      "erasures": [
+        {
+          "x": 0.165,
+          "y": 0.532,
+          "w": 0.55,
+          "h": 0.062,
+          "altered_field": "The year of the grant",
+          "original_value": "in the eleventh year of Aldric I",
+          "innocent": false,
+          "dispositive": true,
+          "note": ""
+        },
+        {
+          "x": 0.10,
+          "y": 0.805,
+          "w": 0.44,
+          "h": 0.052,
+          "altered_field": "The style given to the second witness",
+          "original_value": "sworn measurer of the city",
+          "innocent": true,
+          "dispositive": false,
+          "note": "Ostmark keeps no sworn measurers; that is a Marchfeld office, and the man is a Marchfeld man. The scribe gave him the wrong style, saw it, and set it right while the ink of the rest was still wet."
+        }
+      ],
+
+      "seal": {
+        "id": "seal_aue_mill",
+        "claims_owner": "Berthold, Duke of Ostmark",
+        "claims_polity": "ostmark",
+        "device": "stag",
+        "legend": "BERTHOLDVS DVX ORIENTALIS MARCHIE",
+        "shape": "round",
+        "wax_color": "#2d4f8c",
+        "wear": 0.09,
+        "shape_seed": 3319,
+        "note": "Sound in every particular, and worth nothing. The wax is the one part of this instrument nobody has touched."
+      }
+    }
+  ],
+
+  "lines": [
+    {
+      "beat": "arrival",
+      "text": "Reimbold Zant. I hold the mill on the Aue below Tanneck and I have held it ten years, and the Duke's sons are entering every title in the east March this winter, so here I am with mine."
+    },
+    {
+      "beat": "arrival",
+      "text": "The old Duke gave me that mill before he settled anything on his sons. I will thank the office to notice that the parchment says so, because there are four men at Tanneck who would rather it did not."
+    },
+    {
+      "beat": "arrival",
+      "text": "It has lived in a meal chest eleven winters, so it smells of the mill and the skin has gone uneven in places. That is flour and damp and my own roof. It is not anything."
+    },
+    {
+      "beat": "inspect_seal",
+      "text": "That is the old Duke's stag. He struck it himself, in the hall at Tanneck, with his hand on my shoulder. Everything you are looking at there is true."
+    },
+    {
+      "beat": "inspect_closing",
+      "text": "Tanneck drew it. The Duke's own notary, in the Duke's own hall, and they count an emperor's years exactly as you do. There is no trick in the reckoning. You may put that one down."
+    },
+    {
+      "beat": "hold_to_light",
+      "text": "What do you want with the candle? Sir — it is skin, it is not glass, you will not see anything through— ... ... Oh. ... You have it, then. There is no use in me telling you it was flour."
+    },
+    {
+      "beat": "consult_matrix_book",
+      "text": "The stag was cut two years before he gave me the mill, and it has never been broken and it never will be while he draws breath. You will find nothing in that book, and I say so as a kindness. The wax is the soundest thing I own."
+    },
+    {
+      "beat": "consult_almanac",
+      "text": "The eighth year of Aldric. I was one-and-thirty and the race was new. Count it whichever way your office counts it; it comes out the same year."
+    },
+    {
+      "beat": "consult_kalendar",
+      "text": "Ostmark will send you nothing. Four sons, four chapels, four books, and not one of them will write down another's dead. That is what the division did to us, and you are holding the last parchment made before it."
+    },
+    {
+      "beat": "waiting",
+      "text": "There is a wheel on the Aue that does not stop because a clerk is thinking. My son is standing on it today and he is not good at it yet."
+    },
+    {
+      "beat": "waiting_long",
+      "text": "You keep coming back to the same third of the page. ... I would rather you said it than went on doing that. I have carried this eleven winters and my arms are tired in a way that has nothing to do with the weight of it."
+    }
+  ],
+
+  "outcomes": [
+    {
+      "verdict": "DENY",
+      "favor": { "imperial": 1 },
+      "reaction": "Yes. ... Write down that the mill is mine, if you write anything. Not the parchment. The mill. I have turned that wheel since before the Duke had four sons to divide anything between.",
+      "register_note": "Date of the grant scraped to the nap and written over. Against the flame the skin returns the eleventh year of Aldric, 1214; the instrument as it stands reads the eighth, 1211. Berthold's stag genuine and live, date reduces clean, witnesses accounted for. Refused on the alteration.",
+      "aftermath": "The Duke's second son has entered the Aue mill to his own portion and put his own man on the wheel. Zant is still at Tanneck, working for him. The instrument he started with would have bound one quarter and begun a quarrel he had some chance of winning; the knife left him nothing to quarrel with. He did that to himself in an afternoon, and this desk only read it."
+    },
+    {
+      "verdict": "CONFIRM",
+      "favor": { "imperial": -1 },
+      "reaction": "Thank you, sir. ... You are the first man in a year who did not hold it up to anything.",
+      "register_note": "Berthold's stag, live at the date. Eighth year of Aldric, drawn at Tanneck, reduces to 1211. Nothing found against it. Confirmed.",
+      "aftermath": "Entered on the eleventh, and read at Tanneck a fortnight later by a clerk who took it to the window, which is the first thing they do there. The mill went to the Duke's second son regardless. What this office added was a certified date: a man cannot be tried for a claim he merely asserts, but he can be tried for one an imperial notary has admitted under seal. Zant is being tried on it. The knife was his. The certificate is this desk's, and the hand in the Register is yours."
+    },
+    {
+      "verdict": "REFER",
+      "favor": {},
+      "reaction": "Up. ... How long is up, usually? No. Nobody ever says. The wheel turns either way and somebody is standing on it.",
+      "register_note": "Ostmark grant of the Aue mill. Seal live, date reduces clean, no reckoning quarrel. Sent up rather than decided.",
+      "aftermath": "With the Duke's court since November, where the eastern portions are being entered anyway and where somebody will eventually take it to a window. Referral did not spare Zant that; it only meant the finding was made by a clerk who had never met him, four months after the mill had already changed hands."
+    }
+  ]
+}

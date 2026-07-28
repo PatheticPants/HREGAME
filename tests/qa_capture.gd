@@ -43,6 +43,7 @@ func _run() -> void:
 	_desk = _main.get_node("desk") as Desk
 	await _settle(40)
 	await _shot("19_practice_before_first_knock")
+	await _hold_to_the_flame()
 	if _desk.session.stage == SessionController.Stage.PRACTICE:
 		_desk.sweep_packet_away()
 		_desk.session._begin_day(0)
@@ -313,6 +314,46 @@ func _inspect_pendant_seal() -> void:
 	_desk.lens.solver.place(Vector2(700, 250), deg_to_rad(-14.0))
 	_desk.lens.position = Vector2(700, 250)
 	await _settle(12)
+
+
+## The fourth investigative verb, on the leaf that teaches it.
+##
+## At rest the scrape is a difference in the nap and nothing else; lifted into the
+## flame the thin place transmits and the word that was cut out comes back. Both
+## states are captured, because the whole design of this mechanic is the gap
+## between them — if the "at rest" frame reads as a highlighted box then the verb
+## is decoration, and if it reads as nothing at all then the verb is unfair.
+func _hold_to_the_flame() -> void:
+	var leaf: Sheet = null
+	for node in _desk.case_papers:
+		if node is CharterView:
+			leaf = node
+	if leaf == null:
+		return
+	var camera := _main.get_node("camera") as Camera2D
+	_desk.bring_to_front(leaf)
+	camera.zoom = Vector2(2.1, 2.1)
+	camera.position = _desk.to_global(leaf.position) + Vector2(0, -20)
+	await _settle(24)
+	await _shot("33_scrape_at_rest")
+
+	# Exactly what a player does: pick the sheet up and carry it to the candle.
+	leaf.is_held = true
+	# Beside the flame rather than on top of it, so the candle sprite does not
+	# cover the very patch this frame exists to show. Still inside BACKLIT_LEVEL.
+	var flame := _desk.candle.position + Vector2(-70.0, 60.0)
+	leaf.solver.place(flame, leaf.rotation)
+	leaf.position = flame
+	camera.position = _desk.to_global(flame) + Vector2(0, 40)
+	await _settle(40)
+	await _shot("34_scrape_against_the_flame")
+
+	leaf.is_held = false
+	leaf.solver.place(Vector2(-20, 52), deg_to_rad(-2.0))
+	leaf.position = Vector2(-20, 52)
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	await _settle(20)
 
 
 ## The Kalendar of the Dead, open at a house's roll. Everything WitnessCheck can

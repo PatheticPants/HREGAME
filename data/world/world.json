@@ -1,25 +1,27 @@
 {
   "_comment": "The Empire. Seven polities, three reigns. Cap the polity list at nine forever: learnability is the whole game, and each one must carry exactly one mechanical habit a player can hold in their head.",
-
   "present_year": 1221,
   "present_reign": "kunrad_iv",
   "chancery_name": "The Imperial Chancery at Aachen-Verd",
   "notary_name": "the notary",
   "day_heading": "The eleventh day of October, in the seventh year of Kunrad IV. Third desk, second floor. Three matters heard.",
-
   "_day_note": "One candle is one working day. Listening is free until the notary first handles a matter. From that physical engagement onward it burns through thought and speech until judgment. It does not burn between callers or while the ledger is open.",
   "day_seconds": 1200,
-
   "day_burnt_out": "The candle went before the queue did. The doorkeeper turned the rest of them out into the passage and told them to come back on Thursday.",
-
   "desk_note": {
     "kind": "docket",
     "id": "third_desk_memorandum",
     "title": "Memorandum",
     "_geometry_note": "Left edge must clear the right edge of the widest charter (430 wide, laid at x=-45, so ending at x=175). At the old offset of 300 the memorandum began at x=155 and every packet in the game covered the first three characters of every line of the only instructions the player gets.",
-    "size": [330, 510],
+    "size": [
+      330,
+      510
+    ],
     "tint": "#d5c6a1",
-    "start_offset": [358, -45],
+    "start_offset": [
+      358,
+      -45
+    ],
     "start_angle_deg": -5.0,
     "takes_seal": false,
     "petitioner_name": "TO THE THIRD HAND",
@@ -28,20 +30,25 @@
     "received_note": "There is a tablet in the rack and a stylus by your left hand. Scratch down what you cannot hold in your head, and rest the nib on the wax to take it out again. Nobody will ever read it but you.\n\nThe green book in the rack is the Kalendar. It is not ours — it is what other houses have troubled to send us of their dead, and three of them send nothing at all. A name it does not carry is a name nobody has written to us about. It is not a man alive.\n\nWhen a parchment is wrong and you cannot say where, pick it up and put it in front of the flame. Skin that has been scraped is thin, and thin skin lets the light through.\n\nMelt the resin cake in the brass spoon, lift it clear of the flame, and pour. One ring. When the wax gives, judgment is made. Hold for the device, then lift cleanly. There is no second impression.\n\nOnce you disturb a matter, the candle waits on neither thought nor tongue.",
     "doorkeeper_note": "When two laws disagree, CONFIRM or DENY names the law you chose. REFER follows this office's procedure without choosing. Do not confuse procedure with truth. — R.V."
   },
-
   "practice_documents": [
     {
       "kind": "docket",
       "id": "practice_instruction",
       "title": "Before the door opens",
-      "size": [305, 250],
+      "size": [
+        305,
+        250
+      ],
       "tint": "#cdbd98",
-      "start_offset": [-350, -82],
+      "start_offset": [
+        -350,
+        -82
+      ],
       "start_angle_deg": 4.5,
       "takes_seal": false,
       "petitioner_name": "PRACTICE",
       "petitioner_style": "discarded office leaf; no party is bound",
-      "claim_summary": "Read the memorandum. Melt, pour, choose a ring, and hold until the wax gives. The first knock waits.",
+      "claim_summary": "Read the memorandum. Hold the leaf up to the flame and see what the knife took out. Then melt, pour, choose a ring, and hold until the wax gives. The first knock waits.",
       "received_note": "",
       "doorkeeper_note": "Afterward, hold the glass over your impression until the door opens."
     },
@@ -49,12 +56,18 @@
       "kind": "charter",
       "id": "practice_leaf",
       "title": "Discarded Practice Leaf",
-      "size": [390, 500],
+      "size": [
+        390,
+        500
+      ],
       "tint": "#d8caa9",
-      "start_offset": [-20, 52],
+      "start_offset": [
+        -20,
+        52
+      ],
       "start_angle_deg": -2.0,
       "takes_seal": true,
-      "body_text": "THIS LEAF TRANSFERS NOTHING.\n\nStrike one complete office device below. Feel the resistance before the wax yields. Once it gives, the judgment cannot be changed; continue to hold for a clean device, then lift without dragging.",
+      "body_text": "THIS LEAF TRANSFERS NOTHING.\n\nStrike one complete office device below. Feel the resistance before the wax yields. Once it gives, the judgment cannot be changed; continue to hold for a clean device, then lift without dragging.\n\nSomebody has been at the year on this leaf with a knife. Pick the sheet up and hold it in front of the flame before you seal it, so that you know what that looks like the first time it matters.",
       "date_emperor": "kunrad_iv",
       "date_regnal_year": 7,
       "drawn_by_polity": "aachen_verd",
@@ -63,12 +76,24 @@
       "property": "No property",
       "subject_id": "practice_only",
       "claimant_id": "practice_only",
-      "witnesses": []
+      "witnesses": [],
+      "erasures": [
+        {
+          "_note": "Over the rubric date line, measured from a capture. The practice leaf teaches the fourth verb because it transfers nothing and cannot be got wrong.",
+          "x": 0.04,
+          "y": 0.605,
+          "w": 0.82,
+          "h": 0.075,
+          "altered_field": "The year",
+          "original_value": "in the fourth year of Kunrad IV",
+          "innocent": false,
+          "dispositive": true,
+          "note": ""
+        }
+      ]
     }
   ],
-
   "_reigns_note": "election_year is when he was chosen King of the Romans, in his predecessor's lifetime. accession_year is when the predecessor died. coronation_year is the imperial crown at Rome. The gaps between these three are what make a regnal date ambiguous, and they are the engine of every date puzzle in the game.",
-
   "reigns": [
     {
       "id": "otbert_ii",
@@ -104,7 +129,6 @@
       "note": "Elected in Aldric's lifetime, as is now the custom. Crowned four years after."
     }
   ],
-
   "polities": [
     {
       "id": "aachen_verd",
