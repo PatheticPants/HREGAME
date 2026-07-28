@@ -540,6 +540,32 @@ func _test_candle_light(desk: Desk) -> void:
 		desk.candle.position = candle_home
 		desk._update_lighting()
 
+	# SNUFFING A HALF-USED CANDLE LEAVES HALF A CANDLE.
+	#
+	# snuff() used to set burn = 1.0, which is the state of a candle that has
+	# drowned — so carry_forward(), being clampf(1 - burn, NEXT_DAY_FLOOR, 1.0),
+	# handed a notary who finished all three matters with two thirds in hand the
+	# exact same 45% floor as one who ran out mid-sentence. The candle is the
+	# only scarce thing in the game and this line made it purchase nothing.
+	var saved_burn := desk.candle.burn
+	var saved_spent := desk.candle._spent
+	desk.candle.reset_day()
+	desk.candle.burn = 0.30
+	desk.candle.snuff()
+	_is_true(desk.candle.is_spent(), "snuffing puts the candle out")
+	_is_true(absf(desk.candle.burn - 0.30) < 0.001,
+		"and does not burn the rest of it away")
+	_is_true(desk.candle.carry_forward() > 0.65,
+		"so finishing early actually carries a longer candle into the next day")
+	desk.candle.reset_day()
+	desk.candle.burn = 1.0
+	desk.candle.snuff()
+	_is_true(absf(desk.candle.carry_forward() - Candle.NEXT_DAY_FLOOR) < 0.001,
+		"while running out still carries only the floor")
+	desk.candle.reset_day()
+	desk.candle.burn = saved_burn
+	desk.candle._spent = saved_spent
+
 	var first_flame := desk.candle.flame_world()
 	var first_energy := key.energy if key != null else 0.0
 	for i in 24:
@@ -1332,6 +1358,31 @@ func _test_complete_ledger(desk: Desk) -> void:
 	desk.bring_to_front(desk.ledger)
 	_is_true(desk.ledger.spread_count() >= 2,
 		"the full day paginates into a turnable physical ledger")
+
+	# THE DAY ENDING MID-PRESS MUST NOT LEAVE THE RING IN THE WAX.
+	#
+	# `enabled` goes false the instant the candle drowns, and tick() returns at
+	# _relax() before it ever reaches _update_ring — so a player whose candle
+	# died with the signet held down was left with the ring frozen at full
+	# press_depth, tilted by its resistance fight, while the sheet was swept from
+	# under it and the pool freed. A ring pressed into nothing, at an angle, for
+	# the rest of the session.
+	var press := desk.press
+	var stuck := desk.rings[0] if not desk.rings.is_empty() else null
+	if press != null and stuck != null:
+		press._active_ring = stuck
+		stuck.press_depth = 1.0
+		stuck.resistance_amount = 1.0
+		stuck.peel_amount = 0.4
+		press.enabled = false
+		press.phase = PressController.Phase.HOLD
+		for i in 90:
+			press.tick(1.0 / 60.0, null, Vector2.ZERO, 0.0)
+		_is_true(stuck.press_depth <= 0.001,
+			"a press abandoned by the day's end lifts the ring back out")
+		_is_true(stuck.resistance_amount <= 0.001
+			and stuck.peel_amount <= 0.001,
+			"and leaves it neither fighting nor peeling")
 
 	# THE THUD BELONGS TO THE LANDING.
 	#

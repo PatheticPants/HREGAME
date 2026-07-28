@@ -820,7 +820,12 @@ func _process(delta: float) -> void:
 			armed = ledge.slot_for_drop(_held.position, _held)
 		if armed != ledge.armed_slot:
 			if armed >= 0:
-				Audio.play_throttled(&"stow_out", 0.22)
+				# stow_IN. This telegraphs a hole about to CATCH what is in the
+				# hand, and it was playing the sound authored for the opposite
+				# action — the noise of something being pulled back OUT of a
+				# pigeonhole. So the rack answered "you are taking that out" at
+				# the exact moment it meant "I will take that in".
+				Audio.play_throttled(&"stow_in", 0.22)
 			ledge.armed_slot = armed
 	if docket_tray != null:
 		var hearing_armed := _held is DocketSlip and _dragged \

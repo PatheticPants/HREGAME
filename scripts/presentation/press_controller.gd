@@ -144,22 +144,55 @@ func tick(delta: float, held: Draggable, cursor: Vector2, cursor_speed: float) -
 		_relax(delta)
 		return
 
+	# THE SPOON'S LOOPS BELONG TO THE SPOON'S PHASES.
+	#
+	# wax_melt and wax_pour are written in exactly one place — _update_spoon —
+	# and _update_spoon is only called during the spoon phases. So a player who
+	# went from pouring straight into a press left the pour loop running at
+	# whatever volume it last held, for the whole descent, resist, hold and peel.
+	# The sound of wax falling continued over a ring being pressed into wax that
+	# had already fallen.
+	var spoon_phase := phase == Phase.IDLE or phase == Phase.HEATING \
+		or phase == Phase.READY or phase == Phase.POURING \
+		or phase == Phase.COOLING
+	if not spoon_phase:
+		Audio.set_loop(&"wax_melt", 0.0)
+		Audio.set_loop(&"wax_pour", 0.0)
+
 	if phase == Phase.PEEL:
 		_update_peel(delta)
 		return
 
-	if phase == Phase.IDLE or phase == Phase.HEATING or phase == Phase.READY \
-			or phase == Phase.POURING or phase == Phase.COOLING:
+	if spoon_phase:
 		_update_spoon(delta)
 
 	if pool != null:
 		_update_ring(delta)
 
 
+## Hands off. Everything the press was driving has to come back to rest here,
+## because this is where control ends and nothing else will do it.
+##
+## THE RING USED TO BE LEFT SUNK. `enabled` goes false the instant the candle
+## drowns, and tick() returns here before it ever reaches _update_ring — so a
+## player whose candle died with the signet held in the wax was left with the
+## ring frozen at press_depth 1.0, tilted by its resistance fight, while the
+## sheet was swept out from under it and the pool freed. A ring pressed into
+## nothing, at an angle, for the rest of the session.
 func _relax(delta: float) -> void:
 	if spoon:
 		spoon.tilt = maxf(0.0, spoon.tilt - delta / feel.untilt_time)
 		spoon.lose_heat(delta, feel)
+	var ring := _active_ring
+	if ring != null and is_instance_valid(ring):
+		# Lifted out rather than teleported: the day ending should look like a
+		# hand coming off the desk, not like a frame being dropped.
+		ring.press_depth = move_toward(ring.press_depth, 0.0, delta * 3.4)
+		ring.resistance_amount = move_toward(ring.resistance_amount, 0.0,
+			delta * 6.0)
+		ring.peel_amount = move_toward(ring.peel_amount, 0.0, delta * 6.0)
+		if ring.press_depth <= 0.0 and ring.peel_amount <= 0.0:
+			_active_ring = null
 	Audio.set_loop(&"wax_melt", 0.0)
 	Audio.set_loop(&"wax_pour", 0.0)
 	Audio.set_loop(&"ring_press", 0.0)

@@ -255,11 +255,28 @@ func burn_remaining() -> float:
 
 ## Put out deliberately, at the end of a day the player finished on their own
 ## terms rather than on the candle's.
+## SNUFFING DOES NOT BURN THE REST OF THE CANDLE.
+##
+## This used to set `burn = 1.0`, which is the state of a candle that has
+## drowned in its own wax — and it therefore threw away the entire reward for
+## finishing a day on your own terms. carry_forward() is clampf(1 - burn,
+## NEXT_DAY_FLOOR, 1.0), so a notary who got through all three matters with two
+## thirds of his candle left carried forward exactly the same 45% floor as one
+## who ran out mid-sentence. The candle is the only scarce thing in the game, it
+## exists to purchase something, and this was the line that made it purchase
+## nothing.
+##
+## The README's claim that finishing yourself "is a different ending from having
+## it snuffed for him" was false in the only way that could be measured.
+##
+## It was wrong visually too: a half-used candle you pinch out is a half-used
+## candle, not a stub. `burn` drives the melt, the flood in the saucer, the
+## wick's slump and the runnels down the side, so setting it to 1.0 made the
+## candle collapse to a puddle on the frame the player finished early.
 func snuff() -> void:
 	if _spent:
 		return
 	_spent = true
-	burn = 1.0
 	Audio.play(&"candle_out", global_position)
 
 
