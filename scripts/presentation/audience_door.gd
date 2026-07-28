@@ -47,6 +47,28 @@ var open_amount := 0.0
 var target := 0.0
 var velocity := 0.0
 
+## THE DOOR HAD NEVER MET THE CANDLE.
+##
+## Fed by Desk._update_lighting like every other object in the room, and until
+## now the only large thing that was not. Its face colour was
+## `Color(1 - t*0.43, ...)` — a pure function of how far open the leaf is, under
+## a comment reading "the face loses direct candlelight as it turns into the
+## passage" while reading nothing whatever about where the candlelight was.
+##
+## So the biggest object on screen during every arrival was drawn at a fixed
+## brightness in a room whose whole premise is one carried flame. Carrying the
+## candle across the desk relit the parchment, the books, the rings, the spoon
+## and the person standing there, and did nothing at all to the door behind them.
+var light_position := Vector2(0, -400)
+var light_level := 0.25
+var light_strength := 1.0
+var ambient_daylight := false
+
+## Oak in a dark room still has a silhouette. The door must never fall so far
+## that the arrival happens in front of a black rectangle — a door you cannot
+## see is a door that cannot be opened dramatically.
+const FLOOR_LEVEL := 0.16
+
 var _settled := true
 var _rattle := 0.0
 var _rattle_phase := 0.0
@@ -152,8 +174,33 @@ func set_open_amount(value: float) -> void:
 		Vector2(outer_x, DOOR_SIZE.y - bottom_skew),
 		Vector2(rattle * 0.35, DOOR_SIZE.y),
 	])
-	# The face loses direct candlelight as it turns into the passage.
-	color = Color(1.0 - t * 0.43, 1.0 - t * 0.46, 1.0 - t * 0.49, 1.0)
+	color = face_colour(t)
+
+
+## Where the middle of the leaf actually is, for sampling the flame's falloff.
+## The node's own origin is the hinge, in the top corner, which is the worst
+## available point to measure a 390x715 slab from.
+func centre_world() -> Vector2:
+	return to_global(Vector2(projected_width() * 0.5, DOOR_SIZE.y * 0.5))
+
+
+## Oak, lit by the one flame in the room.
+##
+## Two separate terms, and they are not the same thing. `t` is how far the leaf
+## has turned INTO the passage, so its face stops pointing at the room; that term
+## was already here and is correct. How much flame reaches it at all was missing
+## entirely, and that is the term the whole game is about.
+func face_colour(t: float) -> Color:
+	var lit := maxf(Surface.lit(light_level, light_strength), FLOOR_LEVEL)
+	# Under the cold morning through the shutter there is nothing warm to lerp
+	# toward, and the room is lit uniformly from one direction.
+	var warm := 0.0 if ambient_daylight else 0.30
+	var face := Surface.tint(Color(1.0, 1.0, 1.0), lit, warm, 0.78)
+	return Color(
+		face.r * (1.0 - t * 0.43),
+		face.g * (1.0 - t * 0.46),
+		face.b * (1.0 - t * 0.49),
+		1.0)
 
 
 func projected_width() -> float:

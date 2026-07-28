@@ -101,6 +101,22 @@ func _run() -> void:
 		view_up.look_up()
 		await _settle(80)
 		await _shot("09_audience_view")
+
+		# THE DOOR MEETS THE CANDLE.
+		#
+		# 09 has the flame at its home on the right, as far from the door as the
+		# desk allows, and the leaf should be almost lost in the dark. This is the
+		# same frame with the candle carried into the near corner — the closest a
+		# player can physically get it to the door, since the candle is clamped to
+		# DESK_RECT and the door is above and outside it.
+		#
+		# Read them as a pair. Until this session the door read NONE of the three
+		# lighting values and these two frames were identical.
+		await _move_candle(Vector2(Desk.DESK_RECT.position.x + 50.0, -235.0))
+		await _settle(40)
+		await _shot("50_door_by_candlelight")
+		await _move_candle(home)
+		await _settle(24)
 		view_up.look_down()
 		await _settle(80)
 

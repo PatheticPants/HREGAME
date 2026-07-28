@@ -446,6 +446,44 @@ func _test_candle_light(desk: Desk) -> void:
 		"the flame leans the way the draught is blowing")
 	desk.candle._flame_drift = saved_drift
 
+	# THE DOOR TAKES THE CANDLE TOO.
+	#
+	# It was the one large object in the room that read none of the three
+	# lighting values — its face colour was a pure function of how far open it
+	# was, under a comment claiming it "loses direct candlelight". So the biggest
+	# thing on screen during every arrival was drawn at a fixed brightness in a
+	# game about carrying the only light in the room.
+	var door := desk._door
+	_is_true(door != null, "the room has a door")
+	if door != null:
+		var candle_home := desk.candle.position
+		var near_door := Vector2(Desk.DESK_RECT.position.x + 40.0, -240.0)
+		var far_corner := Vector2(Desk.DESK_RECT.end.x - 40.0, 380.0)
+		desk.candle.solver.place(near_door, 0.0)
+		desk.candle.position = near_door
+		desk._update_lighting()
+		var lit_face := door.face_colour(0.0)
+		desk.candle.solver.place(far_corner, 0.0)
+		desk.candle.position = far_corner
+		desk._update_lighting()
+		var dark_face := door.face_colour(0.0)
+		_is_true(lit_face.v > dark_face.v + 0.02,
+			"carrying the candle toward the door lights it")
+		_is_true(lit_face.r > lit_face.b,
+			"and lights it with fire rather than with a grey wash")
+		# Never a black rectangle: the arrival beat happens in front of this.
+		_is_true(dark_face.v > 0.05,
+			"and the door keeps a silhouette even at the far end of the desk")
+		# Cold morning is uniform and has nothing warm in it.
+		door.ambient_daylight = true
+		var morning := door.face_colour(0.0)
+		_is_true(absf(morning.r - morning.b) < 0.02,
+			"the morning through the shutter puts no fire on the door")
+		door.ambient_daylight = false
+		desk.candle.solver.place(candle_home, 0.0)
+		desk.candle.position = candle_home
+		desk._update_lighting()
+
 	var first_flame := desk.candle.flame_world()
 	var first_energy := key.energy if key != null else 0.0
 	for i in 24:

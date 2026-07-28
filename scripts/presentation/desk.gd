@@ -981,6 +981,16 @@ func _update_lighting() -> void:
 		ledge.light_level = WINDOW_LEVEL if spent \
 			else candle.illumination_at(ledge.global_position)
 		ledge.queue_redraw()
+	# The door was the one large object in the room that took no light at all.
+	# Sampled at the middle of the leaf rather than at its origin, which is the
+	# hinge in the top corner and would report the falloff at the wrong place by
+	# most of the height of a door.
+	if _door != null:
+		_door.light_position = flame
+		_door.light_strength = strength
+		_door.ambient_daylight = spent
+		_door.light_level = WINDOW_LEVEL if spent \
+			else candle.illumination_at(_door.centre_world())
 
 
 ## Exactly one object can be hovered — the same one _pick would grab — so the
