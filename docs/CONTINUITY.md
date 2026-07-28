@@ -126,6 +126,22 @@ that is wrong in both places.
   independently, in `tools/verify_content.py`. When the two disagree, one has a
   bug. They had silently disagreed about `date_sound` for months because only the
   final verdict was ever compared.
+- **Humour is rationed: six to eight dry beats per working day, and never two in
+  one matter.** The voice is flat declarative, past tense, the joke in a
+  subordinate clause, and it always carries information — `matrices.json`'s
+  "Ulrich seals a great deal and reads very little of it" is the register, and a
+  line that would still be funny with its facts removed is the wrong line. At
+  least three of the day's beats live inside a book the player has to open, so
+  the office is funny when investigated rather than funny at the player.
+
+  FORBIDDEN ABSOLUTELY: every `outcomes[].aftermath`; anything Adelheid Vesser
+  says or that is said about her; case_08's `hold_to_light` and `waiting_long`
+  lines; every DENY and REFER `reaction`; `burnt_out_text` and the ledger's
+  "Heard, not ruled" and "Not heard" blocks; and any `Finding` text in
+  `scripts/rules/`. The doorkeeper may be contemptuous about a person but never
+  about a ruling — his note is written at the door, before the wax, and a docket
+  that comments on the outcome is the game winking. What makes Grellwater land is
+  that nothing anywhere near it is trying to be liked.
 
 ---
 
@@ -216,13 +232,6 @@ These are recorded so the next person does not think they are undiscovered.
   his name and style. A player can infer the house from the style most of the
   time, which is the intended lookup — but where they cannot, the ledger knows
   something the desk never said.
-- **The Kalendar's Marchfeld roll is the one section with no marginalia.** The
-  other three carry R.V.'s hand and the book's front matter carries his best
-  line in the project ("in eleven years at this desk I have never once been able
-  to write down that a man was living — only that nobody has sent word he was
-  dead"). The city book is the roll a player will consult first, because
-  Marchfeld is where the tutorial case lives, and it is the one that says
-  nothing.
 
 ---
 

@@ -22,9 +22,15 @@
       "kind": "docket",
       "id": "docket_06",
       "title": "Passage docket",
-      "size": [330, 235],
+      "size": [
+        330,
+        235
+      ],
       "tint": "#d5c6a3",
-      "start_offset": [-350, -88],
+      "start_offset": [
+        -350,
+        -88
+      ],
       "start_angle_deg": 5.0,
       "petitioner_name": "Matthias Erken",
       "petitioner_style": "Imperial bailiff, the Nether March",
@@ -36,9 +42,15 @@
       "kind": "charter",
       "id": "charter_kesselholt_writ",
       "title": "Imperial Writ for Kesselholt",
-      "size": [430, 585],
+      "size": [
+        430,
+        585
+      ],
       "tint": "#dfd0ad",
-      "start_offset": [-35, 65],
+      "start_offset": [
+        -35,
+        65
+      ],
       "start_angle_deg": -1.0,
       "takes_seal": true,
       "body_text": "Kunrad, by divine favour Emperor of the Romans, ever august, to Matthias Erken our bailiff in the Nether March, greeting.\n\nBecause no title to the woodland called Kesselholt has been admitted under the reckoning of our Chancery, take the said wood into our hand. Suspend all felling by the house of Saint Wend until our further command and answer for the timber at the next account.\n\nGiven at Verd under the seal of our Chancery.",
@@ -51,8 +63,18 @@
       "subject_id": "kesselholt_wood",
       "claimant_id": "imperial_demesne",
       "witnesses": [
-        { "name": "Liutger von Ahr", "person_id": "liutger_von_ahr", "house": "aachen_verd", "title": "vice-chancellor" },
-        { "name": "Matthias Erken", "person_id": "matthias_erken", "house": "nether_march", "title": "bailiff in the Nether March" }
+        {
+          "name": "Liutger von Ahr",
+          "person_id": "liutger_von_ahr",
+          "house": "aachen_verd",
+          "title": "vice-chancellor"
+        },
+        {
+          "name": "Matthias Erken",
+          "person_id": "matthias_erken",
+          "house": "nether_march",
+          "title": "bailiff in the Nether March"
+        }
       ],
       "seal": {
         "id": "seal_kesselholt_writ",
@@ -105,26 +127,39 @@
     {
       "beat": "waiting",
       "text": "Every moment you keep the writ here is a tree the abbey may already have on a cart."
+    },
+    {
+      "beat": "consult_kalendar",
+      "text": "Nothing of the March is in that book. What the Empire ever wrote down about the March was at Lenz, and Lenz burnt in '18, and the March is now whatever the oldest man in the room remembers it to be."
     }
   ],
   "outcomes": [
     {
       "verdict": "CONFIRM",
-      "favor": { "imperial": 2, "church": -2 },
+      "favor": {
+        "imperial": 2,
+        "church": -2
+      },
       "reaction": "Then I bar the road before terce. Your Register will finally point in one direction, even if it points against itself.",
       "register_note": "Imperial writ for Kesselholt confirmed. Wood taken into the Emperor's hand.",
       "aftermath": "The bailiff barred Saint Wend's cutters. The Church reads the act as seizure of land whose title it already admitted."
     },
     {
       "verdict": "DENY",
-      "favor": { "church": 1, "imperial": -2 },
+      "favor": {
+        "church": 1,
+        "imperial": -2
+      },
       "reaction": "An Imperial writ refused at an Imperial desk. Keep the book open. The Chancellor will wish to see the line.",
       "register_note": "Imperial writ for Kesselholt denied in view of the admitted church title.",
       "aftermath": "The cutters remained. The Chancellor now has a copy of the denial and the name of the hand that struck it."
     },
     {
       "verdict": "REFER",
-      "favor": { "imperial": -1, "church": -1 },
+      "favor": {
+        "imperial": -1,
+        "church": -1
+      },
       "reaction": "While it goes up, the timber goes down. I will tell both offices which journey was quicker.",
       "register_note": "Competing Imperial writ and church title to Kesselholt referred.",
       "aftermath": "Cutting continued while both authorities blamed the desk for preserving the dispute."

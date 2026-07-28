@@ -1,8 +1,6 @@
 {
   "_comment": "Every die known to this Chancery. NOTE what is NOT here: no field saying whether a seal is genuine. A forgery is derived by asking whether any die that existed on the charter's date could have produced the impression in front of you. Store the answer and the rules stop being rules.",
-
   "_legend_note": "Legends are compared letter for letter against the impression. An impression may carry the characters . ? * _ or the middle dot for letters that have rubbed away; those match anything. Lengths must still agree — letters do not vanish, they only become unreadable.",
-
   "matrices": [
     {
       "id": "imperial_chancery",
@@ -14,7 +12,7 @@
       "wax_color": "#c9a227",
       "cut_year": 1180,
       "broken_year": -1,
-      "note": "Our own. Kept in the iron press on the second floor and signed out by name."
+      "note": "Our own. Kept in the iron press on the second floor and signed out by name. The book of names is kept in the same press."
     },
     {
       "id": "thurn_dietrich_i",

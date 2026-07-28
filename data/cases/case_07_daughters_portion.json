@@ -21,9 +21,15 @@
       "kind": "docket",
       "id": "docket_07",
       "title": "Passage docket",
-      "size": [330, 235],
+      "size": [
+        330,
+        235
+      ],
       "tint": "#dcd0b2",
-      "start_offset": [-345, -95],
+      "start_offset": [
+        -345,
+        -95
+      ],
       "start_angle_deg": -3.5,
       "petitioner_name": "Elsbeth Ott",
       "petitioner_style": "daughter of Wilhelm Ott, cooper",
@@ -35,9 +41,15 @@
       "kind": "charter",
       "id": "charter_daughters_portion",
       "title": "Exemplification of the Küfergasse Grant",
-      "size": [430, 585],
+      "size": [
+        430,
+        585
+      ],
       "tint": "#e2d6b8",
-      "start_offset": [-38, 63],
+      "start_offset": [
+        -38,
+        63
+      ],
       "start_angle_deg": 2.0,
       "takes_seal": true,
       "body_text": "To all who shall see this writing, the Council and Commune of Marchfeld send greeting.\n\nAt the request of Wilhelm Ott and his daughter Elsbeth we have inspected our city book and found entered there the grant to Heinrich Ott and his heirs of the plot on Küfergasse with its well-right. We exemplify and confirm the same for the entry of Elsbeth's marriage portion.\n\nGiven under our common seal.",
@@ -51,8 +63,18 @@
       "claimant_id": "ott_household",
       "supersedes_prior_instrument": true,
       "witnesses": [
-        { "name": "Aldebrand Stoss", "person_id": "aldebrand_stoss", "house": "marchfeld", "title": "of the lesser council" },
-        { "name": "Gerhoh Lamp", "person_id": "gerhoh_lamp", "house": "marchfeld", "title": "sworn measurer" }
+        {
+          "name": "Aldebrand Stoss",
+          "person_id": "aldebrand_stoss",
+          "house": "marchfeld",
+          "title": "of the lesser council"
+        },
+        {
+          "name": "Gerhoh Lamp",
+          "person_id": "gerhoh_lamp",
+          "house": "marchfeld",
+          "title": "sworn measurer"
+        }
       ],
       "seal": {
         "id": "seal_daughters_portion",
@@ -105,26 +127,36 @@
     {
       "beat": "waiting",
       "text": "Whitsun sounds distant until people begin counting the papers a marriage requires."
+    },
+    {
+      "beat": "waiting_long",
+      "text": "My father has counted the papers a marriage wants. He got to nine and stopped, because he says the tenth one is the priest."
     }
   ],
   "outcomes": [
     {
       "verdict": "CONFIRM",
-      "favor": { "custom": 1 },
+      "favor": {
+        "custom": 1
+      },
       "reaction": "Thank you. I will tell my father the office can recognize the same house twice.",
       "register_note": "Fresh Marchfeld exemplification of the Küfergasse plot. Commune die live. Portion confirmed.",
       "aftermath": "The portion was entered before Whitsun. No further instrument was required."
     },
     {
       "verdict": "DENY",
-      "favor": { "custom": -2 },
+      "favor": {
+        "custom": -2
+      },
       "reaction": "Then I do not know what a city is meant to bring you after it brings its own book and its own seal.",
       "register_note": "Fresh exemplification of the Küfergasse title refused.",
       "aftermath": "A second sound instrument was refused. Marchfeld entered a formal protest beside the blank portion."
     },
     {
       "verdict": "REFER",
-      "favor": { "custom": -1 },
+      "favor": {
+        "custom": -1
+      },
       "reaction": "Up again. I will tell the wedding to wait at the same stair.",
       "register_note": "Fresh Marchfeld exemplification sent up.",
       "aftermath": "The marriage proceeded with the portion unresolved and the city unwilling to draw a third copy."
