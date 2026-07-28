@@ -132,12 +132,16 @@ static func circular_incuse(c: CanvasItem, centre: Vector2, text: String,
 		var glyph_width := f.get_string_size(glyph,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 		var baseline := Vector2(-glyph_width * 0.5, f.get_ascent(size) * 0.34)
-		var cut := light.rotated(-tangent) * lift
+		# Cut into the wax, so lit AWAY from the flame and shadowed toward it —
+		# the same rule as the device it surrounds and as any engraved line, and
+		# taken from the same place so the legend can never disagree with the
+		# device it is cut around. Both were inverted; see Heraldry.
+		var toward := light.rotated(-tangent)
 		c.draw_set_transform(origin, tangent, Vector2.ONE)
-		c.draw_string(f, baseline + cut, glyph,
+		c.draw_string(f, baseline + Surface.lip_offset(toward, lift), glyph,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, size,
 			Color(wax.lightened(0.34 * depth), wax.a * 0.78))
-		c.draw_string(f, baseline - cut, glyph,
+		c.draw_string(f, baseline + Surface.trough_offset(toward, lift), glyph,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, size,
 			Color(wax.darkened(0.52 * depth), wax.a * 0.92))
 		c.draw_string(f, baseline, glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, size,

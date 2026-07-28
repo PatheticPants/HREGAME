@@ -29,9 +29,6 @@ static func draw_device(c: CanvasItem, device: StringName, at: Vector2, r: float
 		_: _unknown(c, at, r, col)
 
 
-## Debossed variant for wax: the device pressed *into* the pool. A dark pass
-## offset down-right and a light pass offset up-left is the cheapest possible
-## way to read as an impression rather than a print.
 ## A device sunk into wax.
 ##
 ## The offset that makes it read as *cut* rather than printed now follows the
@@ -45,8 +42,25 @@ static func draw_device_incuse(c: CanvasItem, device: StringName, at: Vector2,
 	var light := light_dir.normalized() if light_dir.length() > 0.01 \
 		else Vector2(-0.707, -0.707)
 	var lift := maxf(1.2, r * 0.036) * depth
-	draw_device(c, device, at + light * lift, r, wax.lightened(0.34 * depth))
-	draw_device(c, device, at - light * lift, r, wax.darkened(0.50 * depth))
+	# INCUSE MEANS SUNK, AND THIS WAS LIT AS A BOSS.
+	#
+	# A device pressed INTO wax is a depression. Its far wall faces back toward
+	# the flame and catches it; its near wall faces away and is shadowed. So the
+	# lit pass belongs AWAY from the light and the dark pass toward it — which is
+	# the same rule as an engraved line, and is why both offsets come from
+	# Surface rather than being written out again here.
+	#
+	# This had them the other way round: lightened at +light, darkened at -light,
+	# which is the RAISED convention. So every seal in the game — the pendant
+	# seals that arrive on charters, the plates in the Book of Matrices, and the
+	# impression the player themself strikes — read as a device standing proud of
+	# the wax rather than stamped into it, and rolled the wrong way whenever the
+	# candle was carried past. It has been wrong since the function was written;
+	# wiring the real flame direction in later only made the error move.
+	draw_device(c, device, at + Surface.lip_offset(light, lift), r,
+		wax.lightened(0.34 * depth))
+	draw_device(c, device, at + Surface.trough_offset(light, lift), r,
+		wax.darkened(0.50 * depth))
 	draw_device(c, device, at, r, wax.darkened(0.20 * depth))
 
 

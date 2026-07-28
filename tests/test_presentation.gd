@@ -351,6 +351,18 @@ func _test_surface_helper(desk: Desk) -> void:
 	_is_true(Surface.trough_color().a > 0.0,
 		"a groove's trough stays dark regardless of the flame")
 
+	# EVERY CUT SURFACE IN THE GAME OBEYS THE SAME RULE. The blind tooling on the
+	# book boards, the device struck into a wax pool, and the legend cut round a
+	# seal matrix are all grooves, and all three were independently written with
+	# the lit pass on the wrong side. They now take their offsets from here, so
+	# the three can no longer disagree with each other.
+	var flame_right := Vector2(1.0, 0.0)
+	_is_true(Surface.lip_offset(flame_right, 3.0).x < 0.0
+		and Surface.trough_offset(flame_right, 3.0).x > 0.0,
+		"an incuse device is lit away from the flame, like every other groove")
+	_is_true(is_equal_approx(Surface.lip_offset(flame_right, 3.0).length(), 3.0),
+		"and the depth argument scales the offset rather than being ignored")
+
 	# The lit product. Three call sites already agreed on this formula and two
 	# more had drifted off it; this is the one they agreed on.
 	_is_true(is_equal_approx(Surface.lit(0.5, 1.0), 0.5),
