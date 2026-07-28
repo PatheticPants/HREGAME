@@ -221,6 +221,20 @@ func _day_two_tray() -> void:
 	_is_true(desk.day_papers.size() == 1 and desk.day_papers[0] is LetterView,
 		"Tuesday's Kesselholt choice arrives as sealed correspondence")
 
+	# THE CANDLE FINALLY BUYS SOMETHING.
+	#
+	# It used to reset to full every morning, so the only scarce thing in the
+	# game purchased nothing and an hour spent re-reading the Almanac was free.
+	# Thursday is now as long as what Tuesday left in the dish, floored so that a
+	# day nobody can finish is never handed out as a punishment.
+	_is_true(desk.last_candle_remaining >= Candle.NEXT_DAY_FLOOR
+			and desk.last_candle_remaining <= 1.0,
+		"what was left of Tuesday's candle is carried into Thursday")
+	var thursday := Lore.data.day_by_id(&"day_02")
+	_is_true(is_equal_approx(session.day_seconds(),
+			thursday.day_seconds * desk.last_candle_remaining),
+		"and Thursday is exactly that much shorter than it is authored to be")
+
 	var candle_before := desk.candle.burn
 	var chosen := desk.docket_slips[-1].case_id()
 	desk.docket_selected.emit(chosen)

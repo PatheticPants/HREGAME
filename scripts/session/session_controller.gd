@@ -225,10 +225,25 @@ func _burn_the_day(delta: float) -> void:
 		return
 	if stage not in [Stage.ENTERING, Stage.SPEAKING, Stage.WORKING]:
 		return
+	if desk.candle.burn_for(delta, day_seconds()):
+		_end_day_by_candle()
+
+
+## How long this day's candle lasts, after what was left of the last one.
+##
+## Candle-seconds were the only scarce thing in the game and they bought
+## nothing: the candle reset to full every morning, so finishing Tuesday with two
+## thirds of it left and finishing it guttering differed by one line of ledger
+## prose. An hour spent re-reading the Almanac cost nothing, which is the same as
+## saying the clock was decoration.
+##
+## The office issues a candle, not a candle a day.
+func day_seconds() -> float:
 	var seconds := current_day.day_seconds if current_day != null \
 		else Lore.data.day_seconds
-	if desk.candle.burn_for(delta, seconds):
-		_end_day_by_candle()
+	if desk == null:
+		return seconds
+	return seconds * desk.last_candle_remaining
 
 
 ## The wick went out with people still in the passage. Whatever has been ruled is
@@ -807,6 +822,28 @@ func _ledger_summary() -> Array[Dictionary]:
 			out.append(Ledger.text(
 				"The candle was all but gone. Another matter and it would not "
 				+ "have been heard.", 11, Ink.RUBRIC))
+		# AND WHAT THAT COSTS TOMORROW, said plainly and before it happens.
+		#
+		# The remainder is now carried into the next day, so this line is the
+		# whole warning a player gets. A scarcity the player only discovers by
+		# having lost it is a trap; one they are told about at the end of the day
+		# they spent it is a decision they made.
+		if day_index + 1 < days.size():
+			out.append(Ledger.gap(3))
+			if left >= 0.98:
+				out.append(Ledger.text(
+					"The stub goes back in the press. It will do again.", 10,
+					Ink.FADED))
+			elif left > Candle.NEXT_DAY_FLOOR:
+				out.append(Ledger.text(
+					"What is left of it goes back in the press, and it is what "
+					+ "you will be given next time. The office issues a candle, "
+					+ "not a candle a day.", 10, Ink.FADED))
+			else:
+				out.append(Ledger.text(
+					"There is not enough of it left to be worth keeping. The "
+					+ "doorkeeper will find you a stub from somewhere, and it "
+					+ "will be a short morning.", 10, Ink.RUBRIC))
 
 	var grades: Array[int] = []
 	for entry in day_entries:

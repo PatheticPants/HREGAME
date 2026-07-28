@@ -12,6 +12,9 @@ var data: DocumentData = null
 ## Slight per-sheet variation so a stack of parchment does not look printed.
 var _grain_seed := 0
 var _deckle: PackedFloat32Array = PackedFloat32Array()
+## Hair follicles, as fractions of the sheet. Only ever visible against the
+## flame, and generated once so a skin's pores do not crawl between frames.
+var _follicles: PackedVector3Array = PackedVector3Array()
 var _arrival_from := Vector2.ZERO
 var _arrival_t := 1.0
 
@@ -63,6 +66,10 @@ func _build_deckle() -> void:
 	_deckle = PackedFloat32Array()
 	for i in 24:
 		_deckle.append(rng.randf_range(-1.6, 1.6))
+	_follicles = PackedVector3Array()
+	for i in 44:
+		_follicles.append(Vector3(rng.randf(), rng.randf(),
+			rng.randf_range(0.5, 1.1)))
 
 
 func rect() -> Rect2:
@@ -261,7 +268,24 @@ func _tick_backlight(delta: float) -> void:
 
 func _draw_erasures(r: Rect2) -> void:
 	var ch := data as CharterData
-	if ch == null or ch.erasures.is_empty():
+	if ch == null:
+		return
+	if ch.erasures.is_empty():
+		# A VERB THAT SOMETIMES DOES NOTHING IS A VERB THAT IS BROKEN.
+		#
+		# Holding a sound charter up to the flame returned literally no feedback,
+		# so a player who tried the new gesture on the first case learned that it
+		# does not work rather than that the parchment is clean. Every other
+		# investigative act in this game answers every time it is performed: the
+		# glass always magnifies, the books always open, and "nothing here" is a
+		# result. This is the negative reading, and it is what turns a stunt that
+		# happens twice in the campaign into a step you can run on anything.
+		#
+		# Whole skin transmits evenly. The laid lines — the ribbing of the hide,
+		# already drawn in _draw_body — come UP against the light rather than
+		# disappearing, because that is exactly what backlighting vellum does and
+		# it is the same evidence a scraped patch destroys.
+		_draw_whole_skin(r)
 		return
 	for e in ch.erasures:
 		var patch := Rect2(
@@ -308,6 +332,41 @@ func _draw_erasures(r: Rect2) -> void:
 			Ink.line(self, at + off, e.original_value, 12, ghost)
 		Ink.line(self, at, e.original_value, 12,
 			Color(0.22, 0.13, 0.08, 0.52 * glow))
+
+
+## Sound skin against the light: even amber, and the laid lines standing up.
+##
+## The point is that it looks NOTHING like a scrape. A patch is a bright island
+## with feathered ink under it; whole hide is a uniform warmth with the ribbing
+## of the animal coming through it, unbroken all the way across. A player who has
+## seen both once can tell them apart at a glance forever, which is the entire
+## skill this verb exists to teach — and it can only be taught if the negative
+## case answers.
+func _draw_whole_skin(r: Rect2) -> void:
+	if _backlit <= 0.01:
+		return
+	var glow := ease(_backlit, 0.5)
+	# Transmission is strongest through the middle of a stretched skin and falls
+	# off toward the edges, where it was pinned on the frame and is thicker.
+	for i in 3:
+		var t := float(i) / 3.0
+		draw_rect(r.grow(-r.size.x * 0.06 * t),
+			Color(1.0, 0.74, 0.38, 0.055 * glow))
+	# The laid lines come up. Same spacing as the ones _draw_body lays down at
+	# 2% opacity, so this reads as the same feature getting brighter rather than
+	# as a second set of stripes arriving.
+	var ribs := int(r.size.y / 9.0)
+	for i in ribs:
+		var y := r.position.y + float(i) * 9.0 + float(_grain_seed % 5)
+		draw_line(Vector2(r.position.x + 3, y), Vector2(r.end.x - 3, y),
+			Color(0.86, 0.60, 0.30, 0.085 * glow), 1.0)
+	# And the hair follicles, which only ever show against a light. The single
+	# detail that says "this was an animal" rather than "this is paper" — and the
+	# pattern is generated once per sheet, because a skin whose pores move between
+	# frames is not a skin.
+	for f in _follicles:
+		draw_circle(r.position + Vector2(f.x * r.size.x, f.y * r.size.y), f.z,
+			Color(0.58, 0.40, 0.22, 0.14 * glow))
 
 
 ## Overridden by each document type.

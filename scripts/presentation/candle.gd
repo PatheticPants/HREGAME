@@ -263,6 +263,25 @@ func snuff() -> void:
 	Audio.play(&"candle_out", global_position)
 
 
+## THE STUB YOU LEFT LAST NIGHT IS THE STUB YOU GET IN THE MORNING.
+##
+## The candle has been the only scarce thing in the game and it has purchased
+## nothing: it reset to full every morning, so the difference between finishing
+## Tuesday with two thirds of a candle and finishing it guttering was one line of
+## ledger prose and no consequence at all. Spending an hour re-reading the
+## Almanac was free, which is the same as saying the clock was decoration.
+##
+## Carrying the remainder forward is the smallest possible version of making it
+## real, and it needs no new system: the office issues a candle, not a candle a
+## day. There is a floor, because a day nobody can finish is a punishment rather
+## than a consequence — the doorkeeper is not going to let you sit in the dark.
+const NEXT_DAY_FLOOR := 0.45
+
+
+func carry_forward() -> float:
+	return clampf(burn_remaining(), NEXT_DAY_FLOOR, 1.0)
+
+
 func reset_day() -> void:
 	burn = 0.0
 	_spent = false

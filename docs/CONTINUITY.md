@@ -24,7 +24,7 @@ python tools/verify_content.py
 |---|---|
 | rules | 81 |
 | presentation | 170 |
-| the day (full loop) | 71 |
+| the day (full loop) | 73 |
 | content + encoding | PASS |
 
 **Run the rules suite before the Python one.** `tests/test_rules.gd` writes the
@@ -218,9 +218,21 @@ These are recorded so the next person does not think they are undiscovered.
 - **Favour is stored and inert.** `Register.favor_totals()` is written and never
   called. It is the least systemic of the three columns and the most obvious
   place to spend the next campaign-scale effort.
-- **The candle buys nothing.** It is the only scarce thing in the game and it
-  purchases no advantage; running out costs a paragraph of ledger prose. Making
-  candle-seconds convertible is the single largest missing system.
+- **Thursday is three consecutive "nothing is wrong, confirm it" matters.**
+  Verified from `.tools/derived_findings.json`: across all eight cases there is
+  not one finding at the `defect:` tier, so `verdict_policy`'s DEFECT -> REFER row
+  has never executed in play and REFER is only ever taught as "two laws disagree",
+  never as "this is broken, send it back". case_04 is additionally Tuesday's
+  matrix lookup run again with the answer inverted. This is the repetition, and
+  it is content work rather than systems work.
+- **The Kalendar convicts nobody.** Four rolls, thirty-odd obits, its own model
+  classes, a generated book and one of the four pigeonholes — and no shipped case
+  turns on it, so a player who consults it twice correctly infers it never matters
+  and stops opening it. That inverts the exact lesson it was built to teach. The
+  cheapest fix is a witness edit on case_04, which would also give it the DEFECT
+  the policy has never fired and turn the day's sag into the case that teaches the
+  third ring. It changes that case's verdict, so it is a deliberate content
+  decision and not a tweak.
 - **Two of Thursday's four matters cannot be ruled wrongly**, because a pure
   precedent contest marks every ring defensible.
 - **`WitnessCheck` fires no defect in any shipped case.** Every witness in the

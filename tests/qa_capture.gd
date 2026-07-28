@@ -350,6 +350,31 @@ func _the_knife() -> void:
 	await _settle(46)
 	await _shot("35_the_knife_against_the_flame")
 	leaf.is_held = false
+
+	# AND THE NEGATIVE READING, which is the half of this verb that matters more.
+	#
+	# A sound charter against the light has to ANSWER — even amber, the laid lines
+	# standing up, the follicles showing — or a player who tries the gesture on a
+	# clean packet learns that it is broken rather than that the parchment is
+	# whole. These two frames side by side are the entire skill the mechanic
+	# teaches, and if they ever stop being obviously different, it has stopped
+	# being a mechanic.
+	_desk.sweep_packet_away()
+	_desk._finish_sweep()
+	_desk.lay_out_packet(Lore.data.cases[0].documents)
+	await _settle(50)
+	var clean := _desk.current_charter
+	if clean != null:
+		_desk.bring_to_front(clean)
+		clean.is_held = true
+		var here := _desk.candle.position + Vector2(-95.0, -40.0)
+		clean.solver.place(here, deg_to_rad(-1.0))
+		clean.position = here
+		camera.position = _desk.to_global(here) + Vector2(-30, 30)
+		await _settle(46)
+		await _shot("42_whole_skin_against_the_flame")
+		clean.is_held = false
+
 	camera.zoom = Vector2.ONE
 	camera.position = Vector2(960, 590)
 	await _settle(16)
@@ -380,7 +405,12 @@ func _hold_to_the_flame() -> void:
 	leaf.is_held = true
 	# Beside the flame rather than on top of it, so the candle sprite does not
 	# cover the very patch this frame exists to show. Still inside BACKLIT_LEVEL.
-	var flame := _desk.candle.position + Vector2(-70.0, 60.0)
+	# The practice leaf's scrape sits about 52 units BELOW its centre, so posing
+	# this by the middle of the sheet puts the patch a hand's width further from
+	# the wick than it looks and the ghost never comes up. Each patch is lit at
+	# its own position; the capture has to respect that or it lies about the
+	# mechanic.
+	var flame := _desk.candle.position + Vector2(-95.0, -52.0)
 	leaf.solver.place(flame, leaf.rotation)
 	leaf.position = flame
 	camera.position = _desk.to_global(flame) + Vector2(0, 40)
