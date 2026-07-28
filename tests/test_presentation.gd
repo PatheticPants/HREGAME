@@ -408,6 +408,59 @@ func _test_evidence_is_on_the_desk(desk: Desk) -> void:
 			"every obit is on a leaf the player can turn to (%d/%d)"
 			% [covered, obits])
 
+	# 1c. THE KNIFE.
+	#
+	# ErasureCheck convicts on a patch of scraped skin. That patch is authored as
+	# fractions of the sheet, so a wrong fraction puts the ghost over the wrong
+	# paragraph — the finding still fires, the ledger still quotes it, and the
+	# player looked at the right place and saw nothing. Same contract as every
+	# other finding: the evidence has to be ON the sheet, and it has to be big
+	# enough to read.
+	for case_data in _lore_data.cases:
+		var ch := case_data.charter()
+		if ch == null:
+			continue
+		for e in ch.erasures:
+			_is_true(e.region.position.x >= 0.0 and e.region.position.y >= 0.0
+					and e.region.end.x <= 1.0 and e.region.end.y <= 1.0,
+				"%s: the scrape lies inside the sheet it is on" % case_data.id)
+			# Under about 90 units wide the ghost text is drawn wider than the
+			# patch it is supposed to be inside, which reads as a stray line of
+			# ink rather than as something under the surface.
+			_is_true(e.region.size.x * ch.size.x >= 90.0,
+				"%s: the scrape is wide enough to hold what it took out"
+				% case_data.id)
+			# The ghost is drawn one line high inside the patch, so a patch
+			# shorter than the type it has to hold clips it.
+			_is_true(e.region.size.y * ch.size.y >= 22.0,
+				"%s: the scrape is tall enough to show the line beneath"
+				% case_data.id)
+
+	# 1d. THE MEMORANDUM HAS TO FIT ON THE MEMORANDUM.
+	#
+	# It is the entire onboarding — the only thing in the game that tells the
+	# player what the glass is for, that the tablet exists, what the Kalendar is,
+	# what to do with a parchment that is wrong, and that the wax is final. It has
+	# already been damaged twice by content growth: once clipped on the left by
+	# every charter, and once overrunning its own foot so that R.V.'s last rules
+	# were drawn off the parchment. Prose is exactly the kind of thing that gets
+	# added without anyone measuring, so measure it here.
+	var note := _lore_data.desk_note as DocketData
+	if note != null:
+		var column := note.size.x - 40.0
+		var used := 30.0
+		used += Ink.measure(note.petitioner_name, 16, column).y
+		used += Ink.measure(note.petitioner_style, 12, column).y
+		used += Ink.measure(note.claim_summary, 13, column).y
+		used += Ink.measure(note.received_note, 11, column).y
+		used += Ink.measure(note.doorkeeper_note, 11, column).y + 30.0
+		# With headroom, deliberately. Passing by six units is not passing; it
+		# means the next sentence anybody writes here breaks the tutorial and
+		# nobody finds out until a capture.
+		_is_true(used <= note.size.y - 40.0,
+			"the memorandum's text fits with room to grow (%d of %d units)"
+			% [int(used), int(note.size.y)])
+
 	# 2. The Register. Its seeded entries are the strongest signpost in the game
 	# for referring a contested reckoning, and they used to appear only in the
 	# end-of-day ledger — strictly after every ruling they could have informed.

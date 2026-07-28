@@ -383,6 +383,22 @@ def main():
         report()
         return
 
+    # What the GDScript rules actually derived, written by tests/test_rules.gd on
+    # its last run. Absent is not a failure: this tool must stay runnable with no
+    # Godot at all, which is the whole reason it is a separate implementation.
+    # But when it IS there, every finding is compared, not only the verdict.
+    gdscript_findings = {}
+    derived_path = os.path.join(ROOT, ".tools", "derived_findings.json")
+    if os.path.exists(derived_path):
+        with open(derived_path, "r", encoding="utf-8") as f:
+            try:
+                gdscript_findings = json.load(f)
+            except json.JSONDecodeError:
+                notes.append("could not read .tools/derived_findings.json")
+    else:
+        notes.append("no .tools/derived_findings.json: run tests/test_rules.gd "
+                     "to compare finding sets and not merely verdicts")
+
     necrology_raw = load("world", "necrology.json")
     world = {
         "reigns": {r["id"]: r for r in world_raw["reigns"]},
@@ -574,6 +590,30 @@ def main():
         if not ok:
             fail("case '%s': authored %s but the documents produce %s"
                  % (case_id, authored, derived))
+
+        # THE ACTUAL POINT OF THIS FILE.
+        #
+        # Two independently written implementations of the same rules are only
+        # worth having if their outputs are compared, and until now the only
+        # compared output was a three-valued verdict — a summary of a dozen
+        # findings. A CLEAN that should have been a NOTE, a missing witness
+        # finding masked by a FATAL, an extra defect underneath a fatality: all
+        # of them agree on the verdict by luck, and the tool said PASS. That is
+        # precisely how the date_sound guard drifted between the two for months
+        # without either noticing.
+        #
+        # tests/test_rules.gd now writes what the GDScript actually derived.
+        # Compare the whole list, in order.
+        mine = ["%s:%s" % (SEV_NAME[s], code) for s, code in findings]
+        theirs = gdscript_findings.get(case_id)
+        if theirs is None:
+            if gdscript_findings:
+                fail("case '%s': the GDScript produced no finding list; the two "
+                     "implementations cannot be compared" % case_id)
+        elif theirs != mine:
+            fail("case '%s': the two implementations disagree about the "
+                 "findings.\n      godot : %s\n      python: %s"
+                 % (case_id, ", ".join(theirs), ", ".join(mine)))
 
         seal = ch.get("seal")
         if seal:

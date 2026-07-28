@@ -29,6 +29,7 @@ func _initialize() -> void:
 	_test_cases(lore)
 	_test_policy()
 	_test_witnesses(lore)
+	_test_erasures(lore)
 	_test_plural_authority(lore)
 	_test_precedent(lore)
 	_test_campaign_data(lore)
@@ -93,19 +94,40 @@ func _test_cases(lore: LoreData) -> void:
 		_fail("no cases loaded")
 		return
 
+	# THE FINDING SETS GO ON DISK FOR THE PYTHON TO CHECK ITSELF AGAINST.
+	#
+	# tools/verify_content.py is a deliberately independent second implementation
+	# of these rules, and its whole value is that a disagreement between the two
+	# is a bug in one of them. It only ever compared the FINAL VERDICT, which is a
+	# three-valued summary of a dozen findings — so a CLEAN that should have been
+	# a NOTE, or a missing witness finding masked by a FATAL, agreed by luck and
+	# the tool said PASS. That is exactly how the date_sound guard drifted for
+	# months. Writing the real answer out costs eight lines and closes the class
+	# of bug rather than the instance.
+	var derived := {}
 	for c in lore.cases:
+		# A dynamic case has no fixed authored verdict, so there is nothing to
+		# assert against — but its BASELINE against an empty Register is still a
+		# finding set, and the Python computes exactly that one. Skipping them
+		# here left the two most complicated cases in the campaign as the only
+		# two nobody was cross-checking, which the comparison found the first
+		# time it ran.
+		var a := Adjudicator.adjudicate_case(c, lore, null)
 		if c.dynamic_precedent:
 			print("   note  %s: verdict depends on the Register" % c.id)
-			continue
-		var a := Adjudicator.adjudicate_case(c, lore, null)
-		_eq(a.verdict, c.correct_verdict,
-			"%s: documents produce the authored verdict (%s)"
-			% [c.id, Lex.verdict_name(c.correct_verdict)])
-		if a.reason_code() != c.correct_reason:
-			print("      note  %s: authored reason '%s', derived '%s'"
-				% [c.id, c.correct_reason, a.reason_code()])
+		else:
+			_eq(a.verdict, c.correct_verdict,
+				"%s: documents produce the authored verdict (%s)"
+				% [c.id, Lex.verdict_name(c.correct_verdict)])
+			if a.reason_code() != c.correct_reason:
+				print("      note  %s: authored reason '%s', derived '%s'"
+					% [c.id, c.correct_reason, a.reason_code()])
+		var codes := PackedStringArray()
 		for f in a.findings:
 			print("      · %-9s %s" % [_sev(f.severity), f.code])
+			codes.append("%s:%s" % [_sev(f.severity), f.code])
+		derived[String(c.id)] = codes
+	_write_derived(derived)
 
 	# The specific shape of each case, asserted by name. If someone retunes the
 	# content these should be updated deliberately, not silently.
@@ -117,6 +139,21 @@ func _test_cases(lore: LoreData) -> void:
 		"a worn seal is not a forgery")
 	_case_lacks(lore, &"case_01_kufergasse", Lex.Severity.DEFECT,
 		"a witness dying that year is not a defect")
+
+
+## Written where the screenshots go: gitignored, regenerated on every run, and
+## consumed by tools/verify_content.py. If it is absent the Python says so and
+## keeps going, because it must remain runnable without Godot at all — that
+## independence is the entire point of it existing.
+func _write_derived(derived: Dictionary) -> void:
+	DirAccess.make_dir_recursive_absolute("res://.tools/")
+	var f := FileAccess.open("res://.tools/derived_findings.json",
+		FileAccess.WRITE)
+	if f == null:
+		print("   note  could not write derived findings for the Python mirror")
+		return
+	f.store_string(JSON.stringify(derived, "  "))
+	f.close()
 
 
 func _case_has(lore: LoreData, id: StringName, code: StringName, why: String) -> void:
@@ -224,6 +261,76 @@ func _test_witnesses(lore: LoreData) -> void:
 	var c := Adjudicator.adjudicate(lied)
 	_is_true(c.codes().has(&"annotation_disagrees"),
 		"an obiit that disagrees with the roll is itself a finding")
+
+
+## THE KNIFE, AND THE THREE THINGS THAT MUST STAY TRUE ABOUT IT.
+##
+## The whole value of this check is that it convicts on the document's HISTORY
+## while every other check reads its contents — so the ways it can quietly stop
+## working are (a) a scrape stops being decisive, (b) an honest correction starts
+## being a crime, which would teach the exact reflex the first case unteaches, and
+## (c) something else in the packet starts outranking it.
+func _test_erasures(lore: LoreData) -> void:
+	_section("the knife")
+
+	var clean := _packet_with_erasures(lore, [])
+	_is_true(Adjudicator.adjudicate(clean).codes().is_empty()
+			or not Adjudicator.adjudicate(clean).codes().has(&"erasure_dispositive"),
+		"an unscraped instrument raises nothing about the skin")
+
+	var altered := Erasure.new()
+	altered.altered_field = "The year of the grant"
+	altered.original_value = "in the second year of Aldric I"
+	altered.dispositive = true
+	var forged := _packet_with_erasures(lore, [altered])
+	var a := Adjudicator.adjudicate(forged)
+	_eq(a.verdict, Lex.Verdict.DENY,
+		"a scraped and rewritten disposition is refused, not referred")
+	_is_true(a.reason_code() == "erasure_dispositive",
+		"and the knife is the decisive finding, ahead of the seal and the date")
+
+	# A scribe correcting himself is universal and honest. This is the same
+	# lesson the first case teaches about a rubbed seal, one level up.
+	var tidied := Erasure.new()
+	tidied.altered_field = "A misspelt place"
+	tidied.original_value = "Tannek"
+	tidied.innocent = true
+	var honest := Adjudicator.adjudicate(_packet_with_erasures(lore, [tidied]))
+	_is_true(not honest.codes().has(&"erasure_dispositive"),
+		"a scribe's own correction is not a forgery")
+	_eq(honest.verdict, Lex.Verdict.CONFIRM,
+		"and an honestly corrected instrument still passes")
+
+	# Scraped to the nap with nothing recoverable is a different, lesser finding:
+	# the office cannot say what was granted, so it cannot admit what it says.
+	var blank := Erasure.new()
+	blank.altered_field = "The extent of the wood"
+	blank.dispositive = true
+	var illegible := Adjudicator.adjudicate(_packet_with_erasures(lore, [blank]))
+	_is_true(illegible.codes().has(&"erasure_illegible"),
+		"a scrape with nothing under it is a defect rather than a falsity")
+	_eq(illegible.verdict, Lex.Verdict.REFER,
+		"and a defective instrument is sent up for correction, not refused")
+
+
+func _packet_with_erasures(lore: LoreData, erasures: Array) -> CheckContext:
+	var ch := CharterData.new()
+	ch.id = &"test_charter"
+	ch.date_emperor = &"kunrad_iv"
+	ch.date_regnal_year = 3
+	ch.drawn_by_polity = &"marchfeld"
+	var typed: Array[Erasure] = []
+	for e in erasures:
+		typed.append(e)
+	ch.erasures = typed
+	var ctx := CheckContext.new()
+	ctx.documents = [ch]
+	ctx.matrices = lore.matrices
+	ctx.reigns = lore.reigns
+	ctx.polities = lore.polities
+	ctx.present_year = lore.present_year
+	ctx.necrology = lore.necrology
+	return ctx
 
 
 func _first_roll_of(lore: LoreData, polity: StringName) -> ObitRoll:
