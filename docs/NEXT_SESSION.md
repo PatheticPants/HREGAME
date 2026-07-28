@@ -32,7 +32,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 81, presentation 173, session 73, content PASS**. Run the rules
+Green is **rules 81, presentation 206, session 73, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 
@@ -72,10 +72,52 @@ capture before theorising.
 
 ---
 
+## WHERE THE LAST SESSION GOT TO (2026-07-28)
+
+**Phases 0, 1 and 5 are done. Phase 2 is four objects in.** What follows the
+status is the remaining plan; read the status first or you will redo work.
+
+| | |
+|---|---|
+| **Phase 0** | Done in an hour, as instructed. Re-measured **6.07 ms, 165 fps**, 19 draggables, four open books, 3 outline builds. No performance problem. Two per-frame RNG allocations found (`seal_tag`, `petitioner_view`) — both deterministically seeded, so the speckle does not crawl; not worth the churn. |
+| **Phase 1** | Done. `scripts/presentation/surface.gd`. **Named `Surface`, not `Material` — `Material` is a Godot built-in and `class_name Material` does not compile.** Shipped with nothing migrated and no pixels changed, as the plan asked. |
+| **Phase 2** | Four objects: the candle's flame, the wax pool and spoon's physics, the seal's shade veil, the spoon's brass. Each its own commit with before/after frames. |
+| **Phase 5** | Decided and done. See the commit "Phase 5: the Kalendar convicts one man". |
+
+**Three things the last session found that the plan did not predict**, all of
+which are the same shape — a defect invisible in code review and obvious once
+something was measured:
+
+1. **The candle's flame had been drawn upside down since it was written.**
+   `atan2(lean.x, -8.0)`; a negative second argument returns an angle near pi.
+   Tip in the wax, blue base at the top, in every frame, for the life of the
+   project — through four rounds of judging that exact object from captures.
+2. **"Molten is darker than set" was recorded as fixed and was only fixed on the
+   candle.** The pool and the spoon still had it inverted.
+3. **The struck seal never took the shade veil**, because `WaxPool` is a *child*
+   of the sheet and children draw after their parent — so the sheet's veil went
+   down and the wax drew over it.
+
+**Where the plan was wrong, for the record.** The Phase 1 class name does not
+compile. The Phase 5 "obvious fix" — convert an existing witness on case_04 —
+does not survive the data: one of the two has no house by design, the other is
+shared with case_02 and moving him damages a shipped case. And `docs/GRAPHICS.md`
+was telling every session to avoid `ease(x, 0.4)` for a reason that is false;
+measured, it covers 4% of the distance in the first frame rather than snapping.
+All three are corrected in place.
+
 ## THE PLAN OF ATTACK
 
 Review it, disagree with it, expand it. It is ordered so that each phase makes
 the next one cheaper — do not reorder without a reason.
+
+**Phase 2's remaining objects, worst first.** `ReferenceBook` is now top of the
+list for two reasons rather than one: its page turn is still a rectangle whose
+width sweeps the gutter, *and* its blind tooling is lit inside out — the lit lip
+of a groove belongs on the side away from the flame, and the book puts it toward.
+`Surface` has the convention and the physics written down and asserted; the book
+has not been migrated onto it. Then `Ledger`, `Lens`, `DeskPlaneView` /
+`DeskLedge`, `Desk._tick_sweep`, `ViewController`.
 
 **Phase 2 is deliberately not split into "the refactor" and "the fun part".** An
 earlier draft of this plan did split them, and that was a mistake twice over: a
@@ -206,7 +248,17 @@ Dust and the shade veil landed. Still open, from a cold `feel-critic` sweep:
   `tools/make_placeholder_audio.py`'s idiom.
 - The day's-end lighting turn has no geometry to turn on.
 
-### Phase 5 — The Kalendar decision. **Yours to make.** (half a day)
+### Phase 5 — DONE. Kept below only so the decision can be argued with.
+
+**Decided: add a third witness to case_04 — Herbord Gantz, castellan of
+Thurnstadt — and one obit putting him dead two years before the grant.** Two data
+edits, no code. case_04 turns CONFIRM -> REFER on `witness_dead`, which is the
+build's first and only `defect:` tier finding, so the DEFECT -> REFER policy row
+now executes in play. Frames 45 and 46 prove both halves are legible on the desk.
+The full reasoning, and each rejected alternative with the file that kills it, is
+in the commit message. The original brief follows.
+
+### Phase 5 (original) — The Kalendar decision. **Yours to make.** (half a day)
 
 The owner has explicitly handed this one to you. Make the call, do the work, and
 say clearly in the commit what you decided and why so they can disagree

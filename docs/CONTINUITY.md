@@ -29,9 +29,13 @@ python tools/verify_content.py
 | suite | checks |
 |---|---|
 | rules | 81 |
-| presentation | 173 |
+| presentation | 206 |
 | the day (full loop) | 73 |
 | content + encoding | PASS |
+
+The capture harness writes **46** frames. 44 and 45/46 are new: a struck seal
+with the candle taken away (the veil), and the two documents that between them
+decide case_04.
 
 **Run the rules suite before the Python one.** `tests/test_rules.gd` writes the
 finding set it actually derived to `.tools/derived_findings.json`, and
@@ -123,6 +127,28 @@ reaching for `z_index` to get something above something else, you almost
 certainly want child order instead. The legitimate uses are transient and
 self-cancelling: a ring while it is in the hand or in the wax, a falling bead,
 the lens.
+
+**`class_name Material` does not compile — `Material` is a Godot built-in.** The
+shared lighting helper is `Surface` (`scripts/presentation/surface.gd`) for that
+reason and no other. Before adding any `class_name`, check it against
+`ClassDB.class_exists()` rather than against your memory of the engine.
+
+**A pixel-art silhouette can be completely wrong and still read as the thing.**
+The candle's flame was drawn upside down for the life of the project — apex in
+the wax, blue base at the top — and survived four rounds of deliberately judging
+that object from capture frames. At ship scale it is nine pixels by thirteen, and
+an inverted teardrop still parses as "a flame is there". When you assert on
+drawn geometry, assert on **where a point ends up**, not on the angle you handed
+the transform: 148 degrees is a plausible-looking number to read past.
+
+**Measure before believing your own eyes on a colour change.** Comparing spoon
+frames after the wax fix, the new one looked *brighter* and was in fact 18%
+darker — washed orange `(204,58,30)` had become deep crimson `(190,40,18)`.
+Saturation reads as brightness. `PIL` is available; diff the two frames, take the
+bounding box of pixels that actually changed, and compare luminance only over
+those. Desk-wide frames are useless for this because the flame's flicker is not
+deterministic between capture runs and swamps the signal — only the 4x series
+could see it.
 
 **Identity in the necrology is matched on `person_id`, never on name.** Two men
 are called Hugo Wend. The cost is that a typo does not error — the man is simply
@@ -267,27 +293,43 @@ These are recorded so the next person does not think they are undiscovered.
 - **Favour is stored and inert.** `Register.favor_totals()` is written and never
   called. It is the least systemic of the three columns and the most obvious
   place to spend the next campaign-scale effort.
-- **Thursday is three consecutive "nothing is wrong, confirm it" matters.**
-  Verified from `.tools/derived_findings.json`: across all eight cases there is
-  not one finding at the `defect:` tier, so `verdict_policy`'s DEFECT -> REFER row
-  has never executed in play and REFER is only ever taught as "two laws disagree",
-  never as "this is broken, send it back". case_04 is additionally Tuesday's
-  matrix lookup run again with the answer inverted. This is the repetition, and
-  it is content work rather than systems work.
-- **The Kalendar convicts nobody.** Four rolls, thirty-odd obits, its own model
-  classes, a generated book and one of the four pigeonholes — and no shipped case
-  turns on it, so a player who consults it twice correctly infers it never matters
-  and stops opening it. That inverts the exact lesson it was built to teach. The
-  cheapest fix is a witness edit on case_04, which would also give it the DEFECT
-  the policy has never fired and turn the day's sag into the case that teaches the
-  third ring. It changes that case's verdict, so it is a deliberate content
-  decision and not a tweak.
+- ~~**Thursday is three consecutive "nothing is wrong, confirm it" matters.**~~
+  **Half fixed 2026-07-28.** case_04 now produces the build's first and only
+  `defect:` tier finding, so `verdict_policy`'s DEFECT -> REFER row executes in
+  play and REFER is taught as "this is broken, send it back" as well as "two laws
+  disagree". Thursday is no longer three consecutive confirms. What remains true
+  is that case_04 was Tuesday's matrix lookup inverted; it now *starts* that way
+  and then turns on something else, which is the point.
+- ~~**The Kalendar convicts nobody.**~~ **Fixed 2026-07-28**, see the commit
+  "Phase 5: the Kalendar convicts one man". Herbord Gantz, castellan of
+  Thurnstadt, is on case_04's witness list and in the Margrave's chapel roll as
+  dead two years before the grant. The reasoning, and the three alternatives
+  rejected and why, are in that commit message — argue with it there.
 - **Two of Thursday's four matters cannot be ruled wrongly**, because a pure
   precedent contest marks every ring defensible.
-- **`WitnessCheck` fires no defect in any shipped case.** Every witness in the
-  eight cases is either alive by the roll, silent within coverage, or outside
-  coverage entirely. The check is proven by synthetic packets in the rules suite
-  and by nothing the player will ever be handed. It wants a case.
+- ~~**`WitnessCheck` fires no defect in any shipped case.**~~ Fixed by the same
+  edit. It now fires exactly once, on a positive roll entry rather than a
+  silence.
+- **No shipped case springs the reckoning trap.** The Thurn chapel reckons by
+  accession, the same style as case_04's charter, so the game's one decisive
+  Kalendar lookup is a direct comparison of two regnal years and costs no
+  cross-reckoning arithmetic. The Saint Wend chapter counts from *election* and
+  a clerk who reduces its obits as an imperial notary gets a number three years
+  wrong — and nothing a player is ever handed exercises that. This was left
+  deliberately: case_04 already teaches a new book, a new finding tier and a new
+  meaning for a ring, and a fourth new thing in one matter is bad teaching. It is
+  the obvious next case and it should be a *different* case.
+- **`data/world/books/almanac.json`'s ring-doctrine page contradicts the engine.**
+  It tells the player that an unlookuppable name is a referable defect; the engine
+  holds that silence is worth nothing and only ever emits a NOTE. Latent while
+  nothing turned on the Kalendar, and now one page away from a case that does.
+  Either the page or the doctrine should move.
+- **`ReferenceBook`'s blind tooling is lit inside out.** A groove's lit lip
+  belongs on the side AWAY from the flame; the book draws it toward, so the
+  boards' stamped borders read as raised rather than impressed and swing the
+  wrong way as the candle passes. `SignetRing` has it right. The convention and
+  the physics are written down in `Surface` and asserted; the book itself is
+  waiting on its own pass, with a before/after frame.
 - **A witness's claimed house is never rendered on the parchment.** The rules
   read `house` to decide which roll would have had a man; the charter shows only
   his name and style. A player can infer the house from the style most of the

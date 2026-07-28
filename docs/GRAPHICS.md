@@ -117,9 +117,50 @@ What each surface owes:
   bottom of the cup. Drawing liquid brighter than solid turns a candle into a
   poached egg — and that is precisely why it read as flat, because there was no
   dark anywhere on it.
+
+  **This was recorded as fixed and was only fixed on the candle.** The poured
+  pool and the melting spoon — the two objects the press actually runs on — still
+  had it inverted, measured at 0.280 molten against 0.176 set. Fixed 2026-07-28
+  and now asserted on every wax surface in the game. If you write a third one,
+  the assertion is in `test_presentation` under "wax physics".
 - **A flame has a dark cone.** Directly above the wick sits unburnt vapour that
   has not reached oxygen yet, and it is darker than the luminous sheath around
   it. Without it a flame is a bright lozenge with no inside.
+
+### And a third: which way up the flame is
+
+`atan2` takes `(y, x)`. `candle.gd` passed `atan2(lean.x, -8.0)`, and a negative
+second argument returns an angle near pi — so the whole luminous body was drawn
+rotated through **147 to 180 degrees in every frame the candle was ever lit**.
+The authored apex at local `(0,-10)` landed at `y = +8.4 to +10.0`: tip in the
+wax, blue base at the top.
+
+It survived the entire life of the project, including four rounds of judging this
+exact object from frames and the addition of the 4x close series. At ship scale
+the flame is nine pixels by thirteen, and **an upside-down teardrop still reads
+as "a flame is there"**. That is the lesson: at pixel-art sizes a silhouette can
+be completely wrong and still parse as the thing it depicts. Assert on where a
+drawn point *ends up*, not on the angle you fed the transform.
+
+### The material helper
+
+`scripts/presentation/surface.gd` — `Surface`, beside `Ink` and `WaxShape`. It
+was **extracted** from `ReferenceBook._draw` and `SignetRing._draw` rather than
+designed, because nine scripts were computing a direction to the flame by hand in
+four coordinate conventions and five were clamping the `light_level x
+light_strength` product five different ways.
+
+Use `Surface.toward(node, light_position)` and `Surface.lit(level, strength)`
+rather than rolling your own. **It is `Material` in the older plan; that name does
+not compile, because `Material` is a Godot built-in.**
+
+**The cut-line convention lives there and is not obvious.** A groove's far wall
+faces back toward the flame and catches it, so the **lit lip is displaced AWAY
+from the light** and the dark trough toward it. `SignetRing` had this right;
+`ReferenceBook`'s blind tooling has it **inverted** and still does, so the boards'
+stamped borders read as raised rather than impressed. That is a known open item,
+waiting on the book's own pass. Extracting the two into one file is what revealed
+they disagreed.
 
 ### Cheap techniques that are already proven here
 
@@ -149,9 +190,19 @@ slides and lands. The door shoves, swings, arrives and rocks.
 - **The event is the arrival, not the request.** Both door sounds used to fire on
   the frame the target was set, half a second before the leaf had moved — so the
   thud of it shutting played while it stood wide open. Emit on arrival.
-- **Beware `ease(x, 0.4)`.** Its derivative is infinite at zero, so anything using
-  it as a motion curve snaps on the first frame and then glides. Use a two-sided
-  smoothstep `t*t*(3-2t)` for anything that starts and stops.
+- **`ease(x, c)` for `c < 1` is ease-OUT, and the warning that used to be here
+  was wrong.** This document previously said `ease(x, 0.4)` has an infinite
+  derivative at zero and "snaps on the first frame". **Measured, in Godot 4.6:
+  it does not.** Godot computes `1 - (1-x)^(1/c)` for `0 < c < 1`, whose slope at
+  zero is `1/c` — finite. `ease(1/60, 0.4)` returns **0.041**, so the first frame
+  of a one-second move covers 4% of the distance. That is not a snap.
+
+  The real hazard is the one worth knowing: it starts at **2.5x average speed**
+  and decelerates. That is right for something released under tension — a page
+  falling, a ring peeling off wax — and wrong for anything with mass starting
+  from rest, which should begin slowly. For those use a two-sided smoothstep
+  `t*t*(3-2t)`. Reach for the curve that matches the physics, not the one that
+  avoids a bug that was never there.
 - **Check your zeta.** A spring at ζ=0.86 overshoots by 0.47%, which after
   clamping is a tenth of a pixel — a comment claiming a spring where there is
   none. ζ≈0.6–0.8 gives an overshoot you can actually see.
@@ -194,6 +245,16 @@ and both reference books open. About 169 fps.** There is no performance problem
 today, and the previous version of this section claiming the redraw pattern was a
 "blocker" was speculation. It is written down here so the next person does not
 inherit the assumption.
+
+**Re-measured after the materials work later the same day: 6.07 ms, 165 fps**,
+same 19 draggables, four open books, 3 outline builds. The materials pass cost
+essentially nothing, and the memo still holds.
+
+**Know what the probe actually covers before you lean on the number.** The probe
+lays out a packet and opens the books; it never strikes a seal, so nothing it
+measures has `impressed = true`. Anything on the struck-pool path is *unpriced*
+rather than *proven cheap*. When a measured number is used to wave a finding
+away, check the scenario that produced it first.
 
 What *was* real and is now fixed: `WaxShape.outline()` was being called from
 inside `_draw` by the reference book's matrix and polity plates, so an open book
