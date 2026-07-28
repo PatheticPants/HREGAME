@@ -402,6 +402,21 @@ static func _build_document(raw: Variant, path: String, lore: LoreData) -> Docum
 				w._note = _s(wraw, "_note", _s(wraw, "note"))
 				ws.append(w)
 			ch.witnesses = ws
+			# Where the skin has been scraped. Regions are fractions of the
+			# sheet's own size so a patch stays registered whatever the
+			# document's dimensions are.
+			var es: Array[Erasure] = []
+			for eraw in _arr(raw, "erasures"):
+				var e := Erasure.new()
+				e.region = Rect2(_f(eraw, "x"), _f(eraw, "y"),
+					_f(eraw, "w", 0.2), _f(eraw, "h", 0.05))
+				e.altered_field = _s(eraw, "altered_field")
+				e.original_value = _s(eraw, "original_value")
+				e.innocent = _b(eraw, "innocent", false)
+				e.dispositive = _b(eraw, "dispositive", true)
+				e.note = _s(eraw, "note")
+				es.append(e)
+			ch.erasures = es
 			var sraw = raw.get("seal", null)
 			if sraw is Dictionary:
 				var s := SealImpression.new()

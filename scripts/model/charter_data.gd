@@ -32,6 +32,11 @@ extends DocumentData
 ## charter — which is why forging one is worth doing.
 @export var seal: SealImpression = null
 
+## Places where the skin has been scraped and rewritten. Invisible to every other
+## check in the project, because every other check reads what the parchment says
+## and this is about what it used to say. See scripts/model/erasure.gd.
+@export var erasures: Array[Erasure] = []
+
 
 func date_phrase(reign_name: String) -> String:
 	return "in the %s year of %s" % [Lex.ordinal(date_regnal_year), reign_name]

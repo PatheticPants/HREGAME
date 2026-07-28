@@ -4,11 +4,15 @@ extends Node2D
 ## A shallow passage tray fixed to the far lip of the desk. Docket slips remain
 ## physical desk objects; this fixture only tells the hand where a hearing begins.
 
+## Five holds the rail without crowding it. The centre is deliberately skipped:
+## that is where the hearing notch is, and a slip parked on top of the place you
+## drop slips reads as a bug the first time and as a trap thereafter.
 const SLOT_CENTERS := [
-	Vector2(-570, -214),
-	Vector2(-190, -214),
-	Vector2(190, -214),
-	Vector2(570, -214),
+	Vector2(-640, -214),
+	Vector2(-400, -214),
+	Vector2(-160, -214),
+	Vector2(400, -214),
+	Vector2(640, -214),
 ]
 const HEARING_SLOT := Rect2(-145, -180, 290, 105)
 

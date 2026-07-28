@@ -40,9 +40,20 @@ Recorded 2026-07-28 after a full read of `data/` and `scripts/rules/`.
 6. **Polity headroom.** 7 of 9 used. Two slots remain and should stay unspent
    unless a proposal genuinely cannot be served by an existing polity.
 
-7. **The Kalendar page has no pagination.** `KalendarBook.build` makes exactly one
-   book page per roll and `ReferenceBook._draw_obit_roll` draws entries straight
-   down it. Rolls of 7–8 entries overflow a 316×424 book. This is a rendering gap,
-   not a lore gap, but it collides with the project's hardest convention
-   ("everything findable must be renderable on the desk"), so it must be settled
-   before more names are added to any roll.
+7. ~~**The Kalendar page has no pagination.**~~ **CLOSED 2026-07-28.** Raised
+   correctly and fixed in the same pass. A section now gets a head leaf carrying
+   the coverage statement, the reckoning and the written-up-to line and NO names,
+   and every entry leaf after it carries exactly `KalendarBook.ENTRIES_PER_PAGE`
+   (6). Splitting them is what makes the arithmetic exact — the roll's own note is
+   authored prose of unbounded length, so "as many names as will fit" was never
+   something the builder could know. `tests/test_presentation.gd` now asserts that
+   every obit in every roll lands on a leaf the player can turn to, and it will
+   fail if a roll grows past what its leaves hold.
+
+8. **`Volkmar` is now spent on a padding name.** `necrology.json` gives
+   `volkmar_ise`, deacon of the Nether Fen, to the Saint Wend roll. The standing
+   proposal for open question 2 was to name the missing post-1211 Margrave of
+   Thurn *Volkmar*, chosen because V was unused across the whole cast. It is used
+   now. Pick a different initial for the Margrave, or move the deacon, before
+   question 2 is closed — two Volkmars in a game whose entire skill is telling
+   near-identical names apart would be a self-inflicted wound.

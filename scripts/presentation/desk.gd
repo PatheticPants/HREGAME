@@ -105,6 +105,7 @@ var _door_home_y := -683.0
 var _door: AudienceDoor
 var _desk_visual: DeskPlaneView
 var _view_amount := 0.0
+var _backlit_reported := false
 
 
 func _ready() -> void:
@@ -368,6 +369,7 @@ func _build_book(id: StringName, fallback_at: Vector2) -> void:
 func lay_out_packet(documents: Array[DocumentData]) -> void:
 	case_papers.clear()
 	current_charter = null
+	_backlit_reported = false
 	lens.begin_case()
 
 	for doc in documents:
@@ -488,6 +490,22 @@ func _on_lens_focus_confirmed(subject: Node2D) -> void:
 
 func _on_book_consulted(book_id: StringName) -> void:
 	investigation_performed.emit(StringName("consult_" + String(book_id)))
+
+
+## Lifting a charter into the candle is as conspicuous as reaching for the glass,
+## and rather more so — a notary holding your parchment up against the flame is
+## doing exactly one thing, and everybody in the room knows what it is. Fired
+## once per case, like every other beat.
+func _check_backlight() -> void:
+	if current_charter == null or not is_instance_valid(current_charter):
+		return
+	if not current_charter.is_backlit():
+		_backlit_reported = false
+		return
+	if _backlit_reported:
+		return
+	_backlit_reported = true
+	investigation_performed.emit(&"hold_to_light")
 
 
 ## The petitioner gathers the papers up and takes them away. Implemented by
@@ -801,6 +819,7 @@ func _process(delta: float) -> void:
 
 	_update_hover()
 	_update_lighting()
+	_check_backlight()
 	_update_stack_depths()
 	press.tick(delta, _held, _cursor, _cursor_speed)
 	if tablet != null:

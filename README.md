@@ -4,7 +4,8 @@ A document-inspection game set in a fictionalised Holy Roman Empire. You are a
 low-born notary of the Imperial Chancery. People bring you claims to land and
 title, and you rule on them, and the ruling is executed in wax.
 
-Vertical slice: one day, three petitioners, two verification types.
+Two working days, eight matters, five verification types, and a Register that
+carries what you did on the first day into the second.
 
 ---
 
@@ -60,7 +61,7 @@ what these shots exist to check.
 
 ## Review agents
 
-`.claude/agents/` holds five subagent definitions. They load when Claude Code
+`.claude/agents/` holds ten subagent definitions. They load when Claude Code
 starts, so a newly added one is not callable until the next session.
 
 | | |
@@ -70,9 +71,19 @@ starts, so a newly added one is not callable until the next session.
 | `feel-critic` | read-only. Phases, easing, weight, variance, audio hooks, diegetic violations. |
 | `godot-reviewer` | read-only. Cross-platform safety first, then separation of concerns and idiom. |
 | `rules-auditor` | read-only. Assumes every case is broken until proven otherwise. |
+| `campaign-architect` | consequence across days, precedent, faction pressure, progression. |
+| `design-prosecutor` | read-only. Is this a game, or beautiful craft over a thin loop. |
+| `difficulty-curator` | teaching order, and which axis each case spikes. |
+| `player-advocate` | cold first-time-player walkthroughs. |
+| `sound-director` | the sonic language, and what sound tells you that nothing else does. |
 
-`feel-critic` and `rules-auditor` are deliberately adversarial and their prompts
-should stay that way — their value is that they disagree with you.
+`feel-critic`, `rules-auditor` and `design-prosecutor` are deliberately
+adversarial and their prompts should stay that way — their value is that they
+disagree with you.
+
+Running all ten at once against a cold read is worth doing before a large pass.
+The signal is **convergence**: when several agents that share no context
+independently name the same defect, it is real.
 
 ```bash
 python tools/make_placeholder_audio.py
@@ -94,6 +105,7 @@ says Confirm.
 | **Click** a book | opens it. Click the outer third of a page to turn it, the middle to close it. |
 | **Click** anywhere else | the petitioner keeps talking. |
 | **The lens** | a seal's legend is not legible without it, and neither is the closing formula at the foot of a charter. |
+| **The flame** | pick a charter up and hold it near the candle. Scraped skin is thinner than the skin around it, so it transmits — and the word somebody took out with a knife comes back through the patch. |
 | **The rack** | drop a book, tool or sheet over a pigeonhole on the back rail to put it away. Pick it up to get it back. |
 | **The tablet** | take it out of the rack, then move the stylus over the wax to scratch a note. Rest the nib to smooth it out. Nothing reads what you write. |
 | **Your attention** | petitioners notice which book you consult and when the glass lingers over their wax. |
@@ -114,7 +126,11 @@ One petitioner is one full turn of it:
    legend. Open the Book of Matrices, find the die, compare four things. Open the
    Almanac, find the reign, reduce the date. Get the glass onto the *foot* of the
    charter to find out which chancery drew it, because that decides what the date
-   even means.
+   even means. Decide which house would have had a witness, turn to that hand in
+   the Kalendar of the Dead, and scan its years — remembering that the roll is
+   silent about a great many living men and about every man it does not cover.
+   And if something about the parchment is wrong in a way you cannot name, lift
+   it into the candle.
 4. **Fight the desk.** Two open books and a charter do not fit. The candle is not
    where you are reading. Something has to go on the rack, and something has to
    come back off it.
@@ -181,6 +197,55 @@ Smoothing through the middle of a line leaves both ends behind.
 Every alternative to this was software — a text box, a checklist, a journal
 screen — and any of them would have been the first thing in this game that
 admitted it was a computer program.
+
+## The Kalendar of the Dead
+
+A dead man cannot witness a charter. That was checked, for a while, by reading the
+death off the charter's own witness list — which meant the one document under
+suspicion was also the only source for the fact that would have condemned it. A
+forger who declined to write *obiit* defeated the check by omission.
+
+Death now comes from a book the forger never had. **The Chancery keeps no
+necrology of its own**; it keeps a bound volume of extracts returned by the houses
+that do. Four hands return: the cathedral chapter of Saint Wend, the Margrave's
+chapel at Thurnstadt, the city book of Marchfeld, and the Chancery's own
+household. Three houses return nothing, for three different reasons, and the book
+says so on a page of its own.
+
+**The design is in the limits.** A complete imperial register of the dead would be
+an oracle and would end the game. Every roll is partial three ways at once: it
+covers one house, it is written up only so far, and it reckons in its own house's
+style — the Saint Wend chapter counts from election like the rest of the Church,
+so a clerk who reduces its obits as an imperial notary would gets a number three
+years wrong. The roll states its reckoning on its own front page, which is what
+makes that a trap rather than a cheat.
+
+So the rule the check obeys above all others is that **absence from the rolls is
+never evidence of life.** Silence produces a finding that names which roll was
+consulted and where its knowledge stops, and never a defect. What to do about a
+witness list nobody can verify stays with the notary, which is the entire point.
+
+## Rasura, and what the candle is for
+
+The commonest real medieval forgery was not a fabricated charter. It was a genuine
+one improved after the fact: scrape the nap off the vellum with a knife, let it
+dry, and write the year you would rather it said. The seal is real, the die was
+alive, the witnesses were in the room, and the instrument is false.
+
+No other check can see it, because every other check reads what the parchment says
+and this is about what it used to say.
+
+Detection is physical. Scraped skin is thinner than the skin around it, so **pick
+the charter up and hold it near the flame**: the thin place transmits, the patch
+goes amber, and the word somebody took out feathers back through it. At rest the
+scrape is only a difference in the nap — present, findable, and meaningless on its
+own, because scribes correct themselves and a rule that convicted on the mere
+presence of an erasure would convict most genuine charters in Europe.
+
+This is the fourth investigative verb and the first one that is not a lookup. It
+also gives the candle a second job: until now the flame was pressure — light, and
+a clock — and every second spent carrying it was a second spent. It is now an
+instrument, which is the strongest argument the clock has for existing.
 
 ## The rack
 
@@ -259,18 +324,28 @@ data/
 ```
 
 **`scripts/rules/` never touches a node.** That single restriction is what makes
-the rules runnable headless, and what makes adding the planned verification types
-(genealogy, palaeography, witness cross-referencing, jurisdiction) a matter of
-writing one `Check` subclass and appending it to a list in `adjudicator.gd`.
-Nothing else in the project changes.
+the rules runnable headless, and what makes adding the remaining verification
+types (genealogy, palaeography, jurisdiction) a matter of writing one `Check`
+subclass and appending it to a list in `adjudicator.gd`. Nothing else in the
+project changes — the witness check and the erasure check were both added exactly
+that way, and neither touched the policy, the ledger or any existing case file.
 
 ### How validation works
 
 ```
-CheckContext { documents, matrices, reigns, polities, register, present_year }
+CheckContext { documents, matrices, reigns, polities, necrology, register, present_year }
        ↓
-[SealCheck, DateCheck, AuthorityCheck]  →  Array[Finding]  →  VerdictPolicy  →  verdict
+[ErasureCheck, SealCheck, DateCheck, WitnessCheck, AuthorityCheck, PrecedentCheck]
+       ↓
+Array[Finding]  →  VerdictPolicy  →  verdict
 ```
+
+Order is doctrine. `ErasureCheck` runs first because every other check reads what
+the parchment says, and if the parchment has been altered since it was sealed then
+the reading they are all working from is the forger's. `SealCheck` outranks
+`WitnessCheck` because the seal is authenticity and the witness list is formality.
+`DateCheck` outranks `WitnessCheck` because the witness arithmetic is derived from
+the date.
 
 Checks never decide anything; they report `Finding`s with a severity. The policy
 turns findings into a ruling and lives in `data/tuning/verdict_policy.tres`, so
@@ -420,11 +495,7 @@ Renderer is `gl_compatibility` rather than Forward+: this is flat 2D, it runs on
 anything including an old Mac, it starts faster, and it avoids Metal/MoltenVK
 driver differences between your two machines.
 
-Not yet a git repository. When you want one:
-
-```bash
-git init && git add -A && git commit -m "Hand and Seal: vertical slice"
-```
+The repository lives at `github.com/PatheticPants/HREGAME`, on `main`.
 
 ---
 

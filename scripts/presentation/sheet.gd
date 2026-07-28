@@ -35,6 +35,7 @@ func bind(doc: DocumentData, desk_bounds: Rect2) -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
+	_tick_backlight(delta)
 	if _arrival_t >= 1.0:
 		return
 	_arrival_t = minf(1.0, _arrival_t + delta / 0.62)
@@ -85,6 +86,7 @@ func _draw() -> void:
 	draw_soft_shadow(r)
 	_draw_body(r)
 	_draw_face(r)
+	_draw_erasures(r)
 	# Last, over everything the subclass drew. A page out of the candle's reach
 	# loses its writing before it loses its shape, and a new document type cannot
 	# forget to do this because it happens above _draw_face rather than inside it.
@@ -175,6 +177,92 @@ func _draw_deckle(r: Rect2, base: Color) -> void:
 			var y := r.position.y + t * r.size.y
 			draw_rect(Rect2(r.position.x, y, absf(d), 6.0), notch)
 			draw_rect(Rect2(r.end.x - absf(d), y, absf(d), 6.0), notch)
+
+
+## HOLD IT UP TO THE FLAME.
+##
+## Scraped vellum is thinner than the skin around it. At rest that shows only as
+## a slightly different nap — a patch you might notice and might not, and which
+## means nothing on its own, because scribes correct themselves. Lift the sheet
+## and bring it near the candle and the thin place TRANSMITS: the patch goes
+## amber and translucent and the ghost of the word that was taken out comes back
+## through it.
+##
+## This is the fourth investigative verb, after reading, the glass and the books,
+## and it is the first one that is not a lookup. It also gives the candle a second
+## job. Up to now the flame has been pressure — light and a clock — and every
+## second spent carrying it was a second spent. Now it is an instrument, and the
+## most-argued-about object in the design pays for itself twice.
+##
+## The threshold is deliberately BOTH conditions. Holding it is not enough (the
+## sheet has to be in the light) and standing near the candle is not enough (it
+## has to be lifted off the pile, which is what a person does). Neither can be
+## stumbled into while shuffling papers, and both together are one gesture.
+## Tuned against Candle.illumination_at: 0.45 puts the threshold at roughly a
+## hand's width from the wick. Far enough that it cannot be stumbled into while
+## shuffling papers past the light, close enough that "hold it up to the flame"
+## is one deliberate gesture rather than a pixel hunt.
+const BACKLIT_LEVEL := 0.45
+
+var _backlit := 0.0
+
+
+func is_backlit() -> bool:
+	return _backlit > 0.55
+
+
+func _tick_backlight(delta: float) -> void:
+	var want := 1.0 if (is_held and light_level >= BACKLIT_LEVEL) else 0.0
+	# Eased, and faster to rise than to fall, so bringing a sheet to the flame
+	# rewards immediately and taking it away lets you finish reading.
+	_backlit = move_toward(_backlit, want, delta * (3.4 if want > 0.0 else 1.6))
+
+
+func _draw_erasures(r: Rect2) -> void:
+	var ch := data as CharterData
+	if ch == null or ch.erasures.is_empty():
+		return
+	for e in ch.erasures:
+		var patch := Rect2(
+			r.position + Vector2(e.region.position.x * r.size.x,
+				e.region.position.y * r.size.y),
+			Vector2(e.region.size.x * r.size.x, e.region.size.y * r.size.y))
+
+		# AT REST: a difference in the nap. Present, findable, and meaningless on
+		# its own — which is the whole point. It must never be a marker saying
+		# "look here"; it is the same class of thing as a rubbed seal rim.
+		draw_rect(patch, Color(0.42, 0.36, 0.26, 0.055 + 0.03 * (1.0 - _backlit)))
+		for i in 4:
+			var y := patch.position.y + (float(i) + 0.5) * patch.size.y / 4.0
+			draw_line(Vector2(patch.position.x + 2.0, y),
+				Vector2(patch.end.x - 2.0, y),
+				Color(0.35, 0.30, 0.22, 0.05), 1.0)
+
+		if _backlit <= 0.01:
+			continue
+
+		# AGAINST THE LIGHT: the thin place transmits.
+		var glow := ease(_backlit, 0.5)
+		for i in 3:
+			var g := float(3 - i) * 2.4
+			draw_rect(patch.grow(g),
+				Color(1.0, 0.72, 0.34, 0.10 * glow * (1.0 - float(i) / 3.0)))
+		draw_rect(patch, Color(1.0, 0.80, 0.45, 0.30 * glow))
+
+		if e.original_value.is_empty():
+			# Taken down to the nap. Nothing comes back, and the emptiness is
+			# itself what the player has found.
+			continue
+
+		# The removed word, feathered: ink that sat on scraped nap spread into it,
+		# so it comes back soft-edged rather than crisp. Three offset passes at
+		# low alpha, which is the same trick the contact shadows use.
+		var at := patch.position + Vector2(3.0, patch.size.y * 0.5 - 7.0)
+		var ghost := Color(0.30, 0.19, 0.12, 0.30 * glow)
+		for off in [Vector2(-0.6, 0), Vector2(0.6, 0), Vector2(0, 0.6)]:
+			Ink.line(self, at + off, e.original_value, 12, ghost)
+		Ink.line(self, at, e.original_value, 12,
+			Color(0.22, 0.13, 0.08, 0.52 * glow))
 
 
 ## Overridden by each document type.

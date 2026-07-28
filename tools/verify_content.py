@@ -188,6 +188,26 @@ def date_findings(charter, world, present):
     return out
 
 
+# ----------------------------------------------------------------- erasure
+
+def erasure_findings(charter):
+    """Has the skin been scraped since the wax went on?
+
+    The only check here that convicts on the document's history rather than on
+    its contents, which is why a forger who scrapes a year and writes a
+    perfectly possible one is still caught.
+    """
+    out = []
+    for e in charter.get("erasures", []):
+        if e.get("innocent") or not e.get("dispositive", True):
+            out.append((NOTE, "erasure_innocent"))
+        elif not e.get("original_value"):
+            out.append((DEFECT, "erasure_illegible"))
+        else:
+            out.append((FATAL, "erasure_dispositive"))
+    return out
+
+
 # --------------------------------------------------------------- necrology
 
 def necrology_findings(charter, world, necrology, present):
@@ -304,7 +324,8 @@ POLICY = [(FATAL, "DENY"), (CONTESTED, "REFER"), (DEFECT, "REFER")]
 
 
 def adjudicate(charter, world, matrices, present):
-    findings = (seal_findings(charter, world, matrices, present)
+    findings = (erasure_findings(charter)
+                + seal_findings(charter, world, matrices, present)
                 + date_findings(charter, world, present)
                 + necrology_findings(charter, world, world.get("necrology"),
                                      present)

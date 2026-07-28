@@ -10,6 +10,11 @@ extends RefCounted
 
 static func checks() -> Array[Check]:
 	var list: Array[Check] = []
+	# The skin comes first. Every other check reads what the parchment says; this
+	# one asks whether the parchment still says what it was sealed saying, and if
+	# it does not then the reading the other checks are working from is the
+	# forger's. It is decisive over all of them for the same reason a dead die is.
+	list.append(ErasureCheck.new())
 	list.append(SealCheck.new())
 	list.append(DateCheck.new())
 	# ORDER IS DOCTRINE. VerdictPolicy walks severity rows and returns the first
