@@ -663,6 +663,26 @@ func _test_visual_invariants(desk: Desk) -> void:
 	_is_true(desk.foreground != null and desk.foreground.z_index < lens.z_index,
 		"the near desk fascia adds depth without swallowing the hero glass")
 
+	# THE WORLD HAS TO REACH THE EDGE OF THE FRAME AT ANY ASPECT.
+	#
+	# project.godot sets window/stretch/aspect="expand" on purpose: a wider
+	# display shows MORE ROOM rather than letterboxing. The authored plate is
+	# 1920x1080, which has margin to spare at 16:9 and none at all at 21:9 — a
+	# hard vertical seam appeared a third of the way in from each side, where the
+	# chamber stopped and the void began. Confirmed at 2560x1080 before the fix.
+	#
+	# With expand, the base 1920x1080 keeps its height and widens on a wide
+	# display, and keeps its width and heightens on a tall one. So the bled plate
+	# has to cover the extremes of both, not just the one that was noticed.
+	var bled := Desk.ROOM_RECT.grow(Desk.ROOM_BLEED)
+	var widest := Vector2(1080.0 * (32.0 / 9.0), 1080.0)   # 32:9 super ultrawide
+	var tallest := Vector2(1920.0, 1920.0 / (4.0 / 3.0))   # 4:3
+	_is_true(bled.size.x >= widest.x and bled.size.y >= widest.y,
+		"the chamber still fills a 32:9 frame (%.0f wide covers %.0f)"
+		% [bled.size.x, widest.x])
+	_is_true(bled.size.x >= tallest.x and bled.size.y >= tallest.y,
+		"and a 4:3 one (%.0f tall covers %.0f)" % [bled.size.y, tallest.y])
+
 
 func _test_reachability(desk: Desk) -> void:
 	print("-- reachability")

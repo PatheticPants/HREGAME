@@ -1192,14 +1192,62 @@ func petitioner_home_y() -> float:
 	return DESK_RECT.position.y - 2.0
 
 
+## How far past the authored plate the chamber has to keep going.
+##
+## `project.godot` sets `window/stretch/aspect="expand"`, which is a deliberate
+## choice: a wider display shows MORE ROOM rather than letterboxing. The room
+## plate is 1920 units wide, so at 16:9 — where the camera shows 1600 — there is
+## margin to spare and nothing is ever wrong. At 21:9 the camera shows 2560, and
+## the player gets a hard vertical seam a third of the way in from each side
+## where the chamber simply stops and the void begins. Confirmed at 2560x1080.
+const ROOM_BLEED := 1400.0
+
+
+## Continue the plate's own outermost pixels outward.
+##
+## Not a stretch of the authored wall — that would smear hand-placed clusters
+## across a third of the screen — and not a guessed flat colour, which would show
+## its own seam wherever it failed to match. The edge columns and rows of the
+## plate are already near-black masonry, so repeating exactly them is invisible
+## and correct at any aspect ratio. Four strips; the horizontal pair spans the
+## full bleed width so the corners are covered too.
+func _draw_room_bleed(plate: Rect2) -> void:
+	var w := float(ROOM_TEXTURE.get_width())
+	var h := float(ROOM_TEXTURE.get_height())
+	var outer := plate.grow(ROOM_BLEED)
+	# Two source pixels rather than one: a single column can land on a stray
+	# highlight in the authored art and streak it across the whole margin.
+	var edge := 2.0
+	# Left and right, at plate height.
+	draw_texture_rect_region(ROOM_TEXTURE,
+		Rect2(outer.position.x, plate.position.y,
+			plate.position.x - outer.position.x, plate.size.y),
+		Rect2(0.0, 0.0, edge, h))
+	draw_texture_rect_region(ROOM_TEXTURE,
+		Rect2(plate.end.x, plate.position.y,
+			outer.end.x - plate.end.x, plate.size.y),
+		Rect2(w - edge, 0.0, edge, h))
+	# Top and bottom, full bleed width, which also fills the corners. A display
+	# taller than 16:9 opens the same gap vertically.
+	draw_texture_rect_region(ROOM_TEXTURE,
+		Rect2(outer.position.x, outer.position.y,
+			outer.size.x, plate.position.y - outer.position.y),
+		Rect2(0.0, 0.0, w, edge))
+	draw_texture_rect_region(ROOM_TEXTURE,
+		Rect2(outer.position.x, plate.end.y,
+			outer.size.x, outer.end.y - plate.end.y),
+		Rect2(0.0, h - edge, w, edge))
+
+
 func _draw_room() -> void:
 	# This plate extends above and below both camera endpoints. It is never
 	# stretched during the tilt; only the camera reveals a different crop.
 	# Shifted with the camera so the far wall has less apparent travel than the
 	# desk under your hands. See PARALLAX_FAR.
-	draw_texture_rect(ROOM_TEXTURE,
-		Rect2(ROOM_RECT.position - Vector2(0.0, _view_amount * PARALLAX_FAR),
-			ROOM_RECT.size), false)
+	var plate := Rect2(ROOM_RECT.position - Vector2(0.0, _view_amount * PARALLAX_FAR),
+		ROOM_RECT.size)
+	_draw_room_bleed(plate)
+	draw_texture_rect(ROOM_TEXTURE, plate, false)
 	if _morning_amount <= 0.01:
 		return
 
