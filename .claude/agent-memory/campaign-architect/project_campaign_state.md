@@ -37,6 +37,26 @@ Four load-bearing facts that constrain any campaign design:
 - **Exactly one pigeonhole is free (ledge slot 0).** Tablet=1, Kalendar=2, Register=3. Spending
   it is a real and final cost; `desk.gd:276-281` records this on purpose.
 
+**Five facts re-confirmed 2026-07-29 while designing the introduction curve** (read the source
+before trusting any of them again, but they were true on that date):
+- **Every one of the eight shipped cases has 2-3 witnesses carrying a `house`.** So every case
+  emits at least one `WitnessCheck` finding. The Kalendar therefore cannot be withheld from any
+  day that hears a shipped matter without at minimum a CLEAN-severity contract breach, and
+  `case_01` breaks it at NOTE (`witness_died_that_year`).
+- **`PrecedentCheck` provably emits nothing on `day_01`.** It reads only
+  `ctx.register.latest_for_subject()`, which filters `foreign_hand`, and none of the three
+  `register_seed.json` entries carries a `subject_id`. The Register book is the ONE reference
+  volume that can be withheld from Tuesday with zero effect on any finding.
+- **`DayData.resolve_cases()` already tolerates a slot resolving to null** (it skips nulls and
+  dedupes), and `lore.case_by_id(&"")` returns null. An "empty slot" needs no new code.
+- **`practice_documents` is global, not per-day.** It lives in `world.json`, runs once from
+  `SessionController._begin_practice()`, and `_on_practice_lens_dropped` hardcodes
+  `_begin_day(0)`. Teaching a verb with a no-stakes rehearsal on any day but the first needs a
+  flow change, not just data.
+- **`deliver_day_document()` cannot deliver a book.** `_make_document_view` builds only
+  `CharterView`/`LetterView`/`DocketView`. A mid-day book arrival is new code; a dawn arrival in
+  a pigeonhole is free.
+
 **The economy exists only as a planted seam**, not as code: `register_seed.json` has R.V.'s
 "Fee for the writing, two marks, received of the party." No purse, no coin, no tariff.
 

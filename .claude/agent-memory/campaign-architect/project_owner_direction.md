@@ -21,6 +21,21 @@ Four standing requirements that follow from it:
 4. Humour is **dry, subtle, rationed** — see [[campaign-invariants]] for the exact budget and
    the forbidden slots.
 
+**Amendment, 2026-07-29 (verbatim):**
+
+> "We definitely should introduce all these systems at a slower pace, but I didn't want to
+> bloat the game testing with 30 days when we are constantly changing this."
+
+Two consequences, both binding:
+5. **The eight-matter, two-day set is a DELIBERATE CHOICE, not neglect.** Any brief calling it
+   a content gap is wrong about the cause. Content is expensive to maintain against systems
+   that still move; re-authoring thirty days every time a `Check` changes is waste.
+6. **The introduction curve must be CONFIG, not prose.** The player currently meets almost
+   every system on day one (docket, charter, lens-on-seal, lens-on-closing-formula, Book of
+   Matrices, Almanac, Kalendar, hold-to-flame, melt/pour/press, rack, tablet). The owner wants
+   that spread out — but whatever spreads it must survive a `Check` being added, removed or
+   redefined without re-authoring anything. Prefer schema over authored sequence.
+
 **Why:** the two-day slice proves the machinery works but does not yet prove anyone would play
 a third day. The owner is asking for the campaign shape, not more cases.
 

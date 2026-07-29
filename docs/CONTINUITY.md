@@ -219,6 +219,32 @@ that is wrong in both places.
   independently, in `tools/verify_content.py`. When the two disagree, one has a
   bug. They had silently disagreed about `date_sound` for months because only the
   final verdict was ever compared.
+- **`content_loader._load_days` parses exactly three slot keys, and a fourth is
+  silently ignored.** No error, no warning, no test failure — the JSON looks
+  correct and does nothing. Any new `DayCaseSlot` field must land in the same
+  commit as its loader line, its validator row and its `verify_content.py` entry.
+  The same shape of silence applies to every other `_load_*` in that file.
+
+- **The instruments cannot be staged across days.** Verified against
+  `.tools/derived_findings.json`: every one of the eight shipped matters emits a
+  `SealCheck`, a `DateCheck` AND a `WitnessCheck` finding, and case 01's
+  `note:witness_died_that_year` and `clean:witness_roll_silent` both come from the
+  necrology. So the Book of Matrices, the Almanac and the Kalendar are all
+  load-bearing on day one, and withholding any of them breaks
+  findable-must-be-renderable. Do not build a curriculum file to sequence them;
+  there is nothing to sequence. What IS front-loaded is `world.json`'s `desk_note`,
+  which names ten instructions before the first knock — stage that paragraph
+  through `opening_documents`/`after_case` instead.
+
+- **Tuesday teaches a false rule about witnesses, twice, with no exception.** Both
+  deaths a player meets on Tuesday — Reinmar Vogt and Eckhard von Melle — carry
+  `died_*` fields that render on the parchment as a margin note. Nothing on Tuesday
+  ever shows a death that lives only in the roll, so case 04 is the first time the
+  parchment is silent and the Kalendar knows — a reversal of a pattern reinforced
+  twice, and precisely the misconception *absence is never evidence* exists to
+  forbid. Case 03 has three witnesses with no death records and a verdict with
+  slack; one Kalendar-only death there fixes it and changes no verdict.
+
 - **The campaign is short on purpose. Scaffold now, prose last.** Eight matters
   across two days is a decision, not a gap: content authored against systems that
   are still moving has to be re-authored, and the writing is the one thing in this

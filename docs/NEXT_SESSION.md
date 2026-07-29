@@ -185,8 +185,11 @@ exactly the kind of work the owner's constraint permits.
 whole amendment:
 
 - **Scaffold** — which day exists, what it is allowed to teach, which existing
-  matter carries it, what is on the desk yet and what is not. Data, cheap to
-  change, survives a system being redesigned.
+  matter carries it. Data, cheap to change, survives a system being redesigned.
+  **But not "what is on the desk yet": see the settled section below.** Every
+  shipped matter needs every book, so instruments cannot be staged at all without
+  breaking the findable-must-be-renderable contract. The scaffold that IS cheap is
+  the DELIVERY OF THE TELLING, not the withholding of the tools.
 - **Prose** — the docket, the charter body, the petitioner's lines, the outcome
   branches, the aftermath. Expensive, irreplaceable, and must not be written
   against a mechanic that might not survive.
@@ -218,6 +221,120 @@ deciding how many days the shape wants.
   time — everything the ledger says was findable must have been renderable — and
   it becomes much easier to break the moment books start arriving on different
   days. It must be **enforced by the verifier, not remembered.**
+
+---
+
+### SETTLED — what "slower" actually means, and why my own proposal was wrong
+
+Three specialists designed against the owner's constraint and one adjudicated
+against `.tools/derived_findings.json` and the case data. The result contradicts
+the obvious reading of "introduce the systems more slowly", so read this before
+acting on the amendment above.
+
+**You cannot withhold the books.** Verified against the derived findings for all
+eight matters: every shipped case emits a `SealCheck`, a `DateCheck` **and** a
+`WitnessCheck` finding. Case 01 alone emits `note:witness_died_that_year` and
+`clean:witness_roll_silent`, and both are derived from the **necrology** —
+`witness_check.gd` reads the roll, and `Witness.died_*` is demoted to the
+parchment's claim feeding only `annotation_disagrees`. So the Book of Matrices,
+the Almanac and the Kalendar of the Dead are all load-bearing on day one.
+Withholding any of them breaks the oldest contract in the project: everything the
+ledger says was findable must have been renderable on the desk.
+
+The Register is the one book the rules provably do not need on Tuesday. Withholding
+it is still wrong, because `Desk.reveal_register_review()` is the game's only
+mid-day, physical, diegetic correction — and Tuesday is the day case 01 is
+*designed* to be got wrong.
+
+**So "stage the instruments" is unbuildable against the content that exists**, and
+`data/world/curriculum.json` — which the amendment above proposed — is rejected.
+Building enforcement for a curriculum that cannot exist until the prose does is
+exactly the waste the owner's constraint forbids.
+
+**What is genuinely front-loaded is one JSON string.** `world.json`'s `desk_note`
+names ten instructions before the first knock: glass on wax, glass on the closing
+formula, Almanac reduction, live-versus-dead die, tablet and stylus, the Kalendar
+and its silences, hold-to-the-flame, melt/lift/pour/one-ring, the candle rule, and
+CONFIRM/DENY/REFER as law versus procedure. **That paragraph is the whole
+over-teaching problem, and it is data.** Stage it through the
+`opening_documents` / `after_case` channel the R.V. thread already uses, keeping
+only what the practice leaf immediately rehearses. No new system, no new prose —
+the sentences already exist and only their delivery moves.
+
+Note also that the rack is live from the second second with **no in-world
+explanation anywhere except that paragraph**, which is worth solving deliberately
+rather than by deleting the sentence.
+
+### The misconception nobody had noticed
+
+Both witness deaths a player meets on Tuesday — Reinmar Vogt in case 01 and
+Eckhard von Melle in case 02 — carry `died_*` fields that render **on the
+parchment** as a margin note via `charter_view.gd`. Nothing on Tuesday ever shows
+a death that is *not* on the charter. Case 04, the first case where the Kalendar
+is decisive, is therefore the first time "the parchment is silent and only the
+roll knows" has ever been true.
+
+So Tuesday teaches "a dead witness always shows on the document" twice, without a
+single exception, and Thursday reverses it — which is precisely the misconception
+the Kalendar's own doctrine, *absence is never evidence*, exists to forbid.
+
+The fix is cheap and needs no new case: case 03 has three witnesses with no
+`died_*` fields and a REFER verdict with slack in it. Give one of them a death
+that lives **only** in the roll and changes nothing about the verdict. One
+no-stakes "the book knows something the parchment does not" moment, inside a case
+that can afford it.
+
+### Three days, not six — and play the two you have first
+
+**Three is the minimum, and the reason is the candle.**
+`Candle.carry_forward()` clamps to `[0.45, 1.0]` and feeds
+`SessionController.day_seconds()`. Two days is a single hop, so the floor and the
+cap can never both be observed and a *chain* can never be observed at all. Three
+days is the minimum where a day is **entered** on a candle that was already short
+— the only condition under which carry-forward is a curve rather than a one-off
+penalty.
+
+Three is also the minimum that has a shape. As shipped, Tuesday is teach, test and
+twist compressed into one day and Thursday is entirely test, twist and
+consequence. There is no zero-point anywhere in the build, so "Thursday feels
+hard" cannot be attributed to anything.
+
+**And the measured playthrough of the two days that exist comes before the third
+is authored.** That ordering is not negotiable; it is the whole point of phase A.
+
+### The one schema change that is warranted
+
+Not a curriculum file. **One field:** `requires_unruled: StringName` on
+`DayCaseSlot`, with `resolve()` choosing `fallback_case_id` when the register
+already holds a player ruling for it. Left empty, the slot vanishes for free —
+`DayData.resolve_cases()` already skips nulls. That gives you *a matter you never
+heard chases you down the week*, which is the consequence a third day exists to
+carry.
+
+**Named trap, and it is a nasty one:** `content_loader._load_days` parses exactly
+three slot keys. A fourth key in the JSON is **silently ignored, with no error and
+no test failure.** So the loader line, the validator row and the
+`verify_content.py` slot loop must all land in the same commit as the field, or
+the data will look correct and do nothing.
+
+### What was rejected, with reasons
+
+- **`data/world/curriculum.json`** and a per-instrument `findable_by` contract —
+  my own proposal. Every case needs every book; there is nothing to sequence.
+- **Withholding the Register on Tuesday** — safe at the rules level, but it is the
+  only diegetic mid-day correction, on the day the game intends to be got wrong.
+- **A per-day desk-furniture manifest** — `Desk._build_fixtures()` runs before
+  `session.begin()`, so the desk does not yet know which day it is.
+- **A second, third and fourth practice leaf** — the completion condition is
+  welded to the lens on the player's own impression. Keep one leaf, for the two
+  purely physical craft verbs. Everything else uses the pattern already shipped
+  for the closing-formula lens: dressed non-decisively early, decisive later.
+- **One-matter days and stretching eight matters across six thin days** —
+  splitting days does not reduce day-one load at all, because everything the
+  player meets on day one is inside case 01.
+- **Reordering Tuesday's first three matters** — case 01 and case 02 are the only
+  ungated matters in the build, and case 03's priority-5 arrival lines depend on
+  case 02 having been ruled.
 
 ---
 
@@ -351,6 +468,9 @@ a seal, a date — that reduces cleanly and produces a verdict nobody wants.
   effort has been going.
 - **Do not combine the three judgement columns.** Do not add a readout for
   favour. Do not put a number anywhere.
+- **Do not build `data/world/curriculum.json`.** It was proposed in the amendment
+  above and rejected against the derived findings — there is nothing to sequence,
+  because every case needs every book. Stage the MEMORANDUM, not the instruments.
 ---
 
 ## THE LOOP: HOOK, SPINE, AND WHAT TO BUILD NEXT
