@@ -119,7 +119,7 @@ All three are corrected in place.
 The older phase list below is done or superseded. This is the current plan, and
 it opens with an argument you should be willing to disagree with.
 
-### Stop doing graphics. The machine is finished; the game is not written.
+### Stop doing graphics. The machine is finished; the campaign is deliberately unwritten.
 
 Three consecutive sessions have gone into materials, lighting, optics and depth,
 and the result is genuinely good — the candle now governs what can be *read*, the
@@ -128,8 +128,13 @@ wax is wax, the glass is an instrument. None of that was wasted.
 But look at the ratio. **Five checks, four physical reference books, a necrology
 of thirty-odd obits, a precedent engine, dynamic consequence cases, an authority
 split, three judgement columns — against eight matters across two days.** The
-systems could carry forty cases. There are eight. Papers, Please shipped
-thirty-one days. This is a demo with a cathedral of machinery behind it.
+systems could carry forty cases. There are eight.
+
+**That is a decision, not a gap — see the amendment below before drawing the
+obvious conclusion.** Content authored against systems that are still moving has
+to be re-authored, and prose is the one thing here that cannot be regenerated. An
+earlier draft of this section read the ratio as neglect. It is a refusal to spend
+writing on mechanics that might not survive, which is correct.
 
 And the thing that should worry us most: **nobody has played it.** Everything any
 session knows about whether this loop is *fun* comes from reading source and
@@ -142,6 +147,77 @@ guarded, thinly played game. I added eleven of those assertions myself, and I
 would trade all eleven for one recorded playthrough.
 
 So: **the next session's first job is not to make anything prettier.**
+
+---
+
+### AMENDMENT — the small content set is a DECISION, and the correction to the section above
+
+Stated by the owner, 2026-07-29, and binding:
+
+> We definitely should introduce all these systems at a slower pace, but I didn't
+> want to bloat the game testing with 30 days when we are constantly changing
+> this.
+
+**The section above got the ratio right and the cause wrong.** Eight matters
+against systems that could carry forty is a real observation, but it is not
+neglect and it is not a gap. It is a deliberate refusal to author content against
+moving systems. Thirty days of prose written now would be re-authored every time
+a `Check` changes meaning, and re-authoring is the most expensive kind of waste
+there is — it burns the one thing in this project that cannot be regenerated,
+which is the writing.
+
+So "the machine is finished; the game is not written" is the wrong reading. The
+correct reading is: **the machine is finished, the game is deliberately not
+written yet, and the next work is the SHAPE of the campaign rather than its
+prose.**
+
+Two things follow, and they pull in opposite directions from what came before.
+
+**1. The introduction is far too fast, and that IS in scope.** On day one the
+player currently meets the docket, the charter, the lens on a seal, the lens on
+the closing formula at 7pt, the Book of Matrices, the Almanac, the Kalendar of the
+Dead, hold-to-the-flame, melt/pour/press, the rack, and the wax tablet. That is
+eleven teachable things before the second knock. Spreading them out costs no new
+prose at all — it is a re-sequencing of content that already exists, which is
+exactly the kind of work the owner's constraint permits.
+
+**2. Do NOT author bulk content. Author the SCAFFOLD.** The distinction is the
+whole amendment:
+
+- **Scaffold** — which day exists, what it is allowed to teach, which existing
+  matter carries it, what is on the desk yet and what is not. Data, cheap to
+  change, survives a system being redesigned.
+- **Prose** — the docket, the charter body, the petitioner's lines, the outcome
+  branches, the aftermath. Expensive, irreplaceable, and must not be written
+  against a mechanic that might not survive.
+
+Build the scaffold now. Write the prose last, once the systems have stopped
+moving.
+
+**Test the curve with re-sequenced existing matters, not new ones.** The
+design-prosecutor's earlier note applies directly: *a matter heard on Thursday is
+a matter not heard on Tuesday.* `DayData.case_slots`, `requires_ruled` and
+`fallback_case_id` already support re-using the eight shipped matters across more
+days. That means the pacing of a six-day shape can be judged without authoring a
+single new sentence.
+
+**And this sharpens phase A rather than replacing it.** Play the days that exist.
+The one number that matters — candle remaining at the start of the last matter —
+is measurable on two days and tells you whether the clock is real. Do that before
+deciding how many days the shape wants.
+
+**What this amendment forbids:**
+
+- Authoring new cases to "fill out" the campaign while any `Check` is still in
+  flux.
+- A tutorial overlay, a hint system, or any non-diegetic teaching. If a system is
+  not yet introduced it is simply **not on the desk yet**, and it arrives as an
+  object with a slip on it, the way the Register already comes back from review.
+- Letting a day's findings depend on a book that day does not have. This is the
+  same contract that has been violated three times and treated as critical each
+  time — everything the ledger says was findable must have been renderable — and
+  it becomes much easier to break the moment books start arriving on different
+  days. It must be **enforced by the verifier, not remembered.**
 
 ---
 
@@ -263,8 +339,11 @@ a seal, a date — that reduces cleanly and produces a verdict nobody wants.
 ### What NOT to do next
 
 - **No more graphics passes** until A is done. The marginal hour is worth more in
-  content than in pixels, and that is a change of advice from the last three
-  briefs.
+  the campaign's SHAPE than in pixels, and that is a change of advice from the
+  last three briefs.
+- **No authoring bulk prose while any `Check` is in flux.** Scaffold, not prose —
+  see the amendment. This is the owner's standing constraint and it outranks every
+  suggestion in this file.
 - **No new `Check` subclasses.** There are five and two of them barely fire in
   shipped content. Feed the existing ones.
 - **No more presentation assertions** unless they guard a defect you actually

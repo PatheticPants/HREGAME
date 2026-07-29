@@ -219,6 +219,25 @@ that is wrong in both places.
   independently, in `tools/verify_content.py`. When the two disagree, one has a
   bug. They had silently disagreed about `date_sound` for months because only the
   final verdict was ever compared.
+- **The campaign is short on purpose. Scaffold now, prose last.** Eight matters
+  across two days is a decision, not a gap: content authored against systems that
+  are still moving has to be re-authored, and the writing is the one thing in this
+  project that cannot be regenerated. So the SHAPE of a campaign — which days
+  exist, what each is allowed to teach, which existing matter carries it, what is
+  on the desk yet — is cheap and may be built freely. The docket, the charter
+  body, the petitioner's lines and the outcome branches are expensive and wait
+  until the mechanics have stopped changing. Test pacing by RE-SEQUENCING the
+  eight matters that exist, never by writing new ones; `DayData.case_slots`,
+  `requires_ruled` and `fallback_case_id` already allow a matter heard on Thursday
+  to be a matter not heard on Tuesday.
+
+  The corollary is a new way to break the oldest contract here. Once books start
+  arriving on different days, a day's findings can depend on a book that day does
+  not have — and "everything the ledger says was findable must have been
+  renderable on the desk" has been violated three times already and treated as
+  critical each time. When the curriculum becomes data, that has to be **enforced
+  by `tools/verify_content.py`, not remembered.**
+
 - **Humour is rationed: six to eight dry beats per working day, and never two in
   one matter.** The voice is flat declarative, past tense, the joke in a
   subordinate clause, and it always carries information — `matrices.json`'s
