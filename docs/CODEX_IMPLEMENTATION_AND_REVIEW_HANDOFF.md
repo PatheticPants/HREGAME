@@ -179,14 +179,22 @@ and costs nothing measurable. Judge it on a frame, not on its history.
 
 ### Remaining, deliberately not done here
 
-- **Cold morning still reads as the same warm room, slightly brighter.** Measured:
-  daylit objects get `light_level = WINDOW_LEVEL = 0.30`, and `Surface.tint_for`
-  blends `lit * colour_gain * 0.62`, about 5.6% toward the cool constant — which
-  cannot flip a base texture whose warm R:B ratio is already 3–4:1. Separately,
-  `qa_capture`'s `_burn_series` settles 150 frames against a ramp needing roughly
-  250, so shot 14 never shows the state the docs describe. Two independent
-  numeric fixes are proposed in the review notes. Neither is applied: this is an
-  art-direction decision and belongs on a frame with the owner watching.
+- **Cold morning was reported broken and is not.** An art-direction reviewer
+  measured shot 14 and concluded the morning stays warm, proposing two numeric
+  rewrites of `Surface.tint_for` and `MORNING_AMBIENT`. Both were **rejected after
+  adjudication**: `_morning_amount` ramps at 0.24/sec and needs ~250 frames while
+  the ambient lerp needs ~360, and `qa_capture` settled 150. The reviewer measured
+  a transition roughly 60% complete. Driven to convergence, the room does go flat,
+  even and desaturated with the warm pool entirely gone, which is what the code
+  claims. **The art was right and the capture was early.** The harness now waits on
+  the state (`_settle_until_morning`) rather than on a frame count, because a fixed
+  count against a rate that can change is exactly the shape of that mistake.
+
+  One real thing did fall out of the corrected frame: the lens's resolving field
+  stayed warm in daylight and painted a salmon disc into an otherwise neutral
+  room — the one surface still insisting on firelight next to a dead candle. Now
+  gated on `ambient_daylight`, the way `_chassis_tint` beside it already was.
+
 - The packet-departure sound plays on request rather than on arrival — the exact
   bug class this project's own rulebook documents as already fixed once, for the
   door.

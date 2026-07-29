@@ -392,10 +392,17 @@ func _draw() -> void:
 		var settle := ease(clampf(_focus_amount, 0.0, 1.0), 0.55)
 		draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965,
 			Color(0.88, 0.83, 0.70, 0.60 * settle))
-		# Warmed by the flame like every other surface, so the resolved field does
-		# not read as a neutral panel dropped onto a candlelit desk.
-		draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965,
-			Color(1.0, 0.80, 0.50, (0.05 + lit * 0.10) * settle))
+		# Warmed by the FLAME, and only by the flame. Left ungated this painted a
+		# salmon disc into the cold-morning frame, where the rest of the room has
+		# gone flat and neutral and the candle is a dead stub — the one surface
+		# still insisting on firelight. `_chassis_tint` below already makes this
+		# distinction for the brass; the field has to make it too.
+		if not ambient_daylight:
+			draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965,
+				Color(1.0, 0.80, 0.50, (0.05 + lit * 0.10) * settle))
+		else:
+			draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965,
+				Color(0.80, 0.86, 0.96, 0.10 * settle))
 
 	# The magnified evidence is `_detail`, cut to the aperture by `_field`, and the
 	# reflections and brass are `_overlay` above it. Both are children, so they

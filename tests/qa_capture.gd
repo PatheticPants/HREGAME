@@ -1002,7 +1002,18 @@ func _burn_series() -> void:
 
 	_desk.candle.snuff()
 	_desk.begin_morning()
-	await _settle(150)
+	# WAIT FOR THE STATE, NOT FOR A FRAME COUNT.
+	#
+	# This settled 150 frames — two and a half seconds — against a _morning_amount
+	# that ramps at 0.24/sec and therefore needs about 250, and an ambient colour
+	# that lerps toward MORNING_AMBIENT over roughly six seconds. So the one frame
+	# in the whole harness that exists to show "the flame is gone and the room has
+	# gone cold" has always shown the transition about 60% of the way through, and
+	# a reviewer measuring it reasonably concluded the cold morning was not working
+	# and proposed rewriting the colour maths. The art was right; the capture was
+	# early. A fixed frame count against a rate that can change is exactly the
+	# shape of that mistake, so this waits on the condition instead.
+	await _settle_until_morning()
 	await _shot("14_day_over")
 
 
@@ -1042,6 +1053,17 @@ func _measure_visual_stress() -> void:
 	print("   performance  %.2f ms/frame  %.0f fps  %d draggables  %d open books  %d outline builds"
 		% [ms_per_frame, 1000.0 / maxf(0.001, ms_per_frame), draggables,
 			_desk.books.size(), WaxShape.builds])
+
+
+## Run until the morning transition has actually finished, with a hard cap so a
+## broken transition fails as a bad frame rather than as a hung harness.
+func _settle_until_morning() -> void:
+	for _i in 900:
+		await get_tree().process_frame
+		if _desk._morning_amount >= 0.999 				and _desk._ambient.color.is_equal_approx(Desk.MORNING_AMBIENT):
+			break
+	# A few more so nothing is mid-interpolation in the captured frame.
+	await _settle(12)
 
 
 func _move_candle(to: Vector2) -> void:
