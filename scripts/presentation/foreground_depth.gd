@@ -19,6 +19,17 @@ const TOP_LIFTED := 492.0
 const FACE_DEPTH := 86.0
 const RUNOFF := 620.0
 
+## HALF-WIDTH OF THE LIP.
+##
+## It was 925 at the top edge and 990 at the foot, which covers a 1600-wide
+## window (visible desk-local x reaches +/-800) and nothing wider. At 2560 the
+## camera shows +/-1280, so the lip stopped short of the frame and a sheet
+## dragged into either bottom corner reappeared below it — the same defect the
+## runoff fixed vertically, surviving horizontally. Sized past a 32:9 frame,
+## which is the same extreme the room bleed is sized for — and the first number
+## tried here, 1360, was caught short by the assertion rather than by a player.
+const HALF_WIDTH := 1980.0
+
 var desk: Desk
 var _grain: PackedVector3Array = PackedVector3Array()
 
@@ -32,7 +43,7 @@ func bind(owner: Desk) -> void:
 	rng.seed = 0x0f0e6
 	for i in 38:
 		_grain.append(Vector3(
-			rng.randf_range(-930.0, 930.0),
+			rng.randf_range(-HALF_WIDTH, HALF_WIDTH),
 			rng.randf_range(0.08, 0.88),
 			rng.randf_range(12.0, 74.0)))
 	queue_redraw()
@@ -64,17 +75,19 @@ func _draw() -> void:
 	# The lip projects toward the player. Its slight widening is the closest and
 	# therefore strongest perspective cue in the scene.
 	var face := PackedVector2Array([
-		Vector2(-925.0, top),
-		Vector2(925.0, top),
-		Vector2(990.0, bottom),
-		Vector2(-990.0, bottom),
+		Vector2(-HALF_WIDTH, top),
+		Vector2(HALF_WIDTH, top),
+		Vector2(HALF_WIDTH + 65.0, bottom),
+		Vector2(-HALF_WIDTH - 65.0, bottom),
 	])
 	draw_colored_polygon(face, Color(0.088, 0.049, 0.025))
-	draw_line(Vector2(-925.0, top), Vector2(925.0, top),
+	draw_line(Vector2(-HALF_WIDTH, top), Vector2(HALF_WIDTH, top),
 		Color(0.39, 0.225, 0.10, 0.72), 4.0)
-	draw_line(Vector2(-940.0, top + 8.0), Vector2(940.0, top + 8.0),
+	draw_line(Vector2(-HALF_WIDTH - 15.0, top + 8.0),
+		Vector2(HALF_WIDTH + 15.0, top + 8.0),
 		Color(0.12, 0.067, 0.032), 7.0)
-	draw_line(Vector2(-958.0, top + depth - 12.0), Vector2(958.0, top + depth - 12.0),
+	draw_line(Vector2(-HALF_WIDTH - 33.0, top + depth - 12.0),
+		Vector2(HALF_WIDTH + 33.0, top + depth - 12.0),
 		Color(0.025, 0.017, 0.016, 0.92), 12.0)
 
 	# Fixed oak pores, almost lost in the near dark. They are only apparent where
@@ -92,10 +105,14 @@ func _draw() -> void:
 	# The corners are nearer than the centre and fall away first. These wedges
 	# also keep the lip from reading as another horizontal UI bar.
 	draw_colored_polygon(PackedVector2Array([
-		Vector2(-990, top + depth), Vector2(-990, top + 10),
-		Vector2(-760, top), Vector2(-850, top + depth),
+		Vector2(-HALF_WIDTH - 65.0, top + depth),
+		Vector2(-HALF_WIDTH - 65.0, top + 10),
+		Vector2(-HALF_WIDTH + 165.0, top),
+		Vector2(-HALF_WIDTH + 75.0, top + depth),
 	]), Color(0.012, 0.010, 0.014, 0.48))
 	draw_colored_polygon(PackedVector2Array([
-		Vector2(990, top + depth), Vector2(990, top + 10),
-		Vector2(760, top), Vector2(850, top + depth),
+		Vector2(HALF_WIDTH + 65.0, top + depth),
+		Vector2(HALF_WIDTH + 65.0, top + 10),
+		Vector2(HALF_WIDTH - 165.0, top),
+		Vector2(HALF_WIDTH - 75.0, top + depth),
 	]), Color(0.012, 0.010, 0.014, 0.48))

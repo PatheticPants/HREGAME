@@ -604,6 +604,22 @@ func sweep_packet_away() -> void:
 	for d in case_papers:
 		if d == null or not is_instance_valid(d):
 			continue
+		# TAKE IT OUT OF THE HAND FIRST.
+		#
+		# The packet is swept when the petitioner's reaction ends and when the
+		# candle drowns — and nothing checked whether the player was holding one
+		# of the papers at that moment. _finish_sweep then queue_free()d the sheet
+		# while _held still pointed at it, leaving a dangling reference that
+		# _process trips over every frame from then on: the hover affordance, the
+		# per-object lighting update and the morning transition all stop, silently
+		# and permanently, until the player happens to grab something else.
+		#
+		# Physically this is also just what happens. The doorkeeper gathers the
+		# packet; if you are still holding a sheet of it, you let go.
+		if d == _held:
+			_held.drop()
+			_held = null
+			_dragged = false
 		d.draggable_enabled = false
 		d.solver.bounds = Rect2()
 		d.solver.sleeping = false
@@ -922,6 +938,12 @@ func _process(delta: float) -> void:
 		# whose volume is the physical rate, silent the instant the leaf stops.
 		Audio.set_loop(&"door_creak", _door.swing_rate())
 
+	# is_instance_valid, not a null check. A queue_free()d Draggable leaves a
+	# reference that is neither null nor usable, and every later line in this
+	# function that touches _held then aborts the whole frame.
+	if _held != null and not is_instance_valid(_held):
+		_held = null
+		_dragged = false
 	if _held != null:
 		_held.move_to(_cursor)
 		if _press_origin.distance_to(_cursor) > CLICK_SLOP:

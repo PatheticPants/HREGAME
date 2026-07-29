@@ -73,6 +73,7 @@ func _run() -> void:
 	await _test_complete_ledger(desk)
 	await _test_day_end(desk)
 	_test_authored_payoff()
+	await _test_sweep_with_paper_in_hand(desk)
 
 	main.queue_free()
 	await get_tree().process_frame
@@ -703,6 +704,15 @@ func _test_visual_invariants(desk: Desk) -> void:
 		"the desk lip runs past the deepest a document can reach (%.0f >= %.0f)"
 		% [face_bottom, deepest + tallest_sheet * 0.5])
 
+	# And past the widest, for the same reason and in the same breath. The runoff
+	# fixed this vertically and it survived horizontally: the lip was 925 units
+	# half-wide against a 1600 window that shows +/-800, so it covered that frame
+	# and nothing wider. At 2560 the camera shows +/-1280 and a sheet dragged into
+	# either bottom corner reappeared below the lip.
+	_is_true(ForegroundDepth.HALF_WIDTH >= 1080.0 * (32.0 / 9.0) * 0.5,
+		"the desk lip reaches the corners of a 32:9 frame (%.0f >= %.0f)"
+		% [ForegroundDepth.HALF_WIDTH, 1080.0 * (32.0 / 9.0) * 0.5])
+
 	# THE WORLD HAS TO REACH THE EDGE OF THE FRAME AT ANY ASPECT.
 	#
 	# project.godot sets window/stretch/aspect="expand" on purpose: a wider
@@ -722,6 +732,44 @@ func _test_visual_invariants(desk: Desk) -> void:
 		% [bled.size.x, widest.x])
 	_is_true(bled.size.x >= tallest.x and bled.size.y >= tallest.y,
 		"and a 4:3 one (%.0f tall covers %.0f)" % [bled.size.y, tallest.y])
+
+
+## SWEEPING THE PACKET OUT OF THE PLAYER'S HAND MUST NOT KILL THE DESK.
+##
+## The packet is swept when a petitioner's reaction ends and when the candle
+## drowns, and nothing checked whether a sheet of it was being held. The sweep
+## then queue_free()d that sheet while Desk._held still pointed at it, leaving a
+## reference that is neither null nor usable — and every later line of
+## Desk._process that touches _held aborted the frame. The hover affordance, the
+## per-object lighting update and the morning transition all stopped, silently
+## and permanently, until the player happened to grab something else.
+##
+## Not from the graphics pass; it has been reachable the whole time.
+##
+## Runs LAST and turns Desk._process back on, because this suite freezes the desk
+## at the top so it can pose it — and a frozen _process is exactly the thing this
+## regression needs running in order to be observed at all.
+func _test_sweep_with_paper_in_hand(desk: Desk) -> void:
+	print("-- the packet leaves while you are holding it")
+	var victim := desk.current_charter
+	if victim == null:
+		return
+	desk.set_process(true)
+	victim.grab(victim.position)
+	desk._held = victim
+	desk.sweep_packet_away()
+	_is_true(desk._held == null,
+		"sweeping the packet takes a held sheet out of the hand first")
+	desk._finish_sweep()
+	await get_tree().process_frame
+	desk.candle.solver.place(Vector2(-500.0, 100.0), 0.0)
+	desk.candle.position = Vector2(-500.0, 100.0)
+	for _i in 6:
+		await get_tree().process_frame
+	_is_true(desk.desk_note != null and desk.desk_note.light_position
+			.distance_to(desk.candle.flame_world()) < 4.0,
+		"and Desk._process survives to keep lighting the room")
+	desk.set_process(false)
 
 
 func _test_reachability(desk: Desk) -> void:
