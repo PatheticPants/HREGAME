@@ -52,6 +52,165 @@ feedback, and authored campaign.
 
 ---
 
+## 2026-07-29 Claude review of the Codex optics pass — READ THIS FIRST
+
+This is the newest section and it supersedes the optical claims below it. The
+Codex pass was reviewed, not rewritten: the chassis, the depth layer, the seal
+relief, the page turn, the packet flight and the petitioner work are good and
+were left alone. Six defects in what the pass *did with* them were reproduced
+and fixed.
+
+**Working tree was clean on arrival.** The brief described the work as
+uncommitted; it was already committed as `58bcca2`. Nothing was in danger.
+
+### Verified state
+
+| | |
+|---|---|
+| rules | 90 |
+| presentation | **313** (was 305; +8 assertions, each guarding a defect found here) |
+| session | 76 |
+| content + encoding | PASS |
+| `git diff --check` | clean |
+| capture harness | 58 frames, regenerated and inspected at 1600x900 and 2560x1080 |
+| documented stress pose | **5.63 ms, 178 fps**, 17 draggables, four open books, glass focused |
+
+Performance improved against the recorded 6.45–6.73 ms because the shader's
+`active` uniform now genuinely gates the backbuffer copy. Preserve the scenario
+when comparing: instantiate `scenes/main.tscn`, open all four books, park the
+lens on the charter, time 240 frames.
+
+### What was wrong, in order of severity
+
+**1. The refraction shader had never rendered a single fragment.** `Polygon2D`
+writes its `uv` array into the draw command only when it has a valid texture.
+`_build_optics` set polygon, uv, colour, z_index, filter and material — and no
+texture — so the fragment shader got a constant UV, `length((UV - 0.5) * 2)` was
+a constant greater than one, and the aperture's own `discard` killed everything.
+Hiding the quad was pixel-identical to showing it. Fixed with a 1x1 white
+texture; it must be 1x1 because Polygon2D divides the uv array by the texture
+size. **Every optical claim in the sections below this one was unobservable when
+it was written.**
+
+**2. The magnifier could read evidence the candle had not reached.**
+`draw_detail` takes a light *direction* and never reads `light_level`, so a seal
+in the far corner — correctly an illegible smudge to the naked eye, which shot 44
+exists to prove — became fully legible under the glass with the flame across the
+room. The hero prop of the pass could be used to cheat the mechanic the game is
+built on. It escaped structurally: `draw_shade` is applied inside each object's
+own `_draw()`, and the lens calls `draw_detail` from elsewhere, so the veil was
+never on that path. The subject's own shade is now applied inside the aperture —
+once, for every present and future implementer.
+
+**3. The magnified evidence was not clipped to the aperture,** and clipping it
+made things worse before better. `CharterView.draw_detail` flows an `Ink.block`
+into a rectangle whose height depends on the chancery's name, so the longest ran
+out over the brass and onto the desk (visible in the old shot 58 as "Free City
+of" printed across the ring). A `CLIP_CHILDREN_ONLY` stencil then cut the
+overflow instead — and the cut fell inside the decisive physical evidence.
+Spilling a conclusion onto the frame is ugly; clipping one out of view is a
+defect. The column is now sized to the widest chord the text can occupy and the
+block is measured and centred, asserted for **every** polity name rather than the
+one that happened to be tried.
+
+**4. The desk lip was a bar across the page.** `ForegroundDepth`'s face was 86
+units deep and then stopped, while the drag solver lets a sheet's centre reach
+`DESK_RECT.end.y + edge_allowance`. A charter pulled toward the player was sliced
+by an opaque band **with legible text above and below it** — reproduced on the
+Kufergasse charter, cut mid-clause with its regnal date reading clearly
+underneath. The face now runs off frame, so a sheet passes under the lip and
+stays under it. The moulding, pores and corner wedges remain anchored to the
+visible 86, so the depth cue is unchanged.
+
+**5. The chamber stopped a third of the way in on an ultrawide display.**
+`window/stretch/aspect="expand"` is deliberate — a wider display shows more room
+— but the plate is 1920 wide, and at 2560x1080 there is a hard vertical seam
+where the masonry ends. The plate's own outermost pixel columns and rows are now
+repeated outward, so the wall continues in its authored tone at any aspect.
+Asserted at 32:9 **and** 4:3, because "expand" fails in both directions.
+
+**6. The chromatic fringe was dead by its own arithmetic.** `sample_uv` was
+snapped to a texel centre and *then* offset by 0.42 texels; from a centre you
+must travel more than 0.5 to reach the next texel, and the sampler is
+`filter_nearest`, so red and blue resolved to the identical texel as base at
+every resolution. Each tap is now snapped after its own displacement. A real fix
+to an effect that was unreachable behind defect 1 anyway.
+
+Also: the `active` uniform existed to switch the optics off and was wired to the
+constant `1.0`, so a glass shrunk into a pigeonhole still ran a backbuffer copy
+and a full refraction of the rack behind it. Now gated, and the copy is disabled
+outright rather than merely made transparent.
+
+### What was investigated and REJECTED
+
+**The exit-time leak warnings are Godot's, not ours.** Reproduced
+deterministically: five `AudioStreamWAV` and five `AudioStreamPlaybackWAV` in
+both scene suites, and the three named resources are `cloth_shift`,
+`candle_gutter`, `candle_out` — exactly what a day ending leaves sounding. Not
+the ShaderMaterial, not the 420 KB chassis, not the lens's children, not
+`WaxShape._cache`, not signal connections. Every plausible suspect for a graphics
+pass is wrong.
+
+A twelve-line scene that plays one sound, stops it, nulls the stream and waits
+eight frames **still reports one of each**. It is engine teardown behaviour. An
+attempted `AudioDirector.silence()` was written, measured to change nothing, and
+**reverted rather than left in looking like a fix**. Do not spend time here again.
+
+Also rejected: the recommendation to cut the refraction shader as spectacle. It
+was judged on the assumption that it worked; now that it does, it is restrained
+and costs nothing measurable. Judge it on a frame, not on its history.
+
+### Confirmed good — do not rewrite
+
+- The authored brass-and-walnut chassis. It belongs in the room and is the best
+  new asset in the project.
+- **The glass states no legal conclusion.** `lens_detail_text()` returns the
+  chancery's name — physical evidence — and never the reduced year or the dating
+  custom. The brief's chief fear is not realised, and this pass is what fixed it.
+- Evidence semantics, the rules layer and the hard constraints survived untouched.
+- New seeded procedural detail correctly follows the generate-once rule this
+  codebase has broken three times before.
+- Repeated `main.tscn` instantiate and free does not leak or corrupt statics.
+
+### Remaining, deliberately not done here
+
+- **Cold morning still reads as the same warm room, slightly brighter.** Measured:
+  daylit objects get `light_level = WINDOW_LEVEL = 0.30`, and `Surface.tint_for`
+  blends `lit * colour_gain * 0.62`, about 5.6% toward the cool constant — which
+  cannot flip a base texture whose warm R:B ratio is already 3–4:1. Separately,
+  `qa_capture`'s `_burn_series` settles 150 frames against a ramp needing roughly
+  250, so shot 14 never shows the state the docs describe. Two independent
+  numeric fixes are proposed in the review notes. Neither is applied: this is an
+  art-direction decision and belongs on a frame with the owner watching.
+- The packet-departure sound plays on request rather than on arrival — the exact
+  bug class this project's own rulebook documents as already fixed once, for the
+  door.
+- The seal tag's cord going taut has no sound.
+- Two sizes of the same sentence still overlap faintly inside the aperture. The
+  resolving field reduced it to a ghost rather than eliminating it.
+
+### Method note, and one trap
+
+Six cold reviewers ran in parallel against the committed pass, and findings were
+adjudicated rather than accepted. The two most valuable — the dead shader and the
+lens defeating the candle — each arrived with four independent proofs and a
+control region, and were re-verified here before anything was changed.
+Convergence remains the strongest signal: two reviewers independently found the
+fascia defect, which is why it was believed before it was reproduced.
+
+**A parse error in a test can present as the whole suite hanging**, ending in
+`Unreferenced static string` spam and leaked RID allocations rather than as a
+parse error. Rebuild the class cache and read the *top* of the log, not the
+bottom. This cost real time here.
+
+**A test that checks a node exists and carries a material does not check that the
+material does anything.** Every lens assertion in `test_presentation` passed with
+the shader completely inert. Where an effect cannot be verified headlessly,
+assert the structural precondition that makes it possible — which is why the
+refraction quad's texture is now checked, and checked for being 1x1.
+
+---
+
 ## 2026-07-28 magnifier, depth, and atmosphere pass — latest
 
 This is the newest work. It builds on the return pass documented below and is

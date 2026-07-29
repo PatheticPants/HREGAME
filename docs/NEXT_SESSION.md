@@ -7,6 +7,11 @@ claims to land and title; you verify charters, wax seals, witness lists and
 regnal dates against a body of law, then rule in wax with a signet ring. One
 carried candle is the only light in the room and the day's clock.
 
+**Newest first: `docs/CODEX_IMPLEMENTATION_AND_REVIEW_HANDOFF.md` opens with the
+2026-07-29 review of the Codex optics pass.** Six defects were fixed there and
+three things were investigated and rejected; the rejections are worth as much as
+the fixes, because two of them are time sinks that look like real bugs.
+
 Read in this order:
 
 1. **`docs/GRAPHICS.md`** — the standing rules for how this game is allowed to
@@ -32,7 +37,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 90, presentation 305, session 76, content PASS**. Run the rules
+Green is **rules 90, presentation 313, session 76, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 

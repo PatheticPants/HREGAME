@@ -40,9 +40,29 @@ The latest pass closed the most visible remaining motion and material gaps:
 - magnified parchment and wax carry fixed material microdetail, and the glass no
   longer states legal conclusions.
 
-These are rendered and covered by the 59-shot capture harness. The presentation
-suite is now 305 checks. The pass adds one localized canvas shader and one
+**Reviewed 2026-07-29 and six defects fixed — see the top of
+`docs/CODEX_IMPLEMENTATION_AND_REVIEW_HANDOFF.md` before trusting any optical
+claim in this list.** The refraction shader in particular had never rendered a
+single fragment when the list above was written: a Polygon2D with no texture
+emits no UVs, and the aperture discarded on UV.
+
+These are rendered and covered by the 58-shot capture harness. The presentation
+suite is now 313 checks. The pass adds one localized canvas shader and one
 authored raster chassis; procedural detail remains anchored to those pixels.
+
+### The two traps this project keeps re-learning
+
+**A canvas shader can be completely inert and look merely subtle.** The lens
+refraction shipped dead for its whole life: `Polygon2D` writes its `uv` array
+only when it has a valid texture, so with none the fragment shader receives a
+constant UV and an aperture that discards on radius kills every fragment. Hiding
+the quad was pixel-identical to showing it. If you cannot A/B an effect by
+toggling it and measuring the frame, you do not know it renders.
+
+**A test that a node exists and carries a material does not test that the
+material does anything.** Every lens assertion passed with the shader inert.
+Where an effect cannot be verified headlessly, assert the structural
+precondition that makes it possible instead.
 
 ---
 
