@@ -37,7 +37,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 90, presentation 313, session 76, content PASS**. Run the rules
+Green is **rules 90, presentation 316, session 76, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 
@@ -113,6 +113,166 @@ shared with case_02 and moving him damages a shipped case. And `docs/GRAPHICS.md
 was telling every session to avoid `ease(x, 0.4)` for a reason that is false;
 measured, it covers 4% of the distance in the first frame rather than snapping.
 All three are corrected in place.
+
+## THE 2026-07-29 PLAN — READ THIS INSTEAD OF THE OLDER PHASE LIST
+
+The older phase list below is done or superseded. This is the current plan, and
+it opens with an argument you should be willing to disagree with.
+
+### Stop doing graphics. The machine is finished; the game is not written.
+
+Three consecutive sessions have gone into materials, lighting, optics and depth,
+and the result is genuinely good — the candle now governs what can be *read*, the
+wax is wax, the glass is an instrument. None of that was wasted.
+
+But look at the ratio. **Five checks, four physical reference books, a necrology
+of thirty-odd obits, a precedent engine, dynamic consequence cases, an authority
+split, three judgement columns — against eight matters across two days.** The
+systems could carry forty cases. There are eight. Papers, Please shipped
+thirty-one days. This is a demo with a cathedral of machinery behind it.
+
+And the thing that should worry us most: **nobody has played it.** Everything any
+session knows about whether this loop is *fun* comes from reading source and
+looking at still frames. Three visual passes have been spent on a loop whose
+central question — does verifying a charter under time pressure feel good the
+fifth time — has never once been tested by a human being playing to the end.
+
+The presentation suite is at 316 checks for eight cases. That is a beautifully
+guarded, thinly played game. I added eleven of those assertions myself, and I
+would trade all eleven for one recorded playthrough.
+
+So: **the next session's first job is not to make anything prettier.**
+
+---
+
+### A — Prove the loop (half a day, and do it first)
+
+Not a system. An instrument and an honest look.
+
+1. **Make the game recordable.** A `--session-log` flag that appends one JSONL
+   line per player action with a timestamp and the candle's burn: picked up,
+   opened book, put glass on X, ruled, referred. No telemetry service, no UI, one
+   file under `.tools/`. It is the only way any later question about pacing gets
+   answered with data.
+2. **Then play both days, end to end, at `day_seconds` as authored, and write
+   down where it dragged.** Not a subagent — the session's own hands on the real
+   build, with the log open afterwards. Record: how long the first matter took,
+   how much candle each of the four Tuesday matters actually consumed, and which
+   book got opened and which never did.
+3. **Report the number that matters:** candle remaining at the start of the last
+   matter. If the day is never tight, the clock is decoration and the design's
+   central pressure claim is false. If it is always tight, the reference books are
+   a trap rather than a tool.
+
+Nothing below this line should be built before that half day is spent.
+
+---
+
+### B — Favour becomes a supply line (the biggest idea, and the most philosophy-true)
+
+The spine document already says it: **the Empire supplies me, the Church informs
+me, the country comes to me.** Favour is stored on every ruling, and
+`Register.favor_totals()` is written and never called. It is the largest
+completely inert system in the project.
+
+Make standing **physically inspectable and never legible as a number.** Nobody
+tells you where you stand. You notice your tools getting worse.
+
+- **The Kalendar comes back thinner.** Lose the Church and a gathering is razored
+  out of the obit rolls with a "recalled to the chamber" slip in the stub — using
+  the same physical vocabulary as the vermilion REVIEWED slip that already exists.
+  Now a witness you could have checked is simply uncheckable, and *absence is
+  never evidence* becomes something that happens **to** you.
+- **The resin gets worse.** Lose the Empire and Thursday's wax cake is poorer:
+  swap a harsher `WaxFeel` .tres, so the pour window narrows and Craft grades
+  drop through no fault of your hands. The tuning resources are already
+  hot-swappable; this needs no new system at all.
+- **The candle you are issued is shorter.** `day_seconds` already scales by what
+  you left in the dish. Let standing scale it too.
+- **The tray is emptier, or fuller.** Fewer matters means less to rule on and less
+  favour to earn — a debt spiral you can see in the rail before anyone says a word.
+
+Every one of these reuses machinery that exists: `BookData` rebuilds
+(`refresh_register_book` is the pattern), `.tres` swaps, `day_seconds`,
+`DayCaseSlot`. **No new subsystem. No readout. If the player cannot infer their
+standing from the state of the desk, the answer is a stronger effect, never a
+number.**
+
+---
+
+### C — The Register acquires an author who is not you
+
+Three of its entries are already in another hand, and that is the best hook in
+the game. Extend it: **there is a second notary at another desk, and his rulings
+appear in your Register between days.**
+
+He rules on matters adjacent to yours. Sometimes he agrees with you. Sometimes he
+has already decided the exact question you are about to face, the other way, and
+in a firmer hand. You cannot argue with him, write to him, or find him. You can
+only rule consistently with a colleague you have never met, or against him — and
+`PrecedentCheck` already makes both cost something.
+
+This turns the record from a memory into an antagonist, which is what the spine
+document says the antagonist *is*. It is pure data: `RulingRecord` entries with
+`foreign_hand`, delivered by the channels `DayOpeningDocument` already has.
+
+---
+
+### D — The doorkeeper will fetch one thing
+
+The investigation is currently a fixed sweep: read, glass, book, flame. Every
+matter runs the same four verbs in the same order, which is exactly the
+repetition the owner keeps asking about.
+
+Give the player **one errand per matter.** There is a hatch in the door. Write on
+a slip with the stylus you already own, put it through, and the doorkeeper brings
+back exactly one thing — the city book, a man's whereabouts, the other party's
+copy, a second opinion from the second desk.
+
+- It **costs candle**, so the clock finally buys something the player wants.
+- It is **one per matter**, so it is a decision and not a shopping list.
+- It is **physical**: a slip, a hatch, a wait, and something arriving through the
+  door in the middle of your reading.
+- And it makes two players' investigations of the same charter *different*, which
+  is the test the prosecutor keeps applying and the game keeps failing.
+
+---
+
+### E — R.V., and the ending the game is already implying
+
+The strongest thing in this project is not a mechanic. It is that the man who sat
+at this desk before you is not in the building, and the most useful thing anybody
+says to you all week is a memorandum he left addressed TO THE THIRD HAND.
+
+His hand is in the marginalia of two books, the front matter of the Kalendar, and
+three Register entries — **one of which is a recorded bribe, in the same hand as
+the helpful ones.** That is already assembled and nobody has written what it is
+for.
+
+The campaign's spine should be that you work out what happened to him entirely
+through documents, and that the last matter you are handed concerns him. Then the
+game asks its real question, which is the one it has been rehearsing since case
+one: *you have three rings and a body of law, and the man whose notes taught you
+the job is on the wrong side of it.*
+
+Do not write the answer as a twist. Write it as a matter — a docket, a charter,
+a seal, a date — that reduces cleanly and produces a verdict nobody wants.
+
+---
+
+### What NOT to do next
+
+- **No more graphics passes** until A is done. The marginal hour is worth more in
+  content than in pixels, and that is a change of advice from the last three
+  briefs.
+- **No new `Check` subclasses.** There are five and two of them barely fire in
+  shipped content. Feed the existing ones.
+- **No more presentation assertions** unless they guard a defect you actually
+  reproduced. The suite is large enough that its size is now a signal about where
+  effort has been going.
+- **Do not combine the three judgement columns.** Do not add a readout for
+  favour. Do not put a number anywhere.
+---
 
 ## THE LOOP: HOOK, SPINE, AND WHAT TO BUILD NEXT
 
