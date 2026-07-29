@@ -238,6 +238,23 @@ func _build_optics() -> void:
 		Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1),
 	])
 	_optics_quad.color = Color.WHITE
+	# WITHOUT A TEXTURE, POLYGON2D SENDS NO UVs — AND THE SHADER DISCARDS ON UV.
+	#
+	# The `uv` array above is only written into the draw command when the polygon
+	# has a valid texture. With none, the fragment shader receives a constant UV,
+	# so `p = (UV - 0.5) * 2` is constant, `length(p)` is a constant greater than
+	# one, and `if (radius > 1.0) discard;` killed every single fragment. The
+	# refraction, the rim aberration and the aperture mask have therefore never
+	# rendered once in the life of this prop: hiding the quad was pixel-identical
+	# to showing it, and every existing lens assertion passed with the material
+	# completely dead.
+	#
+	# One white texel, and it must be exactly 1x1: Polygon2D divides the `uv`
+	# array by the texture's size, so a 2x2 would silently halve the UV range and
+	# put the aperture back outside the unit circle.
+	var white := Image.create(1, 1, false, Image.FORMAT_RGBA8)
+	white.fill(Color.WHITE)
+	_optics_quad.texture = ImageTexture.create_from_image(white)
 	_optics_quad.z_index = -1
 	_optics_quad.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_optics_material = ShaderMaterial.new()

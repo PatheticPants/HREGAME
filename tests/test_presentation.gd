@@ -576,6 +576,27 @@ func _test_visual_invariants(desk: Desk) -> void:
 		_is_true(not lens.occludes_light,
 			"the clear aperture never becomes a solid candle occluder")
 
+		# THE OPTICS QUAD MUST CARRY A TEXTURE OR THE SHADER IS DEAD.
+		#
+		# Polygon2D only writes its `uv` array into the draw command when it has a
+		# valid texture. Without one the fragment shader receives a constant UV, so
+		# `length((UV - 0.5) * 2)` is a constant greater than one and the shader's
+		# aperture discard kills every fragment. The refraction shipped that way:
+		# hiding the quad was pixel-identical to showing it, and every assertion in
+		# this file passed with the material completely inert.
+		#
+		# This cannot be checked by rendering here — the headless driver has no
+		# frame — so it is checked structurally, which is also the form that names
+		# the trap for whoever writes the next canvas shader.
+		var quad := lens.get_node_or_null("optical_aperture") as Polygon2D
+		_is_true(quad != null and quad.texture != null,
+			"the refraction quad has a texture, so Polygon2D emits its UVs")
+		if quad != null and quad.texture != null:
+			_is_true(quad.texture.get_size() == Vector2(1, 1),
+				"and it is 1x1, because Polygon2D divides uv by the texture size")
+		_is_true(quad != null and quad.material is ShaderMaterial,
+			"and the aperture still carries its refraction material")
+
 	var spoon := desk.press.spoon if desk.press != null else null
 	_is_true(spoon != null, "the wax spoon exists for silhouette checks")
 	if spoon != null:
