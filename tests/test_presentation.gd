@@ -617,6 +617,35 @@ func _test_visual_invariants(desk: Desk) -> void:
 			and not physical_text.contains("dates its instruments"),
 			"the glass does not solve the legal dating inference for the player")
 
+		# THE EVIDENCE MUST FIT THE CIRCLE IT IS READ THROUGH.
+		#
+		# draw_detail laid a flowed block into a fixed rectangle and let it run.
+		# Nothing clipped it, so the tail of the chancery's name printed across the
+		# brass bezel and onto the desk — visible in shot 58 as "Free City of"
+		# written over the ring. Adding the stencil then cut the same overflow off
+		# instead, which is worse: the clipped words ARE the decisive physical
+		# evidence for the Kesselholt matter.
+		#
+		# So this asserts the geometry rather than the appearance, for every
+		# polity name the world can produce, at the radius the lens actually
+		# passes. Widest name wins; if a future polity is longer than Aachen-Verd
+		# this fails here rather than in a screenshot nobody takes.
+		var field := Lens.APERTURE_RADIUS * 0.965
+		var draw_radius := Lens.APERTURE_RADIUS * 0.94
+		var column := draw_radius * 1.24
+		var worst := ""
+		for pid in Lore.data.polities:
+			var candidate := "Drawn at the chancery of %s." % Lore.data.polities[pid].name
+			if candidate.length() > worst.length():
+				worst = candidate
+		var measured := Ink.measure(worst, 13, column)
+		var corner := Vector2(column * 0.5, measured.y * 0.5).length()
+		_is_true(corner <= field,
+			"the longest chancery name still fits inside the glass (%.1f <= %.1f)"
+			% [corner, field])
+		_is_true(measured.x <= column + 0.5,
+			"and no line of it overruns the column it was flowed into")
+
 	var base := Color(0.34, 0.20, 0.09)
 	var fire := Surface.tint_for(base, 0.9, false, 0.30, 0.18)
 	var morning := Surface.tint_for(base, 0.9, true, 0.30, 0.18)

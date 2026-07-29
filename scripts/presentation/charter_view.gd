@@ -230,8 +230,28 @@ func draw_detail(c: CanvasItem, at: Vector2, radius: float) -> void:
 		c.draw_line(top + Vector2(4.0, y), top + Vector2(w - 3.0, y + 0.8),
 			Color(0.42, 0.27, 0.13, 0.035), 0.8)
 
-	var text_at := top + Vector2(6.0, 41.0)
-	Ink.block(c, text_at, lens_detail_text(), 14, Ink.CHANCERY, w - 12.0)
+	# THE WHOLE NAME HAS TO FIT INSIDE A CIRCLE.
+	#
+	# This laid a flowed block into a fixed rectangle 1.62 radii wide and simply
+	# let it run. Nothing clipped it, so the overflow printed across the brass
+	# bezel; once the aperture became a real stencil the overflow was cut instead —
+	# and the cut fell in the middle of the chancery's name, which is the decisive
+	# physical evidence on the whole sheet. Clipping a conclusion out of the
+	# player's view is worse than spilling it onto the frame.
+	#
+	# So the column is sized to the widest chord the text can actually occupy, and
+	# the block is measured and centred vertically. A circle of radius r fits a
+	# column of half-width x only while |y| <= sqrt(r*r - x*x); at 0.62 radii the
+	# corners still have most of the height, which is room enough for the longest
+	# polity name in the world file at 13pt.
+	var column := radius * 1.24
+	var half := column * 0.5
+	var body := lens_detail_text()
+	var block := Ink.measure(body, 13, column)
+	var limit := sqrt(maxf(1.0, pow(radius * 0.965, 2.0) - half * half))
+	var text_at := at + Vector2(-half,
+		clampf(-block.y * 0.5, -limit, limit - block.y))
+	Ink.block(c, text_at, body, 13, Ink.CHANCERY, column)
 	# Pooling, feathering and a scribe's terminal flourish make this read as ink
 	# on skin rather than a UI label.
 	for fleck in _lens_ink:

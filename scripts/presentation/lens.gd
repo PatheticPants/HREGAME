@@ -42,6 +42,31 @@ var _optics_copy: BackBufferCopy
 var _optics_quad: Polygon2D
 var _optics_material: ShaderMaterial
 
+## THE APERTURE IS A CIRCLE AND THE EVIDENCE MUST BE CUT TO IT.
+##
+## The magnified subject used to be drawn inline in `_draw`, straight onto the
+## lens's own canvas item, with nothing but good manners keeping it inside the
+## glass. `CharterView.draw_detail` lays a flowed `Ink.block` into a rectangle
+## 1.62 radii wide whose HEIGHT depends on how long the chancery's name happens to
+## be — so the longest names ran their last line out over the brass bezel and onto
+## the desk. Confirmed in shot 58: "Free City of" is printed across the bottom-left
+## of the ring.
+##
+## Clamping the text would fix that one caller and nothing else. The whole design
+## of this lens is that anything can become magnifiable by implementing
+## `has_detail`/`draw_detail`, so the guarantee has to live at the aperture: the
+## field is a stencil, and whatever a subject draws is cut to the glass.
+##
+## `CLIP_CHILDREN_ONLY` uses this node's own drawing as the mask without painting
+## it. Same mechanism `WaxPool._body` already uses to stencil an impression to the
+## wax it was struck into, which is verified working under gl_compatibility.
+var _field: Node2D
+var _detail: Node2D
+## Reflections and the bezel have to survive the restructure ABOVE the evidence:
+## children draw after their parent, so anything that must sit on top of the
+## magnified image has to become a later sibling rather than a later line.
+var _overlay: Node2D
+
 
 func _ready() -> void:
 	super._ready()
@@ -106,6 +131,12 @@ func _process(delta: float) -> void:
 			_reported[subject_id] = true
 			focus_confirmed.emit(_focus)
 
+	# The children hold the evidence and the brass, and Draggable only ever
+	# redraws `self` and the hover node.
+	if _field != null:
+		_detail.queue_redraw()
+		_overlay.queue_redraw()
+
 	if _optics_material != null:
 		var viewport_size := get_viewport_rect().size
 		var centre_px := get_global_transform_with_canvas().origin
@@ -113,7 +144,21 @@ func _process(delta: float) -> void:
 			centre_px / viewport_size)
 		_optics_material.set_shader_parameter("magnification",
 			lerpf(0.048, 0.070, _focus_amount))
-		_optics_material.set_shader_parameter("active", 1.0)
+		# `active` WAS THE GATE AND WAS WIRED TO THE CONSTANT 1.0.
+		#
+		# The uniform exists to switch the optics off, and every frame of the
+		# game's life it was told they were on — so a glass shrunk into a
+		# pigeonhole, or lying under the ledger at day's end, still ran a
+		# backbuffer copy and a full-aperture refraction of whatever happened to
+		# be behind it. A stowed lens refracting the rack is also just wrong.
+		var working := 0.0 if (stowed or not visible) else 1.0
+		_optics_material.set_shader_parameter("active", working)
+		# And stop paying for the backbuffer copy at all when it cannot be seen.
+		# COPY_MODE_DISABLED is the switch; the node stays put so nothing has to
+		# be rebuilt when the glass comes back out of the hole.
+		if _optics_copy != null:
+			_optics_copy.copy_mode = BackBufferCopy.COPY_MODE_DISABLED \
+				if working <= 0.0 else BackBufferCopy.COPY_MODE_RECT
 
 
 ## A petitioner reacts to an inspection once, not every time the glass wobbles
@@ -200,6 +245,71 @@ func _build_optics() -> void:
 	_optics_quad.material = _optics_material
 	add_child(_optics_quad)
 
+	# Order below is draw order. The parent lays down glass and caustic; the field
+	# cuts the evidence to the aperture; the overlay puts reflections and brass
+	# back on top of it.
+	_field = Node2D.new()
+	_field.name = "optical_field"
+	_field.clip_children = CanvasItem.CLIP_CHILDREN_ONLY
+	_field.draw.connect(_draw_field_mask)
+	add_child(_field)
+
+	_detail = Node2D.new()
+	_detail.name = "magnified_evidence"
+	_detail.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_detail.draw.connect(_draw_magnified_evidence)
+	_field.add_child(_detail)
+
+	_overlay = Node2D.new()
+	_overlay.name = "glass_and_brass"
+	_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_overlay.draw.connect(_draw_overlay)
+	add_child(_overlay)
+
+
+## The stencil. Drawn, never seen: CLIP_CHILDREN_ONLY spends this circle as a mask
+## for `_detail` and paints none of it. Slightly inside the glass tint so a
+## subject cannot land a pixel on the join between glass and brass.
+func _draw_field_mask() -> void:
+	_field.draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965, Color.WHITE)
+
+
+func _draw_magnified_evidence() -> void:
+	if _focus == null or _focus_amount <= 0.02:
+		return
+	if not is_instance_valid(_focus) or not _focus.has_method("draw_detail"):
+		return
+	var lit := Surface.lit(light_level, light_strength)
+	var toward := Surface.toward(self, light_position)
+	# Focus settles over the last few percent rather than growing from a dot: the
+	# image belongs to the glass from first contact and gently resolves.
+	var resolve_scale := lerpf(0.955, 1.0, _focus_amount)
+	var focus_at := Vector2.ZERO
+	if _focus.has_method("detail_centre"):
+		var subject_centre: Vector2 = _focus.call("detail_centre")
+		# A real lens does not teleport an off-axis detail to its centre. Retaining
+		# a little of the subject's offset supplies optical parallax while the
+		# magnification still keeps the important mark readable.
+		focus_at = to_local(subject_centre) * 0.16
+		focus_at = focus_at.limit_length(APERTURE_RADIUS * 0.12)
+	_detail.draw_circle(focus_at + toward * APERTURE_RADIUS * 0.08,
+		APERTURE_RADIUS * 0.72,
+		Color(1.0, 0.76, 0.48, 0.018 + lit * 0.035))
+	# Quantised lag: the image has a fraction of optical inertia while the glass
+	# moves, then returns exactly to the evidence when set down.
+	var lag := Vector2(round(_optical_lag.x), round(_optical_lag.y))
+	_detail.draw_set_transform(focus_at + lag, -rotation,
+		Vector2.ONE * resolve_scale)
+	_focus.call("draw_detail", _detail, Vector2.ZERO, APERTURE_RADIUS * 0.94)
+	_detail.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_overlay() -> void:
+	var lit := Surface.lit(light_level, light_strength)
+	var toward := Surface.toward(self, light_position)
+	_draw_glass_reflections(toward, lit)
+	_draw_authored_bezel(toward, lit)
+
 
 func _draw() -> void:
 	_draw_lens_shadow()
@@ -220,33 +330,32 @@ func _draw() -> void:
 		Color(0.98, 0.97, 0.91, 0.018 + lit * 0.012))
 	_draw_caustic(toward, lit)
 
-	if _focus != null and _focus_amount > 0.02 and _focus.has_method("draw_detail"):
-		# Counter-rotate so the enlarged image stays upright no matter how the
-		# glass is lying. A rotating page of text is unreadable and nobody has
-		# ever wanted one.
-		# Focus settles over the last few percent rather than growing from a dot:
-		# the image belongs to the glass from first contact and gently resolves.
-		var resolve_scale := lerpf(0.955, 1.0, _focus_amount)
-		var focus_at := Vector2.ZERO
-		if _focus.has_method("detail_centre"):
-			var subject_centre: Vector2 = _focus.call("detail_centre")
-			# A real lens does not teleport an off-axis detail to its centre.
-			# Retaining a little of the subject's offset supplies optical parallax
-			# while the magnification still keeps the important mark readable.
-			focus_at = to_local(subject_centre) * 0.16
-			focus_at = focus_at.limit_length(APERTURE_RADIUS * 0.12)
-		draw_circle(focus_at + toward * APERTURE_RADIUS * 0.08,
-			APERTURE_RADIUS * 0.72,
-			Color(1.0, 0.76, 0.48, 0.018 + lit * 0.035))
-		# Quantised lag: the image has a fraction of optical inertia while the
-		# glass moves, then returns exactly to the evidence when set down.
-		var lag := Vector2(round(_optical_lag.x), round(_optical_lag.y))
-		draw_set_transform(focus_at + lag, -rotation, Vector2.ONE * resolve_scale)
-		_focus.call("draw_detail", self, Vector2.ZERO, APERTURE_RADIUS * 0.94)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# A LENS SHOWS YOU ONE IMAGE, NOT TWO.
+	#
+	# The refracted screen copy underneath keeps transmitting the document at its
+	# ordinary size while the resolved evidence is drawn over it at reading size,
+	# so a focused glass showed the witness list twice — once small and once large,
+	# interleaved, both in the same ink. Shot 58 had "Drawn at the chancery of"
+	# lying across "Stoss, of the lesser" and "Lamp, sworn measurer". Physically a
+	# magnifier does not do this, and as an evidence instrument it is worse than
+	# useless: the one place in the game where the player is deliberately reading
+	# small print is the one place the type was doubled.
+	#
+	# The field fills as it resolves. Not to opacity — some transmission has to
+	# survive or the glass becomes a porthole with a card in it — but far enough
+	# that the enlarged hand is unambiguously the thing being read.
+	if _focus_amount > 0.01:
+		var settle := ease(clampf(_focus_amount, 0.0, 1.0), 0.55)
+		draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965,
+			Color(0.88, 0.83, 0.70, 0.60 * settle))
+		# Warmed by the flame like every other surface, so the resolved field does
+		# not read as a neutral panel dropped onto a candlelit desk.
+		draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965,
+			Color(1.0, 0.80, 0.50, (0.05 + lit * 0.10) * settle))
 
-	_draw_glass_reflections(toward, lit)
-	_draw_authored_bezel(toward, lit)
+	# The magnified evidence is `_detail`, cut to the aperture by `_field`, and the
+	# reflections and brass are `_overlay` above it. Both are children, so they
+	# draw after this function returns. See the note beside their declarations.
 
 
 func _chassis_tint(lit: float) -> Color:
@@ -257,18 +366,18 @@ func _chassis_tint(lit: float) -> Color:
 
 
 func _draw_authored_bezel(toward: Vector2, lit: float) -> void:
-	draw_texture_rect_region(CHASSIS, RING_TARGET, RING_SOURCE,
+	_overlay.draw_texture_rect_region(CHASSIS, RING_TARGET, RING_SOURCE,
 		_chassis_tint(lit))
 	var light_angle := toward.angle()
 	# The authored plate supplies form and wear; these moving fragments let the
 	# one carried flame remain the authority over its brass.
-	draw_arc(Vector2.ZERO, RADIUS * 0.965,
+	_overlay.draw_arc(Vector2.ZERO, RADIUS * 0.965,
 		light_angle - 0.82, light_angle + 0.52, 24,
 		Color(1.0, 0.88, 0.56, 0.10 + lit * 0.46), 2.4)
-	draw_arc(Vector2.ZERO, RADIUS * 0.985,
+	_overlay.draw_arc(Vector2.ZERO, RADIUS * 0.985,
 		light_angle + PI - 0.58, light_angle + PI + 0.48, 20,
 		Color(0.08, 0.045, 0.025, 0.38), 2.8)
-	draw_arc(Vector2.ZERO, APERTURE_RADIUS * 1.03,
+	_overlay.draw_arc(Vector2.ZERO, APERTURE_RADIUS * 1.03,
 		light_angle - 0.56, light_angle + 0.34, 18,
 		Color(1.0, 0.91, 0.68, 0.12 + lit * 0.28), 1.5)
 
@@ -279,18 +388,20 @@ func _draw_glass_reflections(toward: Vector2, lit: float) -> void:
 	# the carried flame instead of being painted forever into the upper left.
 	var a := toward.angle()
 	var offset := toward * APERTURE_RADIUS * 0.045
-	draw_arc(offset, APERTURE_RADIUS * 0.79, a - 0.56, a + 0.17, 20,
+	_overlay.draw_arc(offset, APERTURE_RADIUS * 0.79, a - 0.56, a + 0.17, 20,
 		Color(1, 1, 1, 0.12 + lit * 0.16), 6.0)
-	draw_arc(offset * 1.5, APERTURE_RADIUS * 0.61, a - 0.43, a - 0.04, 14,
+	_overlay.draw_arc(offset * 1.5, APERTURE_RADIUS * 0.61, a - 0.43, a - 0.04, 14,
 		Color(1, 1, 1, 0.07 + lit * 0.11), 3.2)
-	draw_arc(-offset, APERTURE_RADIUS * 0.86, a + PI - 0.39, a + PI + 0.19, 16,
+	_overlay.draw_arc(-offset, APERTURE_RADIUS * 0.86, a + PI - 0.39, a + PI + 0.19, 16,
 		Color(0.34, 0.22, 0.09, 0.060), 4.4)
 	# Two tiny seed bubbles in old crown glass. They catch the same light and
 	# keep the otherwise perfect disc from reading as a digital mask.
 	for p: Vector2 in [Vector2(-0.31, 0.18), Vector2(0.28, -0.36)]:
 		var at: Vector2 = p * APERTURE_RADIUS
-		draw_circle(at + toward * 1.2, 2.1, Color(1, 1, 1, 0.08 + lit * 0.08))
-		draw_circle(at - toward * 0.8, 1.1, Color(0.16, 0.11, 0.07, 0.12))
+		_overlay.draw_circle(at + toward * 1.2, 2.1,
+			Color(1, 1, 1, 0.08 + lit * 0.08))
+		_overlay.draw_circle(at - toward * 0.8, 1.1,
+			Color(0.16, 0.11, 0.07, 0.12))
 
 
 func _draw_authored_handle(toward: Vector2, lit: float) -> void:
