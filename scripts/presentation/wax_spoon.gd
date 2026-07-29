@@ -25,6 +25,7 @@ var wax_remaining := 1.0
 var heating := false
 
 var _phase := 0.0
+var _flow_amount := 0.0
 
 
 func _ready() -> void:
@@ -43,9 +44,24 @@ func _ready() -> void:
 	z_index = 0
 
 
+## The bowl is sixty units from the node origin. A hit-box-centred ellipse put
+## its long cast shadow under empty handle space and left the actual bowl lit.
+func light_occluder_polygon() -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in 14:
+		var a := float(i) / 14.0 * TAU
+		points.append(BOWL_CENTER + Vector2(cos(a) * 26.0, sin(a) * 22.0))
+	return points
+
+
 func _process(delta: float) -> void:
 	super._process(delta)
 	_phase += delta
+	var feel := Lore.wax_feel()
+	var flow_target := 1.0 if tilt > 0.48 and is_pourable(feel) else 0.0
+	var flow_time := 0.10 if flow_target > _flow_amount else 0.19
+	_flow_amount = move_toward(_flow_amount, flow_target,
+		delta / flow_time)
 	z_index = 4 if is_held or tilt > 0.01 else 0
 	queue_redraw()
 
@@ -56,6 +72,7 @@ func reset_wax() -> void:
 	tilt = 0.0
 	wax_remaining = 1.0
 	heating = false
+	_flow_amount = 0.0
 	queue_redraw()
 
 
@@ -154,7 +171,7 @@ func _draw() -> void:
 	_draw_wax(feel)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	if tilt > 0.48 and is_pourable(feel):
+	if _flow_amount > 0.015:
 		_draw_pour_neck(feel)
 
 	if heating and temperature > 0.18:
@@ -191,9 +208,12 @@ func brass_light_direction() -> Vector2:
 ## first one precisely because it is held in the light rather than lying in it.
 func _draw_brass(toward: Vector2, lit: float) -> void:
 	# Brass near a flame goes orange-hot; away from it, a dull tarnished olive.
-	var brass_dark := Surface.tint(Color(0.25, 0.18, 0.075), lit, 0.20, 0.34)
-	var brass := Surface.tint(Color(0.52, 0.39, 0.14), lit, 0.28, 0.36)
-	var brass_light := Surface.tint(Color(0.78, 0.62, 0.25), lit, 0.36, 0.30)
+	var brass_dark := Surface.tint_for(Color(0.25, 0.18, 0.075), lit,
+		ambient_daylight, 0.20, 0.34)
+	var brass := Surface.tint_for(Color(0.52, 0.39, 0.14), lit,
+		ambient_daylight, 0.28, 0.36)
+	var brass_light := Surface.tint_for(Color(0.78, 0.62, 0.25), lit,
+		ambient_daylight, 0.36, 0.30)
 
 	# Handle. Three strokes create a rounded, tarnished strip with a bright edge
 	# — and the bright edge now slides from one side of the shaft to the other as
@@ -248,7 +268,8 @@ func molten_colour() -> Color:
 	var hot := clampf(temperature, 0.0, 1.0)
 	var remaining := clampf(wax_remaining, 0.0, 1.0)
 	var base := WAX_COLOR.darkened(hot * 0.16).darkened((1.0 - remaining) * 0.20)
-	return Surface.tint(base, Surface.lit(light_level, light_strength), 0.16, 0.34)
+	return Surface.tint_for(base, Surface.lit(light_level, light_strength),
+		ambient_daylight, 0.16, 0.34)
 
 
 ## The solid tablet, which is the PALE one: pigmented beeswax and resin, full of
@@ -312,11 +333,12 @@ func _draw_pour_neck(feel: WaxFeel) -> void:
 	var lip := lip_local(feel)
 	var outward := (lip - BOWL_CENTER).normalized()
 	var pulse := 0.5 + 0.5 * sin(_phase * TAU / maxf(0.06, feel.drip_interval))
-	var length := lerpf(5.0, 14.0, tilt) + pulse * 3.0
+	var length := lerpf(7.0, 25.0, tilt * _flow_amount) + pulse * 4.5
 	var side := Vector2(-outward.y, outward.x)
-	var tip_width := lerpf(3.8, 1.2, pulse)
-	var root_width := 4.2 * clampf(wax_remaining * 1.5, 0.35, 1.0)
-	var curl := sin(_phase * 3.7) * 1.8
+	var tip_width := lerpf(4.4, 1.35, pulse)
+	var root_width := 5.3 * clampf(wax_remaining * 1.5, 0.35, 1.0) \
+		* smoothstep(0.0, 0.35, _flow_amount)
+	var curl := sin(_phase * 3.7) * 1.2
 	var centres := PackedVector2Array()
 	var left := PackedVector2Array()
 	var right := PackedVector2Array()
@@ -336,21 +358,24 @@ func _draw_pour_neck(feel: WaxFeel) -> void:
 	for i in range(right.size() - 1, -1, -1):
 		strip.append(right[i])
 	var col := molten_colour()
+	# The reservoir stretches over the lip before it becomes a free strand.
+	draw_line(BOWL_CENTER + outward * 18.0, lip + outward * 2.0,
+		col.darkened(0.08), root_width * 1.35, true)
 	draw_colored_polygon(strip, col.darkened(0.16))
 	var highlight := PackedVector2Array()
 	for i in centres.size():
 		var f := float(i) / float(centres.size() - 1)
 		highlight.append(centres[i] - side * lerpf(1.35, 0.35, f))
 	draw_polyline(highlight, Color(1.0, 0.55, 0.31, 0.34 + temperature * 0.24),
-		1.3, true)
+		1.6, true)
 
 	var tip := centres[centres.size() - 1] + outward * (2.2 + pulse * 1.5)
 	draw_set_transform(tip, outward.angle(), Vector2.ONE)
 	draw_colored_polygon(_ellipse(Vector2(0.8, 0.7),
-		Vector2(4.6 + pulse * 1.6, 2.8 + pulse * 0.8), 18),
+		Vector2(3.9 + pulse * 1.0, 2.5 + pulse * 0.55), 18),
 		Color(0, 0, 0, 0.22))
 	draw_colored_polygon(_ellipse(Vector2.ZERO,
-		Vector2(4.4 + pulse * 1.6, 2.7 + pulse * 0.8), 18),
+		Vector2(3.7 + pulse * 1.0, 2.4 + pulse * 0.55), 18),
 		col.lightened(0.05))
 	draw_circle(Vector2(-1.4, -0.7), 1.0,
 		Color(1.0, 0.78, 0.56, 0.42 + temperature * 0.26))

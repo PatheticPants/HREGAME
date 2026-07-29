@@ -15,6 +15,34 @@ const MARGIN := 26.0
 ## Written by _draw_date; read only by the test that asserts an erasure claiming
 ## to sit on the year actually does. Empty until the sheet has drawn once.
 var date_rect_local := Rect2()
+var _lens_fibres: Array[Dictionary] = []
+var _lens_ink: Array[Dictionary] = []
+
+
+func bind(doc: DocumentData, desk_bounds: Rect2) -> void:
+	super.bind(doc, desk_bounds)
+	_build_lens_microdetail()
+
+
+func _build_lens_microdetail() -> void:
+	_lens_fibres.clear()
+	_lens_ink.clear()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(String(data.id)) if data != null else 1729
+	for i in 34:
+		_lens_fibres.append({
+			"y": rng.randf_range(0.10, 0.82),
+			"x": rng.randf_range(0.05, 0.34),
+			"length": rng.randf_range(0.28, 0.61),
+			"alpha": rng.randf_range(0.025, 0.075),
+		})
+	for i in 18:
+		_lens_ink.append({
+			"x": rng.randf_range(0.14, 0.86),
+			"y": rng.randf_range(0.31, 0.78),
+			"radius": rng.randf_range(0.45, 1.35),
+			"alpha": rng.randf_range(0.09, 0.24),
+		})
 
 
 func charter_data() -> CharterData:
@@ -173,42 +201,48 @@ func detail_centre() -> Vector2:
 	return closing_world()
 
 
-## The foot of the page under magnification: which chancery drew it, and what
-## that chancery's reckoning does to the date written above. This is the only
-## place in the game the two verifications are shown touching each other, and it
-## is reached by physically putting a glass on a corner of a document.
-func draw_detail(c: CanvasItem, at: Vector2, radius: float) -> void:
+func lens_detail_text() -> String:
 	var ch := charter_data()
 	if ch == null:
-		return
+		return ""
 	var p := Lore.polity(ch.drawn_by_polity)
-	var reign := Lore.reign(ch.date_emperor)
+	return "Drawn at the chancery of %s." % (p.name if p else "—")
+
+
+## The glass reveals only physical evidence: the closing formula's actual hand,
+## ink pooling and parchment fibres. Interpreting the chancery's dating custom
+## remains the player's work with the reference books.
+func draw_detail(c: CanvasItem, at: Vector2, radius: float) -> void:
+	if charter_data() == null:
+		return
 	var w := radius * 1.62
 	var top := at + Vector2(-w * 0.5, -radius * 0.60)
 
-	var y := Ink.label(c, top, "closing formula", 9, Ink.FADED)
-	y += 3.0
-	y += Ink.block(c, top + Vector2(0, y),
-		"Drawn at the chancery of %s." % (p.name if p else "—"), 13,
-		Ink.CHANCERY, w)
-	y += 6.0
+	# Laid lines and short fibres stay fixed per charter. Randomising these in
+	# _draw would make the parchment crawl beneath a stationary lens.
+	for fibre in _lens_fibres:
+		var start := top + Vector2(
+			float(fibre.x) * w, float(fibre.y) * radius * 1.16)
+		var finish := start + Vector2(float(fibre.length) * w, 0.35)
+		c.draw_line(start, finish,
+			Color(0.23, 0.14, 0.075, float(fibre.alpha)), 0.65)
+	for y in [28.0, 39.0, 50.0, 61.0, 72.0, 83.0, 94.0]:
+		c.draw_line(top + Vector2(4.0, y), top + Vector2(w - 3.0, y + 0.8),
+			Color(0.42, 0.27, 0.13, 0.035), 0.8)
 
-	if p != null:
-		y += Ink.block(c, top + Vector2(0, y),
-			"That chancery dates its instruments %s."
-			% Lex.dating_name(p.dating_style), 11, Ink.RUBRIC, w)
-	y += 4.0
-
-	if reign != null and p != null:
-		# Reduced the way the drawing chancery meant it, not the way an imperial
-		# notary would reach for by habit.
-		var year := RegnalMath.to_absolute(reign, ch.date_regnal_year,
-			p.dating_style)
-		y += Ink.line(c, top + Vector2(0, y), "%s year of %s" % [
-			Lex.sentence(Lex.ordinal(ch.date_regnal_year)), reign.full_name()],
-			11, Ink.FADED)
-		y += Ink.line(c, top + Vector2(0, y),
-			"so read:  %d" % year, 13, Ink.CHANCERY)
+	var text_at := top + Vector2(6.0, 41.0)
+	Ink.block(c, text_at, lens_detail_text(), 14, Ink.CHANCERY, w - 12.0)
+	# Pooling, feathering and a scribe's terminal flourish make this read as ink
+	# on skin rather than a UI label.
+	for fleck in _lens_ink:
+		c.draw_circle(top + Vector2(
+			float(fleck.x) * w, float(fleck.y) * radius * 1.16),
+			float(fleck.radius), Color(0.10, 0.065, 0.045, float(fleck.alpha)))
+	var flourish_y := text_at.y + 36.0
+	c.draw_arc(Vector2(at.x + radius * 0.16, flourish_y), radius * 0.24,
+		PI * 0.12, PI * 0.92, 18, Color(Ink.CHANCERY, 0.42), 1.05)
+	c.draw_arc(Vector2(at.x + radius * 0.25, flourish_y + 3.0), radius * 0.16,
+		PI * 1.05, PI * 1.82, 14, Color(Ink.CHANCERY, 0.28), 0.8)
 
 
 ## The cord: a plaited tag of parchment or silk through the foot of the sheet,

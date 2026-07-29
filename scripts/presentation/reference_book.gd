@@ -84,6 +84,32 @@ func _update_hit_size() -> void:
 	hit_size = Vector2(data.size.x * (1.0 + _open_amount), data.size.y)
 
 
+func light_occluder_polygon() -> PackedVector2Array:
+	var half := hit_size * 0.5 * occluder_inset
+	if _open_amount < 0.08:
+		return bevelled_light_occluder(10.0)
+	# Two boards meet at a recessed gutter. The shallow notches are enough to
+	# break the ruler-straight bar cast by the old hit rectangle.
+	var c := minf(10.0, half.y * 0.18)
+	var gutter := minf(7.0, half.x * 0.06)
+	return PackedVector2Array([
+		Vector2(-half.x + c, -half.y),
+		Vector2(-gutter, -half.y),
+		Vector2(0, -half.y + 6.0),
+		Vector2(gutter, -half.y),
+		Vector2(half.x - c, -half.y),
+		Vector2(half.x, -half.y + c),
+		Vector2(half.x, half.y - c),
+		Vector2(half.x - c, half.y),
+		Vector2(gutter, half.y),
+		Vector2(0, half.y - 6.0),
+		Vector2(-gutter, half.y),
+		Vector2(-half.x + c, half.y),
+		Vector2(-half.x, half.y - c),
+		Vector2(-half.x, -half.y + c),
+	])
+
+
 func _process(delta: float) -> void:
 	super._process(delta)
 
@@ -204,7 +230,8 @@ func _draw() -> void:
 	# Only the warm tint lives here. The fall into shadow is the shared veil at the
 	# foot of this function, so a board and a charter lying beside each other go
 	# dark together instead of on two different curves.
-	var cover := Surface.tint(data.cover_color, glow, 0.30, 0.18)
+	var cover := Surface.tint_for(data.cover_color, glow, ambient_daylight,
+		0.30, 0.18)
 
 	draw_soft_shadow(full)
 
@@ -463,7 +490,7 @@ func _draw_turning_page(r: Rect2, pw: float) -> void:
 	var after_vertical := t > 0.5
 	var face := data.page_color.lightened(0.06) if not after_vertical \
 		else data.page_color.darkened(0.11)
-	face = Surface.tint(face, glow, 0.22, 0.26)
+	face = Surface.tint_for(face, glow, ambient_daylight, 0.22, 0.26)
 
 	# Bowed, not square. Parchment under its own weight curves away from the
 	# spine, and the straight-edged version is most of why this read as a wipe.

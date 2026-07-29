@@ -31,6 +31,8 @@ extends RefCounted
 ## The colour tanned leather, parchment and bare wood all go toward when the
 ## flame is close. Lifted from ReferenceBook, which had the most tuned version.
 const WARM := Color(0.98, 0.63, 0.34)
+## Reflected shutter light: cool and desaturated, not an electric-blue filter.
+const DAYLIGHT := Color(0.70, 0.79, 0.94)
 
 ## A hot specular on metal is never pure white — it is the flame's own colour.
 const SPECULAR := Color(1.0, 0.93, 0.74)
@@ -98,6 +100,16 @@ static func tint(base: Color, lit_amount: float, warm_gain := 0.30,
 		shade_gain := 0.18) -> Color:
 	return base.lerp(WARM, lit_amount * warm_gain) \
 		.darkened((1.0 - lit_amount) * shade_gain)
+
+
+## The same material under the distant morning shutter. Keeping this explicit
+## prevents callers from warming brass and leather with a flame that is out.
+static func tint_for(base: Color, lit_amount: float, daylight: bool,
+		colour_gain := 0.30, shade_gain := 0.18) -> Color:
+	if daylight:
+		return base.lerp(DAYLIGHT, lit_amount * colour_gain * 0.62) \
+			.darkened((1.0 - lit_amount) * shade_gain * 0.42)
+	return tint(base, lit_amount, colour_gain, shade_gain)
 
 
 # ------------------------------------------------------------------- cut lines

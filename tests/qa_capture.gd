@@ -29,6 +29,9 @@ extends Node
 ##   54  the head-rise while the desk is visibly changing planes
 ##   55  the same move near arrival, before its physical settle
 ##   56  the viscous wax neck and falling bead at inspection scale
+##   57  the glass resolving only the charter's physical closing formula
+##   58  the same parchment, ink and optical edge at inspection scale
+##   59  an open book throwing a guttered shadow under grazing candlelight
 
 const OUT := "res://.tools/"
 
@@ -58,6 +61,7 @@ func _run() -> void:
 
 	await _shot("01_desk_default")
 	await _inspect_pendant_seal()
+	await _inspect_charter_formula()
 	await _show_packet_sweep()
 	_desk.lay_out_packet(Lore.data.cases[0].documents)
 	await _settle(60)
@@ -93,6 +97,7 @@ func _run() -> void:
 		book.solver.place(home, 0.0)
 		book.position = home
 	await _settle(20)
+	await _book_shadow_silhouette()
 
 	var home := _desk.candle.position
 	await _move_candle(Vector2(-560.0, 120.0))
@@ -180,6 +185,7 @@ func _run() -> void:
 	await _candle_close()
 	await _write_on_tablet()
 	await _burn_series()
+	await _measure_visual_stress()
 
 	print("captured")
 	get_tree().quit(0)
@@ -254,7 +260,75 @@ func _show_charter_foot() -> void:
 	await _shot("18_charter_foot")
 	camera.zoom = Vector2.ONE
 	camera.position = Vector2(960, 590)
+	if view != null:
+		view.set_process(true)
+		view.set_process_input(true)
 	await _settle(6)
+
+
+## The other job of the glass. The foot keeps its parchment, laid lines, ink
+## pooling and physical wording; it deliberately does not display the legal
+## conclusion the player is meant to reach from the reference books.
+func _inspect_charter_formula() -> void:
+	var sheet := _desk.current_charter
+	if sheet == null:
+		return
+	var view := _main.get_node_or_null("view_controller")
+	var camera := _main.get_node("camera") as Camera2D
+	var candle_home := _desk.candle.position
+	var candle_angle := _desk.candle.rotation
+	if view != null:
+		view.set_process(false)
+		view.set_process_input(false)
+
+	var over := _desk.surface.to_local(sheet.closing_world())
+	await _move_candle(over + Vector2(166.0, -112.0))
+	_desk.bring_to_front(_desk.lens)
+	_desk.lens.solver.place(over, deg_to_rad(-5.0))
+	_desk.lens.position = over
+	await _settle(44)
+	await _shot("57_glass_on_charter_formula")
+
+	camera.position = _desk.lens.global_position
+	camera.zoom = Vector2(2.45, 2.45)
+	await _settle(10)
+	await _shot("58_glass_charter_detail_close")
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	_desk.lens.solver.place(Lens.HOME_POSITION, deg_to_rad(Lens.HOME_ANGLE))
+	_desk.lens.position = Lens.HOME_POSITION
+	_desk.candle.solver.place(candle_home, candle_angle)
+	_desk.candle.position = candle_home
+	if view != null:
+		view.set_process(true)
+		view.set_process_input(true)
+	await _settle(14)
+
+
+## The open book's occluder has the silhouette of two boards and a recessed
+## gutter. This grazing-light pose makes that contract visible.
+func _book_shadow_silhouette() -> void:
+	if _desk.books.is_empty():
+		return
+	var book: ReferenceBook = _desk.books[0]
+	var old_position := book.position
+	var old_angle := book.rotation
+	var old_open := book.is_open
+	_desk.ledge.release(book)
+	book.unstow()
+	var at := Vector2(40.0, 76.0)
+	book.solver.place(at, deg_to_rad(-2.0))
+	book.position = at
+	book.is_open = true
+	_desk.bring_to_front(book)
+	await _move_candle(Vector2(480.0, -74.0))
+	await _settle(52)
+	await _shot("59_open_book_gutter_shadow")
+	book.is_open = old_open
+	book.solver.place(old_position, old_angle)
+	book.position = old_position
+	await _move_candle(Vector2(690.0, -40.0))
+	await _settle(20)
 
 
 ## The Register open on the desk, showing the previous notary's entries — the
@@ -326,8 +400,8 @@ func _inspect_own_seal() -> void:
 	await _settle(45)
 	await _shot("16_glass_on_own_seal")
 	# Put it back where it lives.
-	_desk.lens.solver.place(Vector2(700, 250), deg_to_rad(-14.0))
-	_desk.lens.position = Vector2(700, 250)
+	_desk.lens.solver.place(Lens.HOME_POSITION, deg_to_rad(Lens.HOME_ANGLE))
+	_desk.lens.position = Lens.HOME_POSITION
 	await _settle(10)
 
 
@@ -368,8 +442,8 @@ func _inspect_pendant_seal() -> void:
 	if view != null:
 		view.set_process(true)
 		view.set_process_input(true)
-	_desk.lens.solver.place(Vector2(700, 250), deg_to_rad(-14.0))
-	_desk.lens.position = Vector2(700, 250)
+	_desk.lens.solver.place(Lens.HOME_POSITION, deg_to_rad(Lens.HOME_ANGLE))
+	_desk.lens.position = Lens.HOME_POSITION
 	_desk.candle.solver.place(candle_home, candle_angle)
 	_desk.candle.position = candle_home
 	await _settle(12)
@@ -930,6 +1004,44 @@ func _burn_series() -> void:
 	_desk.begin_morning()
 	await _settle(150)
 	await _shot("14_day_over")
+
+
+## The standing graphics intervention line is ten milliseconds. Keep the probe
+## in the same harness as the rendered frames so future material work can repeat
+## the measurement instead of relying on a number copied into a handoff.
+func _measure_visual_stress() -> void:
+	var camera := _main.get_node("camera") as Camera2D
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	_desk.set_process(true)
+	var positions := [
+		Vector2(-520, 30), Vector2(-170, 20),
+		Vector2(180, 20), Vector2(510, 30),
+	]
+	for i in _desk.books.size():
+		var book: ReferenceBook = _desk.books[i]
+		book.unstow()
+		_desk.ledge.release(book)
+		book.is_open = true
+		book.spread = mini(i, maxi(0, book.data.spread_count() - 1))
+		var at: Vector2 = positions[i % positions.size()]
+		book.solver.place(at, deg_to_rad(-2.0 + i * 1.25))
+		book.position = at
+	await _settle(150)
+
+	var draggables := 0
+	for child in _desk.surface.find_children("*", "", true, false):
+		if child is Draggable:
+			draggables += 1
+	var frames := 300
+	var started := Time.get_ticks_usec()
+	for i in frames:
+		await get_tree().process_frame
+	var elapsed_ms := float(Time.get_ticks_usec() - started) / 1000.0
+	var ms_per_frame := elapsed_ms / float(frames)
+	print("   performance  %.2f ms/frame  %.0f fps  %d draggables  %d open books  %d outline builds"
+		% [ms_per_frame, 1000.0 / maxf(0.001, ms_per_frame), draggables,
+			_desk.books.size(), WaxShape.builds])
 
 
 func _move_candle(to: Vector2) -> void:

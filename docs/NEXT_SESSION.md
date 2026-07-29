@@ -32,7 +32,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 90, presentation 288, session 76, content PASS**. Run the rules
+Green is **rules 90, presentation 305, session 76, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 
@@ -80,10 +80,10 @@ historical reasoning; read this status first or you will redo work.
 
 | | |
 |---|---|
-| **Phase 0** | Re-measured after the return pass at **9.22 ms, 108 fps**, 19 draggables, four open books, 3 outline builds. Still inside the 10 ms intervention line, but re-measure before another broad visual layer. Two per-frame RNG allocations found (`seal_tag`, `petitioner_view`) are deterministically seeded, so the speckle does not crawl. |
+| **Phase 0** | Historical exact stress pose: **9.22 ms, 108 fps**, 19 draggables, four open books, 3 outline builds. Repeated current capture-harness runs measure **6.45–6.73 ms, 149–155 fps**, 17 live draggables, four open books, and 10 cached outlines. Both are below the 10 ms intervention line; preserve the scenario when comparing. `seal_tag` surface randomness is now generated once and cached. |
 | **Phase 1** | Done. `scripts/presentation/surface.gd`. **Named `Surface`, not `Material` — `Material` is a Godot built-in and `class_name Material` does not compile.** Shipped with nothing migrated and no pixels changed, as the plan asked. |
 | **Phase 2** | The candle, wax pool and spoon, seal veil, brass response, Ledger arrival, page turn and blind tooling, magnifier, desk ledge, packet sweep, and view transition have all received implemented and rendered passes. |
-| **Phase 4** | The door takes the candle and cold morning now has directional shutter geometry across the room and desk. A nearer foreground depth layer and the acoustic bed remain open. |
+| **Phase 4** | The door takes the candle; cold morning has directional shutter geometry, band-limited dust, and cold material reflection; the near foreground desk fascia is implemented. The acoustic bed remains open. |
 | **Bugs** | A second cold sweep found 21 candidates; 6 were refuted and **15 were reproduced and fixed** across six commits. See the log from "Two books were printing off the edge of their own boards" onward. |
 | **Phase 5** | Decided and done. See the commit "Phase 5: the Kalendar convicts one man". |
 
@@ -318,9 +318,11 @@ Re-measure frame time after the third object and again at the end (see Phase 0).
 
 ### Phase 3 — Shaders, gated and optional (1 day, exploratory)
 
-The project has **zero `.gdshader` files and zero `CanvasItemMaterial`s**, and
-`gl_compatibility` supports canvas shaders. Ask `godot-reviewer` what is actually
-available on this renderer *before* committing.
+The project now has **one localized canvas shader**:
+`shaders/lens_refraction.gdshader`. It uses the Compatibility renderer's screen
+texture only inside the magnifier aperture and preserves nearest-pixel sampling.
+Do not turn it into a full-screen post-process. Confirm renderer support before
+adding a second shader family.
 
 Two candidates, both of which would replace a lot of banded-rect faking:
 **parchment translucency** (the backlit sheet, the candle's molten cup, the thin

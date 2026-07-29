@@ -18,6 +18,8 @@ var _to := Vector2.ZERO
 var _age := 0.0
 var _motion := Vector2(0, 1)
 var _stretch := 1.0
+var _landed_emitted := false
+var _landing_age := 0.0
 
 
 func setup(from: Vector2, to: Vector2, tint: Color, travel_time := 0.15) -> void:
@@ -27,10 +29,23 @@ func setup(from: Vector2, to: Vector2, tint: Color, travel_time := 0.15) -> void
 	duration = maxf(0.05, travel_time)
 	position = from
 	z_index = 5
+	_landed_emitted = false
+	_landing_age = 0.0
 	set_process(true)
 
 
 func _process(delta: float) -> void:
+	if _landed_emitted:
+		_landing_age += delta
+		var settle := clampf(_landing_age / 0.085, 0.0, 1.0)
+		scale = Vector2(lerpf(1.46, 1.08, settle),
+			lerpf(0.34, 0.16, settle))
+		modulate.a = 1.0 - ease(settle, 0.45)
+		queue_redraw()
+		if settle >= 1.0:
+			queue_free()
+		return
+
 	_age += delta
 	var t := clampf(_age / duration, 0.0, 1.0)
 	# Accelerate into the page. A small sideways bow stops successive beads from
@@ -46,18 +61,22 @@ func _process(delta: float) -> void:
 	position = next_position
 	# Authored along local +Y. The narrow end trails behind the heavy bead.
 	rotation = _motion.angle() - PI * 0.5
-	_stretch = lerpf(1.42, 0.92, ease(t, 0.65))
+	_stretch = lerpf(1.68, 0.92, ease(t, 0.65))
 	scale = Vector2(lerpf(0.72, 1.0, t), _stretch)
 	queue_redraw()
 
 	if t >= 1.0:
+		_landed_emitted = true
+		position = _to
+		rotation = 0.0
+		scale = Vector2(1.46, 0.34)
 		landed.emit()
-		queue_free()
+		queue_redraw()
 
 
 func _draw() -> void:
-	draw_line(Vector2(0, -12), Vector2(0, -5),
-		Color(color.lightened(0.05), 0.26), 1.4)
+	draw_line(Vector2(0, -16), Vector2(0, -5),
+		Color(color.lightened(0.05), 0.34), 1.65)
 	var bead := PackedVector2Array([
 		Vector2(0, -7.5),
 		Vector2(3.4, -1.4),

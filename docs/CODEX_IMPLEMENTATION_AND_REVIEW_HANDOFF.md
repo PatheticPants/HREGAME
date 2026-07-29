@@ -32,7 +32,7 @@ original review.
 
 It is now a connected two-day campaign with:
 
-- seven authored matters across Tuesday and Thursday;
+- eight authored matters across Tuesday and Thursday;
 - persistent rulings and precedent;
 - three legally defensible responses to a genuine authority conflict;
 - dynamic consequence cases that consult earlier rulings;
@@ -49,6 +49,141 @@ It is now a connected two-day campaign with:
 The major design objection in the original review—plural law collapsing into one
 objectively correct answer—has been addressed in the rules model, records,
 feedback, and authored campaign.
+
+---
+
+## 2026-07-28 magnifier, depth, and atmosphere pass — latest
+
+This is the newest work. It builds on the return pass documented below and is
+the state Claude should review, not a proposal.
+
+### The magnifier is now an authored hero prop
+
+The old procedural ring and thin handle were replaced by a new transparent
+pixel-art chassis at:
+
+- `art/props/magnifying_glass_chassis.png`
+
+It has a heavier asymmetrical brass bezel, visible retaining clips, a substantial
+ferrule, and a turned-walnut handle. The prop's resting position was moved upward
+so the complete silhouette is visible. Its hit test now follows the circular
+bezel and handle; the empty corners of the old rectangular grab box no longer
+steal clicks from visible papers.
+
+`shaders/lens_refraction.gdshader` supplies a localized circular screen-space
+refraction with nearest-pixel sampling, restrained magnification, and a
+sub-pixel fringe only at the optical edge. The existing high-detail evidence
+renderers remain authoritative, so the glass does not merely enlarge the low
+resolution desk sprite.
+
+Focus now has weight:
+
+- moving the glass resolves more slowly than setting it down;
+- the optical image trails fast motion by a few quantized pixels, then settles;
+- evidence confirmation requires a resolved, nearly still view;
+- off-axis evidence retains a small amount of parallax instead of teleporting
+  to the centre.
+
+The glass carries crown-glass reflections, two fixed seed bubbles, a restrained
+caustic opposite the flame, and an annular contact shadow. An uncommon physical
+bug was found during the final close-up: one circular `LightOccluder2D` made the
+transparent aperture block the candle like a solid brass plate. Segmenting the
+bezel then projected long bars across nearby papers. The glass now uses no solid
+global light occluder; its short candle-relative shadow is drawn as an annulus,
+leaving the aperture genuinely clear.
+
+### Magnified evidence is material rather than explanatory
+
+The charter foot now resolves parchment laid lines, fixed fibres, ink pooling,
+the scribe's terminal flourish, and the physical closing formula. It no longer
+prints the dating custom or the reduced calendar year inside the glass. The
+player must still connect that physical wording to the relevant reference book.
+This restores the settled contract: **the glass shows evidence, not
+conclusions**.
+
+Pendant and struck seals received candle-relative magnified relief. Their
+shoulder gloss, incuse device, circular legend, rubbed high points, dark resin
+edge, chips, and tiny cast pits all turn with the carried flame. Surface marks
+are generated once per seal and cached, so enlarged wax does not crawl or
+allocate a new random generator every frame.
+
+### Depth, shadows, morning, and the room
+
+The desk has a near oak fascia beyond the authored work plate. It covers papers
+that overrun the work surface while remaining behind lifted tools and the
+magnifier's overhanging handle. It falls below frame during the audience-view
+transition, which adds a real foreground plane without flattening the desk when
+the clerk looks up.
+
+Shadow occluders now follow physical silhouettes rather than generous hit boxes:
+
+- closed boards and tablets have clipped corners;
+- open books retain a recessed gutter;
+- the melting spoon blocks the light under its offset bowl, not under the middle
+  of its handle;
+- the transparent magnifier uses the annular contact shadow described above.
+
+The petitioner has a short candle-thrown wall shadow and a scaled contact value
+at the floor/desk edge, so the portrait belongs to the room during approach,
+speech, and withdrawal. Morning suppresses the fire shadow.
+
+Cold reflected morning now propagates through oak, leather, brass, and wax by a
+shared `Surface.tint_for` path. Dust changes from round firelit motes to faint
+directional strokes and appears only inside the two authored shutter bands.
+
+### Wax motion
+
+The pour now has a visible reservoir stretch over the spoon lip, a curved
+tapering neck with a moving highlight, a slower accelerating drop with a longer
+tail, and a brief landing squash before it disappears into the pool. The pool's
+existing viscous spring, impact ring, wet gloss, partial strike geometry, and
+peel string remain intact.
+
+### New QA contracts
+
+The presentation suite is now **305 checks, 0 failures**. The 17 new assertions
+cover the magnifier's circular and handle hit regions, empty-corner click-through,
+transparent aperture, spoon-bowl shadow registration, open-book gutter,
+physical-only charter evidence, cold-versus-warm material response, shutter-band
+dust bounds, candle-relative seal gloss, near-fascia ordering, and importability
+of the authored chassis.
+
+The capture harness now writes **59 frames**. New frames are:
+
+- `shot_57_glass_on_charter_formula.png`
+- `shot_58_glass_charter_detail_close.png`
+- `shot_59_open_book_gutter_shadow.png`
+
+The same harness now ends with a repeatable four-open-book stress pose. Repeated
+final runs measured **6.45–6.73 ms/frame (149–155 fps)**, with 17 live draggables, four
+open books, and 10 cached outline builds at
+1600×900. This is not the exact historical 19-draggable pose, so preserve both
+numbers; it is nonetheless comfortably below the 10 ms intervention line.
+
+Latest automated state:
+
+- rules: **90 checks, 0 failures**
+- presentation: **305 checks, 0 failures**
+- session: **76 checks, 0 failures**
+- independent Python content and encoding verifier: **passed**
+
+Relevant implementation files:
+
+- `scripts/presentation/lens.gd`
+- `shaders/lens_refraction.gdshader`
+- `scripts/presentation/charter_view.gd`
+- `scripts/presentation/seal_tag.gd`
+- `scripts/presentation/wax_shape.gd`
+- `scripts/presentation/wax_spoon.gd`
+- `scripts/presentation/wax_drop.gd`
+- `scripts/presentation/foreground_depth.gd`
+- `scripts/presentation/draggable.gd`
+- `scripts/presentation/reference_book.gd`
+- `scripts/presentation/petitioner_view.gd`
+- `scripts/presentation/dust.gd`
+- `scripts/presentation/surface.gd`
+- `tests/test_presentation.gd`
+- `tests/qa_capture.gd`
 
 ---
 
@@ -639,7 +774,7 @@ All validation was run from `C:\HREGAME` after the visual pass.
 
 - rules: **90 checks, 0 failures**
 - session: **76 checks, 0 failures**
-- presentation: **288 checks, 0 failures**
+- presentation: **305 checks, 0 failures**
 - independent Python content verifier: **passed**
 
 The suites cover:
@@ -712,6 +847,9 @@ Important frames in `.tools/`:
 - `shot_54_view_lifting.png`
 - `shot_55_view_near_arrival.png`
 - `shot_56_wax_ribbon_close.png`
+- `shot_57_glass_on_charter_formula.png`
+- `shot_58_glass_charter_detail_close.png`
+- `shot_59_open_book_gutter_shadow.png`
 
 Together these captures prove that the incoming seal fills the glass, page
 content remains on its physical leaf, the packet visibly leaves the desk, depth

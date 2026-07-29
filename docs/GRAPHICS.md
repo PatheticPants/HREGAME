@@ -23,20 +23,26 @@ The latest pass closed the most visible remaining motion and material gaps:
   settle; cleanup happens only after every sheet reaches the petitioner;
 - the desk-to-audience move preserves prop relief and the registered far desk
   edge at intermediate poses, not only at its endpoints;
-- the magnifier is clearer crown glass with candle-relative reflections,
-  transmitted subject parallax, a lit inner bezel, and a material-responsive
-  handle;
+- the magnifier is an authored aged-brass and walnut chassis with localized
+  nearest-sampled refraction, candle-relative reflections, transmitted subject
+  parallax, a light-transmitting aperture with an annular contact shadow, and
+  weighted focus;
 - molten wax leaves the spoon as a curved, tapering viscous neck and oriented
   bead rather than two straight lines;
 - the candle's terminal wax stays outside the authored stub instead of painting
   a pale disc over it;
 - the pigeonhole rack is now directional oak rather than fixed-colour geometry;
 - cold morning light has a distinct colour and directional shutter bands across
-  both room and desk planes.
+  both room and desk planes, with dust visible only inside those bands;
+- a near oak fascia creates a foreground plane without swallowing lifted tools;
+- books, boards, tablets, the spoon bowl, and the magnifier now interrupt the
+  candle with physical silhouettes rather than their grab rectangles;
+- magnified parchment and wax carry fixed material microdetail, and the glass no
+  longer states legal conclusions.
 
-These are rendered and covered by the 56-shot capture harness. The presentation
-suite is now 288 checks. The pass added no shader and no new raster plate: the
-authored pixel art remains the anchor.
+These are rendered and covered by the 59-shot capture harness. The presentation
+suite is now 305 checks. The pass adds one localized canvas shader and one
+authored raster chassis; procedural detail remains anchored to those pixels.
 
 ---
 
@@ -55,12 +61,14 @@ review and obvious in a frame:
 | A page turned as a blank rectangle while its ink stayed behind | since the first page-turn animation | three staged page-turn frames |
 | The petition packet waited, then disappeared instead of travelling | since the sweep was authored | a mid-flight frame plus an arrival assertion |
 | Terminal candle wax painted a pale disc over the authored stub | since the late melt was added | the 4× guttering capture |
+| The wax spoon's light blocker sat under its handle instead of its offset bowl | since light occlusion was added | a geometry invariant plus a grazing-light frame |
+| The transparent glass aperture blocked the candle like a solid brass disc, then threw bar shadows when segmented | during the optical chassis integration | repeated 2.5× lens captures |
 
 ```bash
 .tools/godot-4.6.3/Godot_v4.6.3-stable_win64_console.exe --path . --resolution 1600x900 --scene res://tests/qa_capture.tscn
 ```
 
-56 frames into `.tools/shot_*.png` (gitignored). Deliberately **not** headless —
+59 frames into `.tools/shot_*.png` (gitignored). Deliberately **not** headless —
 Godot cannot render 2D lights with the dummy driver.
 
 **Three rules about captures, each of which was learned the hard way:**
@@ -284,6 +292,13 @@ That remains under the 10 ms intervention line below, but no longer by a wide
 margin. Re-run this exact stress pose before adding another broad per-frame
 material layer.
 
+**Measured by the permanent capture-harness probe after the magnifier and
+atmosphere pass: 6.45–6.73 ms, 149–155 fps** at 1600×900 with 17 live draggables, all four
+books open, and 10 cached outline builds. This is a different pose from the
+historical 19-draggable probe, so it supplements rather than replaces 9.22 ms.
+The important result is that the new localized screen copy, foreground plane,
+morning dust, and shadow silhouettes remain below the 10 ms intervention line.
+
 **Know what the probe actually covers before you lean on the number.** The probe
 lays out a packet and opens the books; it never strikes a seal, so nothing it
 measures has `impressed = true`. Anything on the struck-pool path is *unpriced*
@@ -300,18 +315,20 @@ What remains, and is **speculative until somebody measures it**:
 `Draggable._process` calls `queue_redraw()` unconditionally, twice per object,
 every frame, with no dirty flag. So do `Desk`, `WaxPool` (four child CanvasItems)
 and `ReferenceBook`. At 19 objects the current stress pose remains within
-budget, but the 9.22 ms return-pass measurement means its headroom is now small
-enough to watch.
+budget. The 9.22 ms historical pose and 6.45–6.73 ms current harness pose mean there
+is evidence on both sides of the pass, but scenario-preserving measurement still
+matters more than comparing the raw numbers.
 
-**So: re-run the probe before optimising, and again after.** The current number
-to beat is 9.22 ms. If a materials pass pushes it past about 10 ms, fix the dirty flag then —
+**So: re-run the probe before optimising, and again after.** If a materials pass
+pushes its own unchanged pose past about 10 ms, fix the dirty flag then —
 `desk_ledge.gd` has the pattern to copy. Do not spend a day on it in advance of a
 number.
 
-The project has **zero `.gdshader` files and zero `CanvasItemMaterial`s.**
-`gl_compatibility` supports canvas shaders; a single cheap one for parchment
-translucency or wax subsurface would replace a lot of banded-rect faking. Confirm
-the available feature set with `godot-reviewer` before committing to it.
+The project now has **one `.gdshader` file**:
+`shaders/lens_refraction.gdshader`. It is localized to the magnifier aperture,
+uses the Compatibility renderer's screen texture with nearest filtering, and
+keeps the existing procedural evidence detail. Do not generalize it into a
+full-screen post-process or use smooth sampling that breaks the pixel clusters.
 
 ## 7. The workflow that works
 

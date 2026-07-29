@@ -54,6 +54,7 @@ func _run() -> void:
 		await get_tree().process_frame
 
 	_test_surface_helper(desk)
+	_test_visual_invariants(desk)
 	_test_wax_is_darker_molten(desk)
 	_test_the_page_turn(desk)
 	_test_the_office_notices_what_you_read(desk)
@@ -557,6 +558,81 @@ func _test_surface_helper(desk: Desk) -> void:
 		"tint() warms toward the flame")
 	_is_true(far_flame.v < slate.v,
 		"tint() darkens away from it, rather than merely failing to warm")
+
+
+func _test_visual_invariants(desk: Desk) -> void:
+	print("-- visual invariants")
+	var lens := desk.lens
+	_is_true(lens != null, "the desk has its authored magnifying glass")
+	if lens != null:
+		_is_true(lens.contains_point(lens.global_position),
+			"the glass aperture remains draggable")
+		_is_true(lens.contains_point(lens.to_global(
+			Vector2(0, Lens.RADIUS + 68.0))),
+			"the authored walnut handle remains draggable")
+		_is_true(not lens.contains_point(lens.to_global(
+			Vector2(Lens.RADIUS + 5.0, Lens.RADIUS + 5.0))),
+			"an empty corner outside the round bezel no longer steals a paper click")
+		_is_true(not lens.occludes_light,
+			"the clear aperture never becomes a solid candle occluder")
+
+	var spoon := desk.press.spoon if desk.press != null else null
+	_is_true(spoon != null, "the wax spoon exists for silhouette checks")
+	if spoon != null:
+		var spoon_shadow := spoon.light_occluder_polygon()
+		var centroid := Vector2.ZERO
+		for point in spoon_shadow:
+			centroid += point
+		centroid /= maxf(1.0, float(spoon_shadow.size()))
+		_is_true(centroid.distance_to(WaxSpoon.BOWL_CENTER) < 0.1,
+			"the spoon interrupts light under its bowl rather than under its handle")
+
+	var book := desk.books[0] if not desk.books.is_empty() else null
+	_is_true(book != null, "a reference book exists for silhouette checks")
+	if book != null:
+		var old_open := book.is_open
+		var old_amount := book._open_amount
+		book.is_open = true
+		book._open_amount = 1.0
+		book._update_hit_size()
+		var book_shadow := book.light_occluder_polygon()
+		_is_true(book_shadow.size() > 8
+			and book_shadow[2].y > book_shadow[1].y,
+			"an open book shadow retains its recessed gutter")
+		book.is_open = old_open
+		book._open_amount = old_amount
+		book._update_hit_size()
+
+	var charter: CharterView = null
+	for paper in desk.case_papers:
+		if paper is CharterView:
+			charter = paper
+			break
+	_is_true(charter != null, "a charter exists for magnified evidence checks")
+	if charter != null:
+		var physical_text := charter.lens_detail_text()
+		_is_true(physical_text.begins_with("Drawn at the chancery of "),
+			"the glass resolves the charter's physical closing formula")
+		_is_true(not physical_text.contains("so read")
+			and not physical_text.contains("dates its instruments"),
+			"the glass does not solve the legal dating inference for the player")
+
+	var base := Color(0.34, 0.20, 0.09)
+	var fire := Surface.tint_for(base, 0.9, false, 0.30, 0.18)
+	var morning := Surface.tint_for(base, 0.9, true, 0.30, 0.18)
+	_is_true(morning.b > fire.b and morning.r < fire.r,
+		"cold shutter reflection is materially distinct from candle warmth")
+	_is_true(Dust.morning_band_at(Vector2(-250, -300)) == 1
+		and Dust.morning_band_at(Vector2(170, -300)) == 2
+		and Dust.morning_band_at(Vector2(-800, 0)) == 0,
+		"morning dust exists only inside the two shutter bands")
+
+	var a := WaxShape.magnified_specular_angle(Vector2.LEFT)
+	var b := WaxShape.magnified_specular_angle(Vector2.RIGHT)
+	_is_true(absf(absf(angle_difference(a, b)) - PI) < 0.001,
+		"magnified wax relief turns its gloss with the carried candle")
+	_is_true(desk.foreground != null and desk.foreground.z_index < lens.z_index,
+		"the near desk fascia adds depth without swallowing the hero glass")
 
 
 func _test_reachability(desk: Desk) -> void:
@@ -1472,6 +1548,7 @@ func _test_authored_payoff() -> void:
 		"res://art/environment/desk_surface.png",
 		"res://art/props/candle_holder.png",
 		"res://art/props/signet_confirm.png",
+		"res://art/props/magnifying_glass_chassis.png",
 		"res://art/props/wax_pool_0.png",
 	]:
 		_is_true(ResourceLoader.exists(path), "%s is importable" % path)

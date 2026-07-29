@@ -31,6 +31,7 @@ var light_strength := 1.0
 ## Same inverse-square reach the desk objects use, so carrying the candle toward
 ## the far edge visibly brings the person across the desk out of the dark.
 var light_level := 0.4
+var ambient_daylight := false
 
 var _queue: Array[String] = []
 var _current := ""
@@ -251,6 +252,20 @@ func _draw_figure(offset: Vector2, alpha: float, closeness: float) -> void:
 	# which is a thing a player will do without being told to.
 	var warm := clampf(light_level * 1.35, 0.0, 1.0) \
 		* clampf(light_strength, 0.65, 1.15)
+	var light_dir := light_position - global_position
+	light_dir = light_dir.normalized() if light_dir.length() > 1.0 \
+		else Vector2(0.55, -0.84)
+
+	# A person needs a place to stand. The portrait ended exactly at the far desk
+	# edge with no contact value beneath it, so the breath and walk motion still
+	# belonged to a cutout. This low ellipse shares the approach scale and fades
+	# naturally with distance.
+	var ground_scale := lerpf(APPROACH_DISTANT_SCALE, 1.0, closeness)
+	draw_set_transform(base + lean * 0.18 + Vector2(0, 3.0), 0.0,
+		Vector2(ground_scale, ground_scale * 0.20))
+	draw_circle(Vector2.ZERO, b * 0.73,
+		Color(0.018, 0.014, 0.018, alpha * (0.17 + warm * 0.12)))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if _portrait == null:
 		_draw_fallback_figure(base, lean, alpha)
 		return
@@ -270,10 +285,21 @@ func _draw_figure(offset: Vector2, alpha: float, closeness: float) -> void:
 	var portrait_rect := Rect2(Vector2(-target_w * 0.5, -target_h),
 		Vector2(target_w, target_h))
 
+	# A soft portrait-shaped wall shadow, thrown away from the carried candle.
+	# It is deliberately short: the figure stands close to the back wall.
+	if not ambient_daylight and warm > 0.03:
+		var cast := -light_dir * (9.0 + warm * 10.0) + Vector2(0, 5.0)
+		for i in range(3, 0, -1):
+			var blur := float(i - 1) * 1.8
+			var shadow_rect := Rect2(portrait_rect.position + cast
+				+ Vector2(blur, blur * 0.55), portrait_rect.size)
+			draw_texture_rect(_portrait, shadow_rect, false,
+				Color(0.015, 0.012, 0.018,
+					alpha * warm * 0.085 / float(i)))
+
 	# A one-pixel warm echo behind the sprite creates a candle-facing rim without
 	# tinting the authored skin and cloth colors.
 	if warm > 0.02:
-		var light_dir := (light_position - global_position).normalized()
 		var rim_rect := Rect2(portrait_rect.position + light_dir * 1.8,
 			portrait_rect.size)
 		draw_texture_rect(_portrait, rim_rect, false,

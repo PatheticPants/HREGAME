@@ -21,6 +21,8 @@ var charter: CharterView = null
 
 var _unit: PackedVector2Array = PackedVector2Array()
 var _rim_ticks := 0
+var _wear_marks: PackedVector3Array = PackedVector3Array()
+var _detail_pits: PackedVector3Array = PackedVector3Array()
 
 
 func bind(imp: SealImpression, owner_charter: CharterView, desk_bounds: Rect2) -> void:
@@ -36,6 +38,7 @@ func bind(imp: SealImpression, owner_charter: CharterView, desk_bounds: Rect2) -
 	# matters is the *wear*, which is applied when drawing.
 	_unit = WaxShape.outline(imp.shape, imp.shape_seed, 0.055, 26)
 	_rim_ticks = 34 if imp.shape == &"round" else 28
+	_build_surface_marks()
 
 	# setup() takes a position in our parent's space. cord_world() is global, so
 	# convert it before adding the hanging offset. Without this conversion the
@@ -46,6 +49,24 @@ func bind(imp: SealImpression, owner_charter: CharterView, desk_bounds: Rect2) -
 	# but its whole face is available to the player's glass from frame one.
 	var start: Vector2 = parent_space.to_local(owner_charter.cord_world()) + Vector2(-110, 12)
 	setup(start, deg_to_rad(randf_range(-9.0, 9.0)), desk_bounds)
+
+
+func _build_surface_marks() -> void:
+	_wear_marks = PackedVector3Array()
+	_detail_pits = PackedVector3Array()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = impression.shape_seed + 977
+	for i in 12:
+		var t := rng.randf_range(1.3, 3.4)
+		var d := rng.randf_range(0.80, 1.02)
+		_wear_marks.append(Vector3(sin(t) * d, cos(t) * d,
+			rng.randf_range(2.5, 6.5)))
+	rng.seed = impression.shape_seed + 4127
+	for i in 11:
+		var a := rng.randf_range(0.0, TAU)
+		var d := sqrt(rng.randf_range(0.03, 0.62))
+		_detail_pits.append(Vector3(cos(a) * d, sin(a) * d,
+			rng.randf_range(0.006, 0.017)))
 
 
 func _process(delta: float) -> void:
@@ -122,14 +143,11 @@ func _draw_rim(wax: Color) -> void:
 func _draw_wear(wax: Color) -> void:
 	if impression.wear <= 0.02:
 		return
-	var rng := RandomNumberGenerator.new()
-	rng.seed = impression.shape_seed + 977
 	var chips := int(impression.wear * 9.0)
 	for i in chips:
-		var t := rng.randf_range(1.3, 3.4)
-		var d := rng.randf_range(0.80, 1.02)
-		var p := Vector2(sin(t), cos(t)) * RADIUS * d
-		draw_circle(p, rng.randf_range(2.5, 6.5) * (0.5 + impression.wear),
+		var mark := _wear_marks[i]
+		var p := Vector2(mark.x, mark.y) * RADIUS
+		draw_circle(p, mark.z * (0.5 + impression.wear),
 			Color(wax.darkened(0.62), 0.75))
 
 
@@ -170,9 +188,9 @@ func draw_detail(c: CanvasItem, at: Vector2, radius: float) -> void:
 	var wax := impression.wax_color
 	# A slight value lift represents the broadened reflection visible across an
 	# enlarged wax shoulder. It improves separation without inventing a light.
-	var inspection_wax := wax.lightened(0.10)
+	var inspection_wax := wax.lightened(0.16)
 	var r := radius * 0.86
-	var depth := clampf(1.0 - impression.wear * 0.48, 0.42, 1.0)
+	var depth := clampf(1.06 - impression.wear * 0.48, 0.48, 1.06)
 
 	# Where the flame actually is, in the glass's own upright frame. Everything
 	# cut into this wax — the shoulder, the device, the legend — is lit from that
@@ -183,21 +201,43 @@ func draw_detail(c: CanvasItem, at: Vector2, radius: float) -> void:
 	light = light.normalized() if light.length() > 1.0 else Vector2(-0.65, -0.75)
 
 	WaxShape.draw_magnified_body(c, _unit, at, r, inspection_wax, light)
+	var light_angle := light.angle()
+	# Rubbed high points catch a broken band of candlelight while the far shoulder
+	# holds a resin-dark edge. These belong to the wax, not the glass reflection.
+	c.draw_arc(at + light * r * 0.018, r * 0.815,
+		light_angle - 0.54, light_angle + 0.38, 18,
+		Color(inspection_wax.lightened(0.38), 0.26), 1.55)
+	c.draw_arc(at - light * r * 0.012, r * 0.825,
+		light_angle + PI - 0.45, light_angle + PI + 0.36, 16,
+		Color(inspection_wax.darkened(0.58), 0.38), 1.7)
+
+	# Tiny fixed pits make the enlarged field a cast material. Each depression
+	# has the same far-lit/near-dark convention as the device and legend.
+	for pit in _detail_pits:
+		var p := at + Vector2(pit.x, pit.y) * r
+		var pit_radius := maxf(0.65, pit.z * r)
+		var relief := maxf(0.55, pit_radius * 0.55)
+		c.draw_circle(p + Surface.lip_offset(light, relief), pit_radius,
+			Color(inspection_wax.lightened(0.25), 0.24))
+		c.draw_circle(p + Surface.trough_offset(light, relief), pit_radius,
+			Color(inspection_wax.darkened(0.58), 0.36))
+		c.draw_circle(p, pit_radius * 0.62,
+			Color(inspection_wax.darkened(0.34), 0.46))
+
 	Heraldry.draw_device_incuse(c, impression.device, at, r * 0.38,
 		inspection_wax, depth, light)
 	Ink.circular_incuse(c, at, _legend_display(), r * 0.67,
-		9 if _legend_display().length() > 25 else 10, inspection_wax, depth,
+		10 if _legend_display().length() > 25 else 11, inspection_wax, depth,
 		-c.rotation, light)
 
 	# Chips and rubbing stay physical under the glass; a caption announcing wear
 	# was accurate but made the glass look like a tooltip.
 	if impression.wear > 0.04:
-		var rng := RandomNumberGenerator.new()
-		rng.seed = impression.shape_seed + 1973
-		for i in maxi(1, int(impression.wear * 11.0)):
-			var a := rng.randf_range(1.15, 3.35)
-			var p := at + Vector2(cos(a), sin(a)) * r * rng.randf_range(0.83, 0.99)
-			c.draw_circle(p, rng.randf_range(2.0, 5.5),
+		for i in mini(_wear_marks.size(),
+				maxi(1, int(impression.wear * 11.0))):
+			var mark := _wear_marks[i]
+			var p := at + Vector2(mark.x, mark.y) * r
+			c.draw_circle(p, mark.z * 0.86,
 				Color(inspection_wax.darkened(0.62), 0.72))
 
 

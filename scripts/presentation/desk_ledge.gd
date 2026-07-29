@@ -46,6 +46,7 @@ const CATCH_MARGIN := 74.0
 var light_position := Vector2(0, -400)
 var light_level := 0.5
 var light_strength := 1.0
+var ambient_daylight := false
 
 ## Which hole would catch what the player is currently carrying, or -1.
 ##
@@ -153,7 +154,8 @@ func _draw_hole(index: int) -> void:
 	# Carcass: a box of dark oak standing on the desk, lit from wherever the
 	# candle happens to be.
 	var frame := r.grow(11.0)
-	var oak := Surface.tint(Color(0.31, 0.205, 0.105), lit, 0.32, 0.24)
+	var oak := Surface.tint_for(Color(0.31, 0.205, 0.105), lit,
+		ambient_daylight, 0.32, 0.24)
 	Surface.extrude(self, frame, toward, oak, 5.0, 0.58)
 	draw_rect(Rect2(frame.position - toward * 4.0 + Vector2(0, 2),
 		frame.size), Color(0, 0, 0, 0.28))
@@ -171,7 +173,8 @@ func _draw_hole(index: int) -> void:
 	# A recess lights on the wall opposite the source. The four weights make the
 	# hollow turn as the candle crosses the desk instead of keeping a painted
 	# highlight on its top-left corner.
-	var wall := Surface.tint(Color(0.20, 0.135, 0.075), lit, 0.34, 0.30)
+	var wall := Surface.tint_for(Color(0.20, 0.135, 0.075), lit,
+		ambient_daylight, 0.34, 0.30)
 	var top_lit := maxf(0.0, toward.y)
 	var bottom_lit := maxf(0.0, -toward.y)
 	var left_lit := maxf(0.0, toward.x)

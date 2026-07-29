@@ -72,6 +72,10 @@ func _ready() -> void:
 	visible = false
 
 
+func light_occluder_polygon() -> PackedVector2Array:
+	return bevelled_light_occluder(15.0)
+
+
 func open_with(new_lines: Array[Dictionary], desk_bounds: Rect2, at: Vector2) -> void:
 	lines = new_lines
 	revealed = 0.0

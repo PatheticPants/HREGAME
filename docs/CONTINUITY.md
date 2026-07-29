@@ -29,15 +29,15 @@ python tools/verify_content.py
 | suite | checks |
 |---|---|
 | rules | 90 |
-| presentation | 288 |
+| presentation | 305 |
 | the day (full loop) | 76 |
 | content + encoding | PASS |
 
-The capture harness writes **56** frames. The latest additions are 52/53 for the
-petition packet's gather and carried phases, 54/55 for intermediate poses in the
-desk-to-audience projection, and 56 for the viscous wax neck and falling bead at
-inspection scale. Existing 47-49 now show authored page content remaining on the
-physical leaf throughout its turn.
+The capture harness writes **59** frames. The latest additions are 57 for the
+glass on the charter's physical closing formula, 58 for parchment and ink at
+inspection scale, and 59 for an open book's guttered shadow under grazing
+candlelight. Frames 52-56 still cover the petition packet, intermediate
+desk-to-audience poses, and the viscous wax neck.
 
 **Run the rules suite before the Python one.** `tests/test_rules.gd` writes the
 finding set it actually derived to `.tools/derived_findings.json`, and
@@ -327,8 +327,11 @@ These are recorded so the next person does not think they are undiscovered.
   with no dirty flag, as do `Desk` and `WaxPool`. The original 2026-07-28 probe
   measured 5.9 ms/frame; the return graphics pass now measures **9.22 ms/frame,
   about 108 fps, with 19 draggables and all four books open**. It remains below
-  the 10 ms intervention line, but there is no longer enough headroom to skip
-  measurement before another broad material layer.
+  the 10 ms intervention line. The permanent capture-harness probe added by the
+  magnifier pass measures **6.45–6.73 ms/frame, 149–155 fps, with 17 live
+  draggables and all four books open**. Because those poses differ, neither
+  number replaces the other; preserve the scenario and keep measuring before
+  another broad material layer.
   `ReferenceBook`'s half of this — a seeded wax outline rebuilt per frame per open
   plate — WAS real and is fixed: `WaxShape.outline` is memoised and the
   presentation suite asserts the memo holds.

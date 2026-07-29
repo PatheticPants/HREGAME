@@ -66,6 +66,10 @@ func _ready() -> void:
 	z_index = 0
 
 
+func light_occluder_polygon() -> PackedVector2Array:
+	return bevelled_light_occluder(12.0)
+
+
 func inner_rect() -> Rect2:
 	return Rect2(-SIZE * 0.5 + Vector2(FRAME, FRAME),
 		SIZE - Vector2(FRAME, FRAME) * 2.0)

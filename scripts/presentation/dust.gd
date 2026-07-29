@@ -25,6 +25,7 @@ const COUNT := 44
 const FIELD := Rect2(-980.0, -420.0, 1960.0, 900.0)
 
 var candle: Candle
+var desk: Desk
 
 ## x, y, radius, phase. Position drifts; the phase decorrelates the wander so
 ## they do not shoal.
@@ -74,7 +75,10 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	if candle == null or not is_instance_valid(candle) or candle.is_spent():
+	if candle == null or not is_instance_valid(candle):
+		return
+	if candle.is_spent():
+		_draw_morning_motes()
 		return
 	var flame := to_local(candle.flame_world())
 	var flicker := candle.light_intensity()
@@ -94,3 +98,39 @@ func _draw() -> void:
 		var near := clampf(1.0 - at.distance_to(flame) / 90.0, 0.0, 1.0)
 		draw_circle(at, m.z * (1.0 + near * 0.5),
 			Color(1.0, 0.86, 0.62, a + near * near * 0.22))
+
+
+## Once the flame is gone the same air becomes visible only inside the cold
+## shutter bands. Long, faint strokes replace the round firelit motes: the light
+## is distant and directional now, and the change in their shape helps morning
+## feel like a different source rather than a brighter candle.
+func _draw_morning_motes() -> void:
+	if desk == null or desk._morning_amount <= 0.01:
+		return
+	var rise := smoothstep(0.0, 1.0, desk._morning_amount)
+	for i in _motes.size():
+		var m := _motes[i]
+		var at := Vector2(m.x, m.y)
+		var band := morning_band_at(at)
+		if band == 0:
+			continue
+		var band_alpha := 0.15 if band == 1 else 0.08
+		var pulse := 0.75 + 0.25 * sin(_time * 0.19 + m.w)
+		draw_line(at, at + Vector2(2.2, -5.6),
+			Color(0.77, 0.84, 0.98,
+				band_alpha * rise * pulse * clampf(m.z / 1.9, 0.4, 1.0)),
+			maxf(0.7, m.z * 0.72), true)
+
+
+## Returns the authored shutter band containing a desk-local point: 0 for
+## neither, 1 for the broad band, and 2 for the narrow band.
+static func morning_band_at(at: Vector2) -> int:
+	var u := clampf(inverse_lerp(
+		Desk.DESK_RECT.position.y, Desk.DESK_RECT.end.y, at.y), 0.0, 1.0)
+	if at.x >= lerpf(-410.0, 170.0, u) \
+			and at.x <= lerpf(-150.0, 520.0, u):
+		return 1
+	if at.x >= lerpf(95.0, 610.0, u) \
+			and at.x <= lerpf(250.0, 820.0, u):
+		return 2
+	return 0

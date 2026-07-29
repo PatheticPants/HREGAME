@@ -51,7 +51,7 @@ only one that proves the loop actually connects end to end.
 godot --path . --resolution 1600x900 --scene res://tests/qa_capture.tscn
 ```
 
-writes 43 annotated PNGs to `.tools/shot_*.png`. Deliberately **not** headless —
+writes 59 annotated PNGs to `.tools/shot_*.png`. Deliberately **not** headless —
 Godot cannot render 2D lights with the dummy driver, and lighting is what these
 exist to check.
 

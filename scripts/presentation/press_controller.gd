@@ -303,7 +303,7 @@ func _land_drop() -> void:
 	# clean pool and a wandering one drags it out of shape.
 	var toward := from.lerp(pool.position, 0.62)
 	var to := toward + Vector2.from_angle(angle) * distance
-	drop.setup(from, to, pool.color, _rng.randf_range(0.12, 0.18))
+	drop.setup(from, to, pool.color, _rng.randf_range(0.20, 0.27))
 	drop.landed.connect(_on_drop_landed)
 
 

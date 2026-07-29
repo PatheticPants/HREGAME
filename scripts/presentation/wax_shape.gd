@@ -159,11 +159,22 @@ static func draw_magnified_body(c: CanvasItem, unit: PackedVector2Array,
 		maxf(0.9, radius * 0.014), true)
 
 	# Two restrained specular ridges. Broad painted white patches look like
-	# enamel; thin broken arcs read as glossy wax.
+	# enamel; thin broken arcs read as glossy wax. Their angular position follows
+	# the carried candle instead of remaining baked into the sprite.
+	var specular_angle := magnified_specular_angle(light)
 	c.draw_arc(centre + light * radius * 0.07, radius * 0.67,
-		PI * 1.06, PI * 1.50, 18, Color(1.0, 0.72, 0.55, 0.20), 2.2)
+		specular_angle - 0.42, specular_angle + 0.42, 18,
+		Color(1.0, 0.72, 0.55, 0.20), 2.2)
 	c.draw_arc(centre + light * radius * 0.12, radius * 0.48,
-		PI * 1.10, PI * 1.35, 12, Color(1.0, 0.80, 0.66, 0.13), 1.4)
+		specular_angle - 0.24, specular_angle + 0.24, 12,
+		Color(1.0, 0.80, 0.66, 0.13), 1.4)
+
+
+static func magnified_specular_angle(light_dir: Vector2) -> float:
+	var light := light_dir.normalized()
+	if light.length_squared() < 0.5:
+		light = Vector2(-0.65, -0.75)
+	return light.angle()
 
 
 static func _closed(points: PackedVector2Array) -> PackedVector2Array:

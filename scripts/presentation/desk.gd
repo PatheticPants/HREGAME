@@ -77,6 +77,7 @@ var ledge: DeskLedge
 var register_book: ReferenceBook
 var kalendar_book: ReferenceBook
 var dust: Dust
+var foreground: ForegroundDepth
 ## What was left of yesterday's candle, 0..1. Written by reset_for_next_day and
 ## read by the session to scale the new day. 1.0 on the first morning.
 var last_candle_remaining := 1.0
@@ -178,8 +179,17 @@ func _ready() -> void:
 	dust.name = "dust"
 	add_child(dust)
 
+	# One restrained plane nearer than the handled desk. It lives outside the
+	# foreshortened work plane, so the camera naturally carries it below frame
+	# when the clerk lifts his head.
+	foreground = ForegroundDepth.new()
+	foreground.name = "foreground_depth"
+	add_child(foreground)
+	foreground.bind(self)
+
 	_build_fixtures()
 	dust.candle = candle
+	dust.desk = self
 	press.impression_finished.connect(_remember_impression)
 
 	session = SessionController.new()
@@ -239,7 +249,7 @@ func _build_fixtures() -> void:
 
 	lens = Lens.new()
 	surface.add_child(lens)
-	lens.setup(Vector2(700, 250), deg_to_rad(-14.0), DESK_RECT)
+	lens.setup(Lens.HOME_POSITION, deg_to_rad(Lens.HOME_ANGLE), DESK_RECT)
 	lens.focus_confirmed.connect(_on_lens_focus_confirmed)
 
 	# The tablet begins racked, which does two jobs at once: it keeps a big
@@ -959,6 +969,8 @@ func _process(delta: float) -> void:
 
 	if _desk_visual != null:
 		_desk_visual.queue_redraw()
+	if foreground != null:
+		foreground.queue_redraw()
 	queue_redraw()
 
 
@@ -1116,6 +1128,7 @@ func _update_lighting() -> void:
 			else candle.illumination_at(d.global_position)
 	petitioner.light_position = flame
 	petitioner.light_strength = strength
+	petitioner.ambient_daylight = spent
 	petitioner.light_level = WINDOW_LEVEL if spent \
 		else candle.illumination_at(petitioner.global_position)
 	ring_stand.light_position = flame
@@ -1133,6 +1146,7 @@ func _update_lighting() -> void:
 	if ledge != null:
 		ledge.light_position = flame
 		ledge.light_strength = strength
+		ledge.ambient_daylight = spent
 		ledge.light_level = WINDOW_LEVEL if spent \
 			else candle.illumination_at(ledge.global_position)
 		ledge.queue_redraw()

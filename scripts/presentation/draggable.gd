@@ -182,22 +182,43 @@ func _sync_light_occluder() -> void:
 	if not occludes_light or _occluder_size.is_equal_approx(hit_size):
 		return
 	_occluder_size = hit_size
-	var half := hit_size * 0.5 * occluder_inset
 	var polygon := OccluderPolygon2D.new()
+	polygon.polygon = light_occluder_polygon()
+	_light_occluder.occluder = polygon
+
+
+## The silhouette that interrupts the candle. Subclasses whose hit box is not
+## their physical shape override this: the spoon's bowl is at the far end of its
+## handle, an open book has a gutter, and the glass's long handle must not turn
+## its circular aperture into a tall oval shadow.
+func light_occluder_polygon() -> PackedVector2Array:
+	var half := hit_size * 0.5 * occluder_inset
 	if occluder_round:
 		var points := PackedVector2Array()
 		for i in 14:
 			var a := float(i) / 14.0 * TAU
 			points.append(Vector2(cos(a) * half.x, sin(a) * half.y))
-		polygon.polygon = points
-	else:
-		polygon.polygon = PackedVector2Array([
-			Vector2(-half.x, -half.y),
-			Vector2(half.x, -half.y),
-			Vector2(half.x, half.y),
-			Vector2(-half.x, half.y),
-		])
-	_light_occluder.occluder = polygon
+		return points
+	return PackedVector2Array([
+		Vector2(-half.x, -half.y),
+		Vector2(half.x, -half.y),
+		Vector2(half.x, half.y),
+		Vector2(-half.x, half.y),
+	])
+
+
+## A clipped-corner block for boards, tablets and other built objects. The
+## renderer's shadow now follows the silhouette instead of projecting the
+## generous rectangular grab area onto half the desk.
+func bevelled_light_occluder(cut := 8.0) -> PackedVector2Array:
+	var half := hit_size * 0.5 * occluder_inset
+	var c := minf(cut, minf(half.x, half.y) * 0.42)
+	return PackedVector2Array([
+		Vector2(-half.x + c, -half.y), Vector2(half.x - c, -half.y),
+		Vector2(half.x, -half.y + c), Vector2(half.x, half.y - c),
+		Vector2(half.x - c, half.y), Vector2(-half.x + c, half.y),
+		Vector2(-half.x, half.y - c), Vector2(-half.x, -half.y + c),
+	])
 
 
 func _update_slide_audio() -> void:
