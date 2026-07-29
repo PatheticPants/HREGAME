@@ -9,6 +9,16 @@ extends Node2D
 ## over it. It is visible only while looking down; lifting the head carries it
 ## below the frame naturally.
 
+## Where the lip sits at rest, and how far its face runs on past that. The runoff
+## has to clear the deepest point any document can reach — DESK_RECT.end.y plus
+## the drag solver's edge_allowance, plus half the tallest sheet — or content
+## reappears below the lip and the whole thing reads as a bar across the page.
+## Asserted in test_presentation.
+const TOP_REST := 356.0
+const TOP_LIFTED := 492.0
+const FACE_DEPTH := 86.0
+const RUNOFF := 620.0
+
 var desk: Desk
 var _grain: PackedVector3Array = PackedVector3Array()
 
@@ -32,8 +42,24 @@ func _draw() -> void:
 	if desk == null:
 		return
 	var lift := smoothstep(0.0, 1.0, desk._view_amount)
-	var top := lerpf(356.0, 492.0, lift)
-	var bottom := top + 86.0
+	var top := lerpf(TOP_REST, TOP_LIFTED, lift)
+	# THE NEAR EDGE OF A DESK IS NOT A BAR ACROSS THE PAGE.
+	#
+	# The face was 86 units deep and stopped, so a document dragged toward the
+	# player — which the drag solver expressly allows, clamping a sheet's centre to
+	# DESK_RECT.end.y plus a 120-unit edge_allowance — was sliced by an opaque
+	# band with legible text on BOTH sides of it. Reproduced: the Küfergasse
+	# charter cut mid-clause at "the right of the well that stands upon it", with
+	# "Given in the third year of Kunrad IV" reading clearly underneath. Content
+	# above and below an opaque strip does not read as a desk lip. It reads as a
+	# rendering fault, and it hides evidence while doing it.
+	#
+	# Deep enough to leave the frame at every view angle, so it is the edge the
+	# desk stops at. Papers may still pass behind it — a sheet pulled to the near
+	# rim goes under the lip, which is what a lip is — but nothing of them ever
+	# reappears below.
+	var depth := FACE_DEPTH
+	var bottom := top + RUNOFF
 
 	# The lip projects toward the player. Its slight widening is the closest and
 	# therefore strongest perspective cue in the scene.
@@ -48,7 +74,7 @@ func _draw() -> void:
 		Color(0.39, 0.225, 0.10, 0.72), 4.0)
 	draw_line(Vector2(-940.0, top + 8.0), Vector2(940.0, top + 8.0),
 		Color(0.12, 0.067, 0.032), 7.0)
-	draw_line(Vector2(-958.0, bottom - 12.0), Vector2(958.0, bottom - 12.0),
+	draw_line(Vector2(-958.0, top + depth - 12.0), Vector2(958.0, top + depth - 12.0),
 		Color(0.025, 0.017, 0.016, 0.92), 12.0)
 
 	# Fixed oak pores, almost lost in the near dark. They are only apparent where
@@ -57,7 +83,7 @@ func _draw() -> void:
 	var candle_x := desk.candle.position.x if desk.candle != null else 700.0
 	var candle_live := desk.candle != null and not desk.candle.is_spent()
 	for g: Vector3 in _grain:
-		var y := lerpf(top + 15.0, bottom - 17.0, g.y)
+		var y := lerpf(top + 15.0, top + depth - 17.0, g.y)
 		var near_light := clampf(1.0 - absf(g.x - candle_x) / 680.0, 0.0, 1.0)
 		var alpha := (0.025 + near_light * 0.08) if candle_live else 0.035
 		draw_line(Vector2(g.x, y), Vector2(g.x + g.z, y + 1.0),
@@ -66,10 +92,10 @@ func _draw() -> void:
 	# The corners are nearer than the centre and fall away first. These wedges
 	# also keep the lip from reading as another horizontal UI bar.
 	draw_colored_polygon(PackedVector2Array([
-		Vector2(-990, bottom), Vector2(-990, top + 10),
-		Vector2(-760, top), Vector2(-850, bottom),
+		Vector2(-990, top + depth), Vector2(-990, top + 10),
+		Vector2(-760, top), Vector2(-850, top + depth),
 	]), Color(0.012, 0.010, 0.014, 0.48))
 	draw_colored_polygon(PackedVector2Array([
-		Vector2(990, bottom), Vector2(990, top + 10),
-		Vector2(760, top), Vector2(850, bottom),
+		Vector2(990, top + depth), Vector2(990, top + 10),
+		Vector2(760, top), Vector2(850, top + depth),
 	]), Color(0.012, 0.010, 0.014, 0.48))

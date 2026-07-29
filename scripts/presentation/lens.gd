@@ -303,6 +303,33 @@ func _draw_magnified_evidence() -> void:
 	_focus.call("draw_detail", _detail, Vector2.ZERO, APERTURE_RADIUS * 0.94)
 	_detail.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+	# THE GLASS MAY NOT CHEAT THE CANDLE.
+	#
+	# draw_detail takes a light DIRECTION for its shading and never once read
+	# light_level, so a seal in the far corner of the desk — correctly an
+	# illegible smudge to the naked eye, which shot 44 exists to prove — became
+	# fully readable the moment the glass was laid on it. Device, incuse legend
+	# and wear chips, all of it, with the flame across the room. That let the hero
+	# prop of the whole optics pass defeat the one mechanic the game is built on.
+	#
+	# This is the fifth object to escape the shade veil, and it escaped for a
+	# structural reason rather than by oversight: draw_shade is applied inside
+	# each object's own _draw(), and the lens calls draw_detail from somewhere
+	# else entirely, so the veil was never on the path. Applying the SUBJECT's
+	# own shade here puts the enlarged image back under the same rule as the
+	# thing it is an image of — and does it once, for every present and future
+	# implementer of draw_detail, rather than in each of them.
+	#
+	# It dims rather than disappears. You can still see that there is wax there
+	# and that it has a device on it; you cannot read the legend until you bring
+	# the light. A verb that answers with "not from here" is still answering.
+	var subject := _focus as Draggable
+	if subject != null:
+		var veil := subject.shade_alpha()
+		if veil > 0.01:
+			_detail.draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965,
+				Color(Draggable.SHADE_COLOR, veil))
+
 
 func _draw_overlay() -> void:
 	var lit := Surface.lit(light_level, light_strength)

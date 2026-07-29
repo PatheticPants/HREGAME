@@ -663,6 +663,25 @@ func _test_visual_invariants(desk: Desk) -> void:
 	_is_true(desk.foreground != null and desk.foreground.z_index < lens.z_index,
 		"the near desk fascia adds depth without swallowing the hero glass")
 
+	# AND IT MUST NOT SWALLOW THE EVIDENCE EITHER, which the assertion above did
+	# not cover: it checked only that the hero glass out-ranks the fascia, while
+	# every ordinary document sits at z 0 against the fascia's 1.
+	#
+	# The face was 86 units deep and then stopped, so a charter dragged toward the
+	# player — which the solver expressly permits — was cut by an opaque band with
+	# legible text above AND below it. Reproduced before the fix on the Küfergasse
+	# charter, sliced mid-clause with its regnal date reading clearly underneath.
+	# A lip you can see past is not a lip.
+	var deepest := Desk.DESK_RECT.end.y + Lore.paper_feel().edge_allowance
+	var tallest_sheet := 0.0
+	for paper in desk.case_papers:
+		if paper is Sheet:
+			tallest_sheet = maxf(tallest_sheet, (paper as Sheet).rect().size.y)
+	var face_bottom := ForegroundDepth.TOP_REST + ForegroundDepth.RUNOFF
+	_is_true(face_bottom >= deepest + tallest_sheet * 0.5,
+		"the desk lip runs past the deepest a document can reach (%.0f >= %.0f)"
+		% [face_bottom, deepest + tallest_sheet * 0.5])
+
 	# THE WORLD HAS TO REACH THE EDGE OF THE FRAME AT ANY ASPECT.
 	#
 	# project.godot sets window/stretch/aspect="expand" on purpose: a wider
