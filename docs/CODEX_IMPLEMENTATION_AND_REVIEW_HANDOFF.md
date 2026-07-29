@@ -73,12 +73,17 @@ uncommitted; it was already committed as `58bcca2`. Nothing was in danger.
 | content + encoding | PASS |
 | `git diff --check` | clean |
 | capture harness | 58 frames, regenerated and inspected at 1600x900 and 2560x1080 |
-| documented stress pose | **5.63 ms, 178 fps**, 17 draggables, four open books, glass focused |
+| capture harness stress pose | **6.88 ms, 145 fps**, 17 draggables, four open books, 10 outline builds |
+| isolated probe, glass focused | 5.63 ms, 178 fps, same object count |
 
-Performance improved against the recorded 6.45–6.73 ms because the shader's
-`active` uniform now genuinely gates the backbuffer copy. Preserve the scenario
-when comparing: instantiate `scenes/main.tscn`, open all four books, park the
-lens on the charter, time 240 frames.
+**Quote the harness number, not the probe number.** `qa_capture` prints its own
+`performance` line at the end of every run and that is the comparable figure:
+6.88 ms against the recorded 6.45–6.73 ms, i.e. 2–6% slower. That is the honest
+cost of the refraction shader rendering for the first time in its life, and it is
+still far inside the 10 ms intervention line. A separate isolated probe measured
+5.63 ms on a quieter pose; the two are not comparable and the earlier draft of
+this section wrongly claimed an improvement by mixing them. Preserve the
+scenario when comparing.
 
 ### What was wrong, in order of severity
 
