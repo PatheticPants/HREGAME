@@ -59,6 +59,7 @@ func _run() -> void:
 	_test_the_page_turn(desk)
 	_test_the_office_notices_what_you_read(desk)
 	_test_every_leaf_fits(desk)
+	_test_every_sheet_can_be_sealed(desk)
 	_test_dockets_fit(desk)
 	_test_reachability(desk)
 	await _test_view_transition(main, desk)
@@ -197,6 +198,53 @@ func _test_the_office_notices_what_you_read(desk: Desk) -> void:
 			"memo_leaf_the_flame", "memo_leaf_the_rings"]:
 		_is_true(not dawn.has(leaf),
 			"%s is not on the desk before it is wanted" % leaf)
+
+
+## EVERYWHERE A DOCUMENT CAN GO, ITS WAX CAN BE STRUCK.
+##
+## The sheets, the spoon and the three rings all clamped their CENTRE to
+## DESK_RECT grown by PaperFeel.edge_allowance. That is one allowance for objects
+## of wildly different size: a signet ring is 68 units tall and may hang 154 past
+## the rim; a charter is 585 and could hang 412. Since the poured pool is a CHILD
+## of the sheet and PressController requires the die within press_radius of it,
+## the two allowances have to agree or the wax goes somewhere the die cannot
+## follow.
+##
+## Measured before the fix: charter centres from y=325 to y=530 were all legal
+## and every one of them put the wax slot beyond every ring's reach. Two hundred
+## and five units of desk on which a matter could be poured and never struck,
+## with no feedback whatever — the ring simply stopped short of wax it was
+## sitting beside. Sheet._near_edge_bounds closes it on the near edge only.
+##
+## Asserted for EVERY sealable document rather than the one that happened to be
+## tried, because the margin depends on the sheet's own height.
+func _test_every_sheet_can_be_sealed(desk: Desk) -> void:
+	print("-- wherever a document can go, its wax can be reached")
+	var feel := Lore.wax_feel()
+	var pad: float = _lore_data.paper_feel.edge_allowance
+	# The rings are plain Draggables on the full desk rect.
+	var ring_reach: float = Desk.DESK_RECT.end.y + pad + feel.press_radius
+	var seen := 0
+	for case_data in _lore_data.cases:
+		for doc in case_data.documents:
+			if not (doc is DocumentData) or not doc.takes_seal:
+				continue
+			var v := CharterView.new()
+			desk.add_child(v)
+			v.bind(doc, Desk.DESK_RECT)
+			seen += 1
+			# The lowest the solver will let this sheet's centre sit...
+			var lowest: float = v.solver.bounds.end.y + pad
+			# ...and where that puts the foot the chancery leaves for the wax.
+			var slot: float = lowest + v.wax_slot_local().y
+			if slot > ring_reach:
+				_fail("%s can be laid where its seal cannot be struck: wax at "
+					% doc.id + "y=%.0f, no ring reaches past y=%.0f"
+					% [slot, ring_reach])
+			else:
+				checks += 1
+			v.queue_free()
+	_is_true(seen >= 8, "every sealable document was checked (%d)" % seen)
 
 
 ## AND EVERY DOCKET FITS ITS SLIP.

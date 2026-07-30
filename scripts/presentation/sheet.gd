@@ -25,7 +25,8 @@ func bind(doc: DocumentData, desk_bounds: Rect2) -> void:
 	name = "sheet_" + String(doc.id)
 	_grain_seed = hash(String(doc.id))
 	_build_deckle()
-	setup(doc.start_offset, deg_to_rad(doc.start_angle_deg), desk_bounds)
+	setup(doc.start_offset, deg_to_rad(doc.start_angle_deg),
+		_near_edge_bounds(doc, desk_bounds))
 	# Packets are handed down over the far edge of the desk. The physics body is
 	# already at its authored resting place; this short presentation offset
 	# brings the visible sheet in from the petitioner's side without creating a
@@ -34,6 +35,37 @@ func bind(doc: DocumentData, desk_bounds: Rect2) -> void:
 	_arrival_from = Vector2(side * 24.0, -105.0)
 	_arrival_t = 0.0
 	position = solver.position + _arrival_from
+
+
+## A SHEET MAY HANG OVER THE FRONT OF THE DESK BY ITS OWN EDGE, NOT BY ITS
+## MIDDLE — and until this existed there were places on the desk where a
+## document could not be sealed at all.
+##
+## `DragSolver` clamps the object's CENTRE to `bounds` grown by
+## `PaperFeel.edge_allowance` (120). That is right for a signet ring, which is 68
+## units tall, and wrong for a charter, which is 585: the ring may hang 154 units
+## past the rim and the charter 412. Since the poured pool rides on the sheet and
+## the press requires the die within `press_radius` of it, the two allowances
+## have to agree or the wax goes somewhere the die cannot follow.
+##
+## Measured before it was fixed: charter centres from y=325 to y=530 were all
+## legal, and every one of them put the wax slot out of reach of every ring. Two
+## hundred and five units of the desk on which a matter could be poured and then
+## never struck, with no feedback of any kind — the die simply stopped short of
+## wax it was sitting next to. It is also just wrong to look at; a sheet centred
+## at 530 is most of a charter hanging in the air past the desk's front lip.
+##
+## Only the near edge. The far edge is where packets are handed in and where the
+## passage tray's hearing notch lives, and nothing up there can be poured on.
+func _near_edge_bounds(doc: DocumentData, desk_bounds: Rect2) -> Rect2:
+	var out := desk_bounds
+	var lift: float = doc.size.y * 0.5
+	# Never invert the rect: a sheet taller than the desk keeps the old rule
+	# rather than acquiring an empty one.
+	if lift >= out.size.y:
+		return out
+	out.size.y -= lift
+	return out
 
 
 func _process(delta: float) -> void:
