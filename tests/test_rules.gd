@@ -239,6 +239,10 @@ func _test_witnesses(lore: LoreData) -> void:
 		"the Chancery holds obit rolls returned by other houses")
 	if lore.necrology == null:
 		return
+	_is_true(lore.necrology.rolls.size() == 1,
+		"the Kalendar retains exactly one returned roll")
+	_is_true(lore.necrology.rolls[0].id == &"chapel_at_thurnstadt",
+		"the retained roll is the Margrave's chapel at Thurnstadt")
 
 	var thurn := _first_roll_of(lore, &"thurn")
 	_is_true(thurn != null, "the Margrave's chapel returns its dead")

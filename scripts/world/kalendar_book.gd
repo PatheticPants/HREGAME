@@ -74,16 +74,6 @@ static func build(necrology: Necrology, lore: LoreData) -> BookData:
 	else:
 		front.marginalia = necrology.marginalia
 
-	# The silences come SECOND, before any roll — because the most important
-	# thing this book has to teach is what it does not know, and a player who
-	# reads the rolls first will have formed the opposite habit by the time they
-	# reach it.
-	var silence := BookPage.new()
-	silence.kind = &"silence"
-	silence.heading = "Houses that return nothing"
-	silence.body = "A name that is not here is a name nobody has sent us, and that is all it is."
-	pages.append(silence)
-
 	# A ROLL LONGER THAN A PAGE IS SPLIT ACROSS PAGES.
 	#
 	# The first draft of this put each house on exactly one page, which is fine
@@ -119,6 +109,14 @@ static func build(necrology: Necrology, lore: LoreData) -> BookData:
 			p.entry_count = ENTRIES_PER_PAGE
 			pages.append(p)
 			cursor += ENTRIES_PER_PAGE
+
+	# The three houses that return nothing are printed on the reverse of the
+	# retained chapel extract, after the names the Chancery actually received.
+	var silence := BookPage.new()
+	silence.kind = &"silence"
+	silence.heading = "Houses that return nothing"
+	silence.body = "A name that is not here is a name nobody has sent us, and that is all it is."
+	pages.append(silence)
 
 	# Pages are shown two at a time and a lone page on the right of the last
 	# spread reads as a printing error rather than as the end of the book.

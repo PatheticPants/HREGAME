@@ -22,60 +22,6 @@
   ],
   "opening_documents": [
     {
-      "_note": "THE HOOK, AND IT IS A SEED RATHER THAN A PLOT. Arrives after the first matter, so the player has ruled exactly once and has just learned that an anomaly is not a crime. Nothing is asked of them and nothing can be answered: there is no reply mechanic and the steward never comes back. What it does is make the previous holder of this desk a QUESTION, using only books already in the room. Follow it and you find: R.V.'s hand in the margin of every volume; his note in the Kalendar saying two hands held this desk before him and both are on that page; the Chancery's own household roll, which enters Odo Fenne and Isenbard Kliff as notaries at the third desk and does not enter him; and, if you reduce the years against the Almanac, eleven years that overlap Kliff's eight by six. Two written records that cannot both be true, found with three books and the same arithmetic the game already teaches. NO ANSWER EXISTS IN THE BUILD. Do not add one without deciding what it costs.",
-      "after_case": "case_01_kufergasse",
-      "document": {
-        "kind": "letter",
-        "id": "letter_steward_query",
-        "title": "Query from the Steward of the House",
-        "size": [
-          352,
-          300
-        ],
-        "tint": "#d3c6a6",
-        "start_offset": [
-          402,
-          150
-        ],
-        "start_angle_deg": -5.0,
-        "takes_seal": false,
-        "sender": "Meinwerk, steward of the house",
-        "recipient": "The third desk, second floor",
-        "body": "The household book wants a date for the third desk.\n\nI enter a man on the day his bed is stripped and not before. The bed under the stair was stripped in the week after Michaelmas. I have the mattress and the stool and no note of the day itself from anybody who was in the house, and the office will not pay a mason until the book is closed.\n\nIf the third desk holds any paper in the former hand that carries a date, the steward's book would be glad of it.",
-        "closing": "The page is ruled and the line is presently blank.",
-        "endorsements": [
-          "HOUSEHOLD"
-        ]
-      }
-    },
-    {
-      "_note": "THE THREAD ANSWERS WHEN YOU PULL IT. Keyed to read_chancery_household_book, which fires only when the Kalendar is actually OPEN AT THE CHANCERY'S OWN DEAD -- the leaf carrying Odo Fenne and Isenbard Kliff, both styled notary at the third desk. Turning to the Margrave's chapel or the city book does not fire it. This is the whole point: the player used the game's ordinary verbs on something that was not a case, and the office wrote back.\n\nIt still answers NOTHING. Meinwerk supplies one more fact -- that he was told to strip the bed by somebody who did not sign for it -- and confirms he has the two notaries and not the third. The contradiction between R.V.'s eleven years and Kliff's eight is left standing, unremarked, for the player to do the arithmetic on. Do not have anyone in the office notice it for them.",
-      "after_investigation": "read_chancery_household_book",
-      "document": {
-        "kind": "letter",
-        "id": "letter_steward_second",
-        "title": "Further from the Steward",
-        "size": [
-          352,
-          320
-        ],
-        "tint": "#d1c4a2",
-        "start_offset": [
-          -402,
-          -150
-        ],
-        "start_angle_deg": 4.0,
-        "takes_seal": false,
-        "sender": "Meinwerk, steward of the house",
-        "recipient": "The third desk, second floor",
-        "body": "You have the household book open, so I will save you the asking.\n\nTwo notaries of the third desk are entered in it and I entered them both. Odo Fenne I had from the infirmarer. Isenbard Kliff I had from the man who carried him down, and I wrote the day the same evening.\n\nFor the third I have no infirmarer and no man. I was told to strip the bed and I stripped it. I did not think at the time to ask who told me, and I have since asked four people who did not.",
-        "closing": "A steward does not enter what he was not told. The line stands as it is.",
-        "endorsements": [
-          "HOUSEHOLD"
-        ]
-      }
-    },
-    {
       "_note": "THE DIE, AT THE MOMENT OF TEMPTATION. Case 01's whole visible surface is a seal rubbed to nothing and its correct verdict is CONFIRM; the trap is 'damaged therefore false', and the game's opening move is to punish the reflex the player walked in with. On the memorandum this sat in a paragraph with nine other instructions. Keyed to the glass going onto wax, and again to reaching for the Book of Matrices, because those are the same thought. Same document id in both entries: _deliver_investigation_arrivals dedupes on doc.id for the whole session, so it arrives exactly once.",
       "after_investigation": "inspect_seal",
       "document": {

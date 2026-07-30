@@ -156,25 +156,6 @@ func _full_day() -> void:
 			[SessionController.Stage.REACTING, SessionController.Stage.DEPARTING], 14.0)
 		_is_true(gone, "'%s' leaves the room" % expected.id)
 
-		# SOMETHING ARRIVES THAT IS NOT A PETITIONER.
-		#
-		# Until this existed, everything that ever reached the desk came through
-		# the door as a person with a packet, or was lying there at dawn — one
-		# kind of event, seven times over two days. The steward's query lands
-		# after the first matter, in the gap between callers, and it is how the
-		# office becomes a building with other people in it.
-		if expected.id == &"case_01_kufergasse":
-			var delivered := false
-			for paper in desk.day_papers:
-				if is_instance_valid(paper) and paper is LetterView \
-						and paper.data != null \
-						and paper.data.id == &"letter_steward_query":
-					delivered = true
-			_is_true(delivered,
-				"the steward's query arrives mid-day, after the first matter")
-			_is_true(session._last_ruled == &"",
-				"and is not delivered a second time on the next advance")
-
 	_is_true(seen.size() == day_cases.size(),
 		"every petitioner in the day got a ruling")
 

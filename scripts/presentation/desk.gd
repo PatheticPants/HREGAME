@@ -578,9 +578,8 @@ func _on_lens_focus_confirmed(subject: Node2D) -> void:
 
 
 func _on_book_consulted(book_id: StringName) -> void:
-	# `consulted` fires on open AND on every page turn, so the spread is the part
-	# worth recording: "opened the Kalendar" and "turned to the Chancery's own
-	# dead" are materially different acts and only one of them is investigation.
+	# `consulted` fires on open AND on every page turn, so record the spread as
+	# well as the book. That preserves which retained extract was actually read.
 	var spread := -1
 	for b in books:
 		if b.data != null and b.data.id == book_id:
@@ -599,11 +598,9 @@ func _on_book_consulted(book_id: StringName) -> void:
 ## your hands and not your page. It is not enough for anything that cares WHAT
 ## you looked up.
 ##
-## The Kalendar has four rolls and one of them is the Chancery's own dead. Turning
-## to that leaf is a materially different act from turning to the Margrave's
-## chapel, and until now nothing in the game could tell them apart. Emitted on
-## open and on every page turn, because `consulted` already fires on both, which
-## is exactly when the open spread changes.
+## The Kalendar now has one retained roll, but the generic leaf-level report is
+## still useful to the log and remains correct if another reference book later
+## needs to distinguish its sections. Emitted on open and every page turn.
 func _report_open_roll(book_id: StringName) -> void:
 	for b in books:
 		if b.data == null or b.data.id != book_id or not b.is_open:

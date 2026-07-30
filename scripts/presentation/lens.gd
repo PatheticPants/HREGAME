@@ -489,9 +489,8 @@ func _draw() -> void:
 	# useless: the one place in the game where the player is deliberately reading
 	# small print is the one place the type was doubled.
 	#
-	# The field fills as it resolves. Not to opacity — some transmission has to
-	# survive or the glass becomes a porthole with a card in it — but far enough
-	# that the enlarged hand is unambiguously the thing being read.
+	# The field fills to opacity so the small source glyphs beneath authored
+	# detail never double-print with their enlarged replacement.
 	if _focus_amount > 0.01:
 		var settle := ease(clampf(_focus_amount, 0.0, 1.0), 0.55)
 		draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965,

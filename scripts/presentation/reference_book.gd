@@ -570,12 +570,9 @@ func leaf_rect() -> Rect2:
 ## "The generated kinds size themselves" was true of the plates and FALSE of the
 ## obit rolls, which is the more dangerous half. `KalendarBook` paginates on a
 ## flat `ENTRIES_PER_PAGE = 6` — a NAME count, not a height budget — so a leaf's
-## height depends entirely on how many of those six carry a note. Three of the
-## four rolls' first entry leaves currently sit under 5 px clear of the folio
-## number, and nothing in this game clips its own text, so one more line of note
-## would be drawn onto the desk and lost. That is the same defect class as the
-## Almanac's ring-doctrine page and it was found by hand rather than by this
-## function, twice.
+## height depends entirely on how many of those six carry a note. Nothing in
+## this game clips its own text, so an overfull leaf would be drawn onto the desk
+## and lost. That is the same defect class as the Almanac's ring-doctrine page.
 func page_bottom(index: int) -> float:
 	if data == null or index >= data.pages.size():
 		return 0.0
