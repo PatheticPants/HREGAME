@@ -638,6 +638,50 @@ func _test_campaign_data(lore: LoreData) -> void:
 			and followup_ids.has("case_07_daughters_portion"),
 		"ruled Tuesday matters unlock their authored Thursday follow-ups")
 
+	# SATURDAY IS THE WEEK'S ARREARS, AND NOTHING ELSE.
+	#
+	# Every slot on it is gated requires_unruled on itself. That key is parsed by
+	# exactly one line in ContentLoader._load_days and a fourth slot key is
+	# SILENTLY IGNORED — no error, no warning, no failure, the JSON simply does
+	# nothing. These assertions are the only thing standing between the feature
+	# and being inert, so they are worth more than they look.
+	var saturday := lore.day_by_id(&"day_03")
+	_is_true(saturday != null, "there is a third day to carry the arrears")
+	if saturday == null:
+		return
+
+	var nothing_heard := saturday.resolve_cases(lore, Register.new())
+	_is_true(nothing_heard.size() == 8,
+		"a week in which nothing was ruled leaves every matter waiting (%d)"
+		% nothing_heard.size())
+
+	# The whole week cleared. If requires_unruled is not parsed this returns all
+	# eight and the assertion fails loudly, which is exactly what it is for.
+	var whole_week := Register.new()
+	for c in lore.cases:
+		whole_week.add(_prior_record(c, c.correct_verdict))
+	_is_true(saturday.resolve_cases(lore, whole_week).is_empty(),
+		"and a week heard to the end leaves nobody in the passage at all")
+
+	# The chase itself: one matter missed, one matter waiting, and it is hers.
+	var missed_the_widow := Register.new()
+	for c in lore.cases:
+		if c.id != &"case_02_grellwater":
+			missed_the_widow.add(_prior_record(c, c.correct_verdict))
+	var chasing := saturday.resolve_cases(lore, missed_the_widow)
+	_is_true(chasing.size() == 1 and chasing[0].id == &"case_02_grellwater",
+		"a matter you never heard chases you to the end of the week")
+
+	# An unheard Tuesday matter gets Thursday's fallback AND Saturday, in that
+	# order, and is not offered twice on the same day.
+	var thursday_ids := PackedStringArray()
+	for c in thursday.resolve_cases(lore, missed_the_widow):
+		thursday_ids.append(String(c.id))
+	_is_true(thursday_ids.has("case_02_grellwater"),
+		"Thursday offers her first, through its own fallback")
+	_is_true(thursday_ids.count("case_02_grellwater") == 1,
+		"and exactly once")
+
 
 func _prior_record(c: CaseData, verdict: int) -> RulingRecord:
 	var record := RulingRecord.new()

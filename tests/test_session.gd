@@ -33,6 +33,7 @@ func _run() -> void:
 	await _day_two_tray()
 	await _full_thursday()
 	await _day_cut_short()
+	await _the_week_chases_you()
 
 	print("\n%d checks, %d failure(s)\n" % [checks, failures])
 	get_tree().quit(1 if failures > 0 else 0)
@@ -427,6 +428,118 @@ func _day_cut_short() -> void:
 		"and the ledger keeps the two failures apart, by name")
 	_is_true(session.register.own_entries().is_empty(),
 		"an unruled day writes no rulings")
+
+	_close(main)
+
+
+# --------------------------------------------------- the day you did not have
+
+## THE THIRD DAY IS A CONSEQUENCE, NOT A FIXTURE.
+##
+## Saturday's slots are all gated `requires_unruled` on themselves, so it holds
+## exactly what the week failed to hear. Two things have to be true and only a
+## real run can show them: a notary who cleared his week is never offered it (the
+## older assertion in _full_thursday covers that, and still passes word for word),
+## and a notary the candle beat IS — with the right people in the passage.
+##
+## It also exercises the chain the third day exists for. Thursday's length is
+## Tuesday's remainder; Saturday's is Thursday's. Two days can never show that,
+## because a chain needs a day that is ENTERED short.
+func _the_week_chases_you() -> void:
+	print("-- the matters you never heard chase you to the end of the week")
+	var main := _open()
+	var desk := main.get_node("desk") as Desk
+	var session := desk.session
+
+	# Tuesday: rule exactly one matter on a candle that is not under test, then
+	# shorten the candle and let the wick go with the rest still in the passage.
+	# The order matters — _work_engaged resets per caller, so a drowning has to be
+	# arranged on the matter that is actually at the desk.
+	session.current_day.day_seconds = 100000.0
+	await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0)
+	await _hear_them_out(desk)
+	await _await_stage(desk, SessionController.Stage.WORKING, 8.0)
+	var heard := session._current.id
+	var record := ImpressionRecord.new()
+	record.grade = Lex.Grade.GOOD
+	session._on_impression_finished(session._current.correct_verdict, record)
+	await _step(0.3)
+	await _hear_them_out(desk)
+
+	# Now the second caller, on a wick with six seconds left in it.
+	await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0)
+	await _hear_them_out(desk)
+	await _await_stage(desk, SessionController.Stage.WORKING, 8.0)
+	session.current_day.day_seconds = 6.0
+	desk.case_work_engaged.emit(desk.current_charter)
+	_is_true(await _await_stage(desk, SessionController.Stage.LEDGER, 30.0),
+		"Tuesday drowns with matters still in the passage")
+	_is_true(session.burnt_out and session.unheard.size() >= 2,
+		"and they are recorded as unheard (%d)" % session.unheard.size())
+	_is_true(desk.ledger.allow_next_day
+			and desk.ledger.next_day_label == "THURSDAY",
+		"Thursday is offered")
+
+	desk.ledger.skip_to_end()
+	desk.ledger.spread = maxi(0, desk.ledger.spread_count() - 1)
+	desk.ledger.on_click(Vector2(Ledger.SIZE.x * 0.5 - 20,
+		Ledger.SIZE.y * 0.5 - 20))
+	await get_tree().process_frame
+	_is_true(session.current_day != null and session.current_day.id == &"day_02",
+		"and turning the corner opens it")
+	_is_true(desk.last_candle_remaining <= Candle.NEXT_DAY_FLOOR + 0.001,
+		"on a candle Tuesday already spent down to the floor (%.2f)"
+		% desk.last_candle_remaining)
+
+	# Thursday: drown it too, immediately, so the week ends owing people.
+	session.current_day.day_seconds = 0.6
+	if session.stage == SessionController.Stage.CHOOSING \
+			and not desk.docket_slips.is_empty():
+		desk.docket_selected.emit(desk.docket_slips[0].case_id())
+	await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0)
+	await _hear_them_out(desk)
+	await _await_stage(desk, SessionController.Stage.WORKING, 8.0)
+	desk.case_work_engaged.emit(desk.current_charter)
+	_is_true(await _await_stage(desk, SessionController.Stage.LEDGER, 20.0),
+		"Thursday drowns as well")
+
+	# NOW the third day exists, and it exists BECAUSE the week failed.
+	_is_true(desk.ledger.allow_next_day
+			and desk.ledger.next_day_label == "SATURDAY",
+		"Saturday is offered to a notary the candle beat")
+
+	var owed := Lore.data.day_by_id(&"day_03").resolve_cases(
+		Lore.data, session.register)
+	var owed_ids := PackedStringArray()
+	for c in owed:
+		owed_ids.append(String(c.id))
+	_is_true(not owed.is_empty(), "and there is somebody in the passage for it")
+	_is_true(not owed_ids.has(String(heard)),
+		"the matter that WAS ruled is not among them")
+	for entry in session.register.own_entries():
+		if owed_ids.has(String(entry.case_id)):
+			_fail("Saturday re-hears '%s', which was already ruled"
+				% entry.case_id)
+	checks += 1
+
+	desk.ledger.skip_to_end()
+	desk.ledger.spread = maxi(0, desk.ledger.spread_count() - 1)
+	desk.ledger.on_click(Vector2(Ledger.SIZE.x * 0.5 - 20,
+		Ledger.SIZE.y * 0.5 - 20))
+	await get_tree().process_frame
+	_is_true(session.current_day != null and session.current_day.id == &"day_03",
+		"the third day opens")
+	_is_true(session.cases.size() == owed.size(),
+		"holding exactly the arrears (%d)" % session.cases.size())
+	# THE CHAIN. Saturday is short because Thursday was short because Tuesday
+	# was. This is the assertion two days could not carry.
+	_is_true(is_equal_approx(session.day_seconds(),
+			Lore.data.day_by_id(&"day_03").day_seconds
+			* desk.last_candle_remaining),
+		"and it is shortened again by what Thursday left")
+	_is_true(session.stage == SessionController.Stage.CHOOSING
+			and not desk.docket_slips.is_empty(),
+		"with the people who have waited longest protruding from the tray")
 
 	_close(main)
 

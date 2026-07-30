@@ -1,0 +1,56 @@
+{
+  "id": "day_03",
+  "entry_label": "SATURDAY",
+
+  "_note": "THE DAY OF ARREARS, AND IT IS A CONSEQUENCE RATHER THAN A FIXTURE.\n\nEvery slot here is gated requires_unruled on ITSELF with no fallback, so Saturday holds exactly the matters the week never heard and nothing else. Hear all eight and this day does not exist: SessionController._tick_closing only offers the Thursday-to-Saturday corner when the next day actually resolves to somebody, so a notary who cleared his week is never called in.\n\nWHY THIS SHAPE AND NOT A RE-SEQUENCED WEEK. Moving matters between Tuesday and Thursday was designed and rejected: every case's docket states when it was received in player-visible prose ('Received at the door, the eleventh of October', 'Called from the Thursday tray'), and three of case_06's arrival lines open 'On Tuesday you admitted'. Re-sequencing means rewriting six cases' shipped prose, and prose waits while the Checks are in flux.\n\nArrears need none of it. A docket records when a matter was RECEIVED, not when it was heard — so an unheard Thursday matter arriving here still says 'Called from the Thursday tray' and is telling the truth. That is why this is free and the re-sequencing was not.\n\nORDER. Thursday's own slots already give an unheard Tuesday matter one second chance through requires_ruled/fallback. This is the third, and the last. The Tuesday matters stand first because they have been waiting longest.\n\nEMPTY FALLBACKS ARE DELIBERATE. LoreData.case_by_id(&\"\") returns null and DayData.resolve_cases() skips nulls, so a slot whose matter was ruled simply is not there. No substitute, no filler.",
+
+  "heading": "The sixteenth day of October, in the seventh year of Kunrad IV. Third desk, second floor. What the week did not reach.",
+
+  "_day_seconds_note": "Short, and then shortened again by whatever was left of Thursday. A player only ever sees this day because a candle ran out on them, so their carry is at or near Candle.NEXT_DAY_FLOOR and this is 600 x 0.45 = 270 real seconds at worst. Measured cost of a matter at a competent pace is about 85 seconds, so the floor buys three. That is the point of the third day: it is the first one ENTERED on a candle somebody else's Tuesday already spent, which is the only condition under which carry-forward is a curve instead of a single penalty.",
+  "day_seconds": 600,
+
+  "_burnt_out_note": "Deliberately empty. There is no fourth day, so whatever is written here is the last thing the office ever says about the people still in the passage, and that is an ending rather than scaffold. SessionController._ledger_unheard skips the block entirely when this is empty, so nothing renders wrong in the meantime.",
+  "burnt_out_text": "",
+
+  "_selection_note": "A tray, because arrears are a choice about who has waited longest and the candle will not cover all of them. Safe against emptiness two ways over: this day is not offered at all unless it resolves to somebody, and _begin_day closes out rather than sitting in CHOOSING with an empty tray.",
+  "selection_mode": "tray",
+
+  "case_slots": [
+    {
+      "case_id": "case_01_kufergasse",
+      "requires_unruled": "case_01_kufergasse"
+    },
+    {
+      "_note": "Her docket already reads 'Third time she has been here. Told her the answer would be the same. She came anyway.' A week that never called her makes that literally true and costs no new words.",
+      "case_id": "case_02_grellwater",
+      "requires_unruled": "case_02_grellwater"
+    },
+    {
+      "case_id": "case_03_kesselholt",
+      "requires_unruled": "case_03_kesselholt"
+    },
+    {
+      "case_id": "case_08_mill_on_the_aue",
+      "requires_unruled": "case_08_mill_on_the_aue"
+    },
+    {
+      "case_id": "case_04_second_lion",
+      "requires_unruled": "case_04_second_lion"
+    },
+    {
+      "case_id": "case_05_grellwater_regrant",
+      "requires_unruled": "case_05_grellwater_regrant"
+    },
+    {
+      "case_id": "case_06_kesselholt_writ",
+      "requires_unruled": "case_06_kesselholt_writ"
+    },
+    {
+      "case_id": "case_07_daughters_portion",
+      "requires_unruled": "case_07_daughters_portion"
+    }
+  ],
+
+  "_opening_note": "None. Thursday's seven consequence letters stay on Thursday where they were authored to land, and a day made entirely of arrears has nothing new to report — the office has not acted on matters it never heard. Anything put here would be prose.",
+  "opening_documents": []
+}

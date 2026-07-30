@@ -354,6 +354,10 @@ static func _load_days(lore: LoreData) -> void:
 			var slot := DayCaseSlot.new()
 			slot.case_id = _sn(slot_raw, "case_id")
 			slot.requires_ruled = _sn(slot_raw, "requires_ruled")
+			# A KEY THAT IS NOT PARSED IS SILENTLY IGNORED. No error, no warning,
+			# no test failure — the JSON looks right and the feature never fires.
+			# This line must never be separated from the field it reads.
+			slot.requires_unruled = _sn(slot_raw, "requires_unruled")
 			slot.fallback_case_id = _sn(slot_raw, "fallback_case_id")
 			day.case_slots.append(slot)
 		for opening_raw in _arr(raw, "opening_documents"):
@@ -545,6 +549,18 @@ static func _validate(lore: LoreData) -> void:
 					and lore.case_by_id(slot.requires_ruled) == null:
 				lore.errors.append("day '%s': unknown prerequisite case '%s'"
 					% [day.id, slot.requires_ruled])
+			if slot.requires_unruled != &"" \
+					and lore.case_by_id(slot.requires_unruled) == null:
+				lore.errors.append("day '%s': unknown unruled-gate case '%s'"
+					% [day.id, slot.requires_unruled])
+			if slot.requires_ruled != &"" and slot.requires_unruled != &"":
+				# They share one fallback, so a slot carrying both is not a
+				# stricter rule — it is two rules with one outcome and no
+				# defined meaning. Rejected rather than resolved by evaluation
+				# order.
+				lore.errors.append(("day '%s': slot '%s' sets both requires_ruled "
+					+ "and requires_unruled; they share one fallback and cannot "
+					+ "both apply") % [day.id, slot.case_id])
 			if slot.fallback_case_id != &"" \
 					and lore.case_by_id(slot.fallback_case_id) == null:
 				lore.errors.append("day '%s': unknown fallback case '%s'"

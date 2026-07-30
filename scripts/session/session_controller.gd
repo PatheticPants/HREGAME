@@ -174,7 +174,13 @@ func _begin_day(which: int) -> void:
 		"selection": String(current_day.selection_mode),
 	})
 	desk.lay_out_day_documents(current_day.resolve_opening_documents(register))
-	if current_day.selection_mode == &"tray":
+	# AN EMPTY TRAY IS A HANG, and it was reachable the moment a day's slots
+	# could all resolve to nothing. CHOOSING has no tick and no timeout: it waits
+	# for a docket_selected that no slip exists to emit, forever. The gate on the
+	# ledger corner means a day of arrears is never entered empty, but a day that
+	# cannot be entered empty and a day that survives being entered empty are two
+	# different guarantees, and only the second one is a fact about the code.
+	if current_day.selection_mode == &"tray" and not remaining_cases.is_empty():
 		desk.show_docket_tray(remaining_cases)
 		_enter(Stage.CHOOSING)
 	else:
@@ -588,6 +594,25 @@ func _on_case_work_engaged(who: Draggable) -> void:
 	_work_time = 0.0
 
 
+## Is there a next day, AND is there anybody in the passage for it?
+##
+## `day_index + 1 < days.size()` was the whole test, which is right for a week
+## whose days are fixtures and wrong for one that ends in a day of arrears.
+## Saturday exists only to hear what the candle stopped you hearing; a notary who
+## cleared Tuesday and Thursday has nothing waiting, and the office does not call
+## a man in to an empty passage.
+##
+## So the third day is a CONSEQUENCE. It is offered when the week left something
+## undone and is simply not there otherwise — which is also why the existing
+## assertion that a completed campaign invents no third-day corner still holds
+## word for word.
+func _next_day_has_anybody() -> bool:
+	var next := day_index + 1
+	if next < 0 or next >= days.size():
+		return false
+	return not days[next].resolve_cases(Lore.data, register).is_empty()
+
+
 func _tick_closing() -> void:
 	if _timer < CLOSE_DELAY:
 		return
@@ -595,7 +620,7 @@ func _tick_closing() -> void:
 	# on the burnt-out path this is where the departure fade finally lands.
 	desk.petitioner.clear()
 	desk.ledger.open_with(_compose_ledger(), Desk.DESK_RECT, Vector2(40, 40))
-	desk.ledger.allow_next_day = day_index + 1 < days.size()
+	desk.ledger.allow_next_day = _next_day_has_anybody()
 	desk.ledger.next_day_label = days[day_index + 1].entry_label \
 		if desk.ledger.allow_next_day else ""
 	desk.bring_to_front(desk.ledger)

@@ -704,10 +704,29 @@ def verify_days(cases_by_id):
         if day.get("selection_mode") not in ("fixed", "tray"):
             fail("day '%s': invalid selection_mode" % day_name)
         for slot in day.get("case_slots", []):
-            for key in ("case_id", "fallback_case_id", "requires_ruled"):
+            for key in ("case_id", "fallback_case_id", "requires_ruled",
+                        "requires_unruled"):
                 target = slot.get(key)
                 if target and target not in cases_by_id:
                     fail("day '%s': unknown %s '%s'" % (day_name, key, target))
+            # The two gates share one fallback and cannot both apply. Mirrored
+            # from ContentLoader._validate on purpose: every rule in this file is
+            # written twice, independently, so that when they disagree one of
+            # them has a bug.
+            if slot.get("requires_ruled") and slot.get("requires_unruled"):
+                fail("day '%s': slot '%s' sets both requires_ruled and "
+                     "requires_unruled" % (day_name, slot.get("case_id")))
+            # A KEY THAT IS NOT PARSED IS SILENTLY IGNORED, on both sides. The
+            # GDScript loader reads exactly four slot keys; anything else in the
+            # JSON does nothing at all, with no error and no test failure. This
+            # is the only place that notices.
+            known = {"case_id", "fallback_case_id", "requires_ruled",
+                     "requires_unruled"}
+            for key in slot:
+                if key.startswith("_") or key in known:
+                    continue
+                fail("day '%s': slot key '%s' is not parsed by ContentLoader "
+                     "and does nothing" % (day_name, key))
         for opening in day.get("opening_documents", []):
             required = opening.get("requires_case")
             if required and required not in cases_by_id:
