@@ -99,44 +99,86 @@ and the harness could not.
 
 ---
 
-## What a working day actually costs — MEASURED, at last
+## What a working day actually costs — MEASURED, and it is a CURVE
 
-The first playthrough this project has ever had. Both days, end to end, real
-input, real clock. Numbers are candle-seconds, which is the only clock that
-matters: `_burn_the_day` runs **only** while `_work_engaged` is true and the
-stage is ENTERING, SPEAKING or WORKING, so arrivals, departures, dialogue before
-the first touch, the ledger and choosing from the tray are all free.
+The first playthroughs this project has ever had. `tests/play_day.tscn` plays
+every authored day through the real input path; `--dwell` is the seconds of
+reading given to each document and each consulted leaf, which is the one
+quantity a machine cannot supply. So the answer is reported as a curve against
+it rather than as a single figure that silently encodes one guess about a
+stranger.
 
-| | mechanical floor (`--dwell=0`) | competent (`--dwell=8`) |
-|---|---|---|
-| cost of one matter | **~22 s** | **~85 s** |
-| Tuesday, of 1200 s | 89 s (7%) | 341 s (28%) |
-| **Tuesday: candle at the last matter** | **94.6%** | **78.8%** |
-| Thursday, of 720 x carried | 95 s of 666 s | 345 s of 515 s (67%) |
-| **Thursday: candle at the last matter** | **89.5%** | **50.0%** |
+Numbers are candle-seconds. `_burn_the_day` runs ONLY while `_work_engaged` and
+only in ENTERING/SPEAKING/WORKING, so arrivals, departures, dialogue before the
+first touch, the ledger and choosing from the tray are all free.
 
-**The clock is not decoration, but it is not felt on Tuesday either. It is
-BACK-LOADED, and that is a different claim from the one the design makes.**
-Tuesday costs 28% of its candle at a competent pace; the pressure arrives on
-Thursday, which is short both because it is authored at 720 and because it is
-scaled by what Tuesday left. The same work costs 28% of Tuesday and 67% of
-Thursday. Tuesday buys Thursday, which is exactly what "the office issues a
-candle, not a candle a day" says — so the mechanism is working and only the
-*timing* of the pressure is not what the brief assumed.
+| dwell | s/matter | TUESDAY (1200 s) | THURSDAY (720 x carry) | SATURDAY |
+|---|---|---|---|---|
+| 0 | 22 | burn 0.07, last matter **94.6%** | 666 s, burn 0.14, last **89.5%** | not offered |
+| 4 | 54 | burn 0.18, last matter **86.5%** | 589 s, burn 0.38, last **71.9%** | not offered |
+| 8 | 85 | burn 0.28, last matter **78.8%** | 515 s, burn 0.67, last **50.0%** | not offered |
+| 16 | 148 | burn 0.49, last matter **63.4%** | 368 s, **BURNT OUT**, 2 of 4 | 270 s, burnt out, 1 of 2 |
+| 24 | 209 | burn 0.70, last matter **48.0%** | 324 s, **BURNT OUT**, 1 of 4 | 270 s, burnt out, 1 of 3 |
 
-Consequences worth keeping in mind before tuning anything:
+**1. Tuesday never becomes tight at any pace.** At 209 seconds a matter — three
+and a half minutes of reading per charter — it still ends with 48% in the dish.
+There is no reading speed at which Tuesday's clock is a constraint, short of one
+that drowns you.
 
-- **The reference books are not a trap.** Opening all four, every matter,
-  including fetching two out of the rack, is inside the mechanical floor.
-- **The seal ritual is cheap.** Melt, pour, press and peel together are about
-  5 s of the 22 s floor. Half the floor is carrying things around the desk.
-- **Nobody goes unheard at a competent pace**, which is also why `day_03`
-  resolves to nothing for such a player and is correctly never offered.
+**2. Thursday goes off a cliff between dwell 8 and 16**, and the cliff is
+carry-forward compounding, not Thursday being short. A player 1.9x slower needs
+1.7x more time AND is issued 1.4x less of it (515 s becomes 368 s), because the
+carry multiplies what the slowness already cost. Those two multiply into a 2.4x
+swing across one doubling of reading speed. **So shortening TUESDAY does not fix
+this and makes it worse** — a shorter Tuesday means a lower carry means a shorter
+Thursday for exactly the player already drowning. Anyone tempted by the
+one-number retune should read this row first.
 
-Where the floor goes, from the log: pick up 52.8 s, click 19.9 s, put down
-19.4 s, melting 18.9 s, hold-to-flame 13.3 s, pressing 12.5 s, book consults
-11.2 s, pouring 8.6 s, shelving 7.7 s, the glass 7.5 s — 184 s over eight
-matters.
+**3. Guttering is not a warning. It is the death rattle.** `GUTTERING_FROM` is
+0.86, and everything the candle does to say the light is going lives above it.
+On every day a player COMPLETES, burn ends at 0.70 or less and the flame is
+still at 69% of full or better. The threshold is only ever crossed on days that
+burn out. Between "the desk looks like morning" and "the day is over" there is
+no legible middle, at any pace.
+
+**4. Saturday is correctly invisible until it is earned.** Never offered at dwell
+0-8; real at 16 and 24, with no override. The `requires_unruled` gate works.
+
+**5. The reference books are not a trap, and half the floor is not digging.**
+Opening all four every matter, including fetching two out of the rack, fits
+inside the 22 s mechanical floor. The seal ritual — melt, pour, press, peel — is
+about 5 s of it. Of ~20 pick-ups per matter, ~16 are the four book consults;
+evidence handling is four. CONTINUITY used to say "digging a buried charter out
+of a pile is a mechanic here" as though it described the cost. It describes
+about a fifth of it.
+
+**What is NOT known, and would settle the rest:** where a human actually sits on
+this curve. `--dwell` is a stand-in. One person, Tuesday, `--session-log` on,
+twenty minutes.
+
+---
+
+## Review claims that did NOT survive adjudication (2026-07-29)
+
+Recorded so nobody re-raises them. Both came from strong reviews that were
+right about other things.
+
+- **"The petitioners' two waiting lines can never fire."** True that a busy
+  player never hears them — `_work_time` resets on every `_on_case_work_engaged`
+  and every `_on_investigation_performed`, and a measured playthrough shows
+  0.67–2.30 s of silence before each ruling. But both resets carry explicit
+  design comments saying so: *"Doing something resets the silence. A player
+  actively working the packet should not be prompted as though they had gone to
+  sleep."* It is the stated intent, and the measurement came from a harness that
+  never pauses. A human who puts a charter down and thinks for a minute hears
+  them. **Working as designed.**
+- **"The presentation suite is flaky — 4, 3 and 5 failures across three runs."**
+  Not reproducible: three consecutive clean runs, deliberately with a
+  playthrough sweep running concurrently. Every test it named was
+  animation-timed, and the reviewer was rendering its own probes at the time.
+  **Contention, not flakiness** — but worth knowing that this suite can be made
+  to fail by loading the machine, so do not run it against a busy GPU and then
+  believe the result.
 
 ---
 

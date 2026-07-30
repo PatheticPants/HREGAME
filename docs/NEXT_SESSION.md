@@ -37,7 +37,7 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 96, presentation 340, session 90, content PASS**. Run the rules
+Green is **rules 96, presentation 383, session 90, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
 
@@ -68,7 +68,7 @@ parse error in an *unrelated* file. You will hit this. It is in CONTINUITY.
 ## THE 2026-07-29 PLAYTHROUGH SESSION — READ THIS BEFORE ANYTHING BELOW IT
 
 Everything under "THE 2026-07-29 PLAN" further down was the plan. This is what
-happened to it. Green is now **rules 96, presentation 340, session 90, content
+happened to it. Green is now **rules 96, presentation 383, session 90, content
 PASS**.
 
 ### The number, and it changes the argument
@@ -85,23 +85,36 @@ time, which always advances, and candle-seconds, which advance only while the
 player is deliberating. The gap between them is the answer to every pacing
 question, and nothing here could tell them apart before.
 
-| | mechanical floor | competent (`--dwell=8`) |
-|---|---|---|
-| one matter | ~22 s | ~85 s |
-| **Tuesday: candle at the last matter** | **94.6%** | **78.8%** |
-| **Thursday: candle at the last matter** | **89.5%** | **50.0%** |
+| dwell | s/matter | TUESDAY (1200 s) | THURSDAY (720 x carry) | SATURDAY |
+|---|---|---|---|---|
+| 0 | 22 | last matter **94.6%** | last **89.5%** | not offered |
+| 4 | 54 | last matter **86.5%** | last **71.9%** | not offered |
+| 8 | 85 | last matter **78.8%** | last **50.0%** | not offered |
+| 16 | 148 | last matter **63.4%** | **BURNT OUT**, 2 of 4 | burnt out, 1 of 2 |
+| 24 | 209 | last matter **48.0%** | **BURNT OUT**, 1 of 4 | burnt out, 1 of 3 |
 
-**THE CLOCK IS NOT DECORATION, AND IT IS NOT FELT ON TUESDAY EITHER. It is
-back-loaded.** Tuesday costs 28% of its candle at a competent pace. The same
-work costs 67% of Thursday, which is short both because it is authored at 720
-and because it is scaled by what Tuesday left. Tuesday buys Thursday — which is
-exactly what "the office issues a candle, not a candle a day" claims, so the
-mechanism works and only the *timing* of the pressure is not what the brief
-assumed.
+**Tuesday never becomes tight at any pace.** At three and a half minutes of
+reading per charter it still ends with 48% in the dish.
 
-The reference books are **not** a trap: opening all four every matter, including
-fetching two out of the rack, fits inside the 22 s floor. The seal ritual is
-about 5 s of it; half the floor is carrying things around the desk.
+**Thursday goes off a cliff between dwell 8 and 16, and the cliff is
+carry-forward compounding.** A player 1.9x slower needs 1.7x more time and is
+issued 1.4x less of it, because the carry multiplies what the slowness already
+cost. **So the obvious one-number retune — cut Tuesday's `day_seconds` — does
+not fix this and makes it worse:** a shorter Tuesday is a lower carry is a
+shorter Thursday, for exactly the player already drowning. If you touch the
+clock, touch the multiplication, not Tuesday.
+
+**Guttering is the death rattle, not a warning.** `GUTTERING_FROM` is 0.86 and
+every day a player COMPLETES ends at 0.70 or less with the flame above 69% of
+full. The threshold is crossed only on days that burn out. Between "the desk
+looks like morning" and "the day is over" there is no legible middle.
+
+**Saturday is correctly invisible until earned** — never offered at dwell 0-8,
+real at 16 and 24, with no override.
+
+**What is not known:** where a human sits on this curve. `--dwell` is a stand-in
+for reading speed, not a measurement of one. One person, Tuesday,
+`--session-log` on, twenty minutes, and the whole argument closes.
 
 ### What that means for phase B, which was conditional on this number
 
@@ -111,13 +124,20 @@ Tuesday, so the lever the brief names — a shorter issued candle — would comp
 on the day that already bites and do nothing to the day that is decoration.
 Building it now means building against a premise the measurement half-refuted.
 
-**The honest next move is Tuesday's `day_seconds`, not a new system.** 1200 s
-against 341 s of competent work is 3.5x headroom. But note before touching it:
-that headroom is what produces a carry of ~0.72, sitting nicely inside
-`[0.45, 1.0]`, so Tuesday is well tuned *for the carry mechanic* and badly tuned
-*for tension on the day*. Those pull opposite ways and the choice between them
-is a design decision, not a bug fix. **Re-measure with `play_day` after any
-change to it** — that is what the harness is for.
+**And the obvious next move is a trap, which is why the curve was worth
+running.** "Cut Tuesday's `day_seconds`" is the one-number fix everyone reaches
+for, including a prosecution of this build that recommended 800. The curve says
+it backfires: Tuesday's length sets the carry, the carry sets Thursday, and
+Thursday is where the campaign actually breaks. A shorter Tuesday is a lower
+carry is a shorter Thursday for exactly the player who is already drowning
+there. It would make the competent player tenser and the struggling player's
+cliff steeper, and only the first of those was the goal.
+
+If the clock is to be tuned, tune the MULTIPLICATION — `Candle.carry_forward()`
+into `SessionController.day_seconds()` — or give Thursday a floor of its own.
+Either way, re-measure with `play_day` across the dwell range afterwards, not at
+one point. That is what the harness is for, and one point is how you get a
+recommendation that is exactly wrong.
 
 ### Also done
 

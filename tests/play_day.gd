@@ -57,6 +57,11 @@ var report: Array[Dictionary] = []
 ## bounds — measured: the die stalled 78 units short and could not close.
 var charter_home := Vector2.ZERO
 var failures: Array[String] = []
+## How each day ACTUALLY ended, read off the candle rather than summed from the
+## matters that finished. Summing understates a drowned day, because the matter
+## the wick died during never reaches `report` — so the first version of this
+## harness reported burn 0.64 for a day that had burnt out at 1.00.
+var day_end: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -187,14 +192,57 @@ const SEAL_AT := Vector2(-40.0, 70.0)
 
 
 ## Somewhere to put a thing that is in the way. Cycled, so shifting two objects
-## does not stack the second on the first.
-## All well inside DESK_RECT's lower edge (y stops at 410). A tall charter parked
-## at y=330 puts its own wax slot at y=586, which no ring can reach — that is
-## exactly how case 08 died, and the corner looked perfectly reasonable until the
-## die stalled 71 units short of wax it was sitting next to.
+## does not stack the second on the first, and all well inside DESK_RECT's lower
+## edge — a tall charter parked low puts its own wax slot out of every ring's
+## reach, which is how case 08 died once already.
 const SPOIL := [Vector2(-742, -150), Vector2(-742, 120), Vector2(742, 150),
 	Vector2(-300, -200), Vector2(300, -205)]
 var _spoil := 0
+
+## AND NEVER ON THE TOOLS YOU ARE ABOUT TO NEED. The first two spoil positions
+## sit directly over the ring stand (x -809..-731, y -93..216), so clearing a
+## sheet off one thing buried the signet rings under it, and the run died
+## reaching for NEGO — a harness that tidies up by burying the tools.
+## Checked against the object's OWN size, because a charter parked at a spot a
+## docket fits in covers four times the area.
+func _tool_bay() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for who in desk.rings:
+		out.append(_rect_of(who))
+	for who in [desk.wax_spoon, desk.candle, desk.lens]:
+		if who != null and is_instance_valid(who):
+			out.append(_rect_of(who))
+	return out
+
+
+func _rect_of(who: Node2D) -> Rect2:
+	var c := desk.surface.to_local(who.global_position)
+	var s := Vector2(60, 60)
+	if who is Draggable:
+		s = (who as Draggable).hit_size * who.scale.abs()
+	return Rect2(c - s * 0.5, s)
+
+
+## The first parking place where `who`, at its own size, covers no tool.
+func _park_spot(who: Node2D) -> Vector2:
+	var size := Vector2(200, 200)
+	if who is Draggable:
+		size = (who as Draggable).hit_size * who.scale.abs()
+	var bay := _tool_bay()
+	for i in SPOIL.size():
+		var at: Vector2 = SPOIL[(_spoil + i) % SPOIL.size()]
+		var here := Rect2(at - size * 0.5, size)
+		var clear := true
+		for r in bay:
+			if here.intersects(r):
+				clear = false
+				break
+		if clear:
+			_spoil = (_spoil + i + 1) % SPOIL.size()
+			return at
+	# Nothing is clear for something this big. Take the far corner and accept it.
+	_spoil += 1
+	return SPOIL[_spoil % SPOIL.size()]
 
 
 ## Move whatever is lying on top of `who` off it. The desk is deliberately too
@@ -208,8 +256,7 @@ func _uncover(who: Node2D) -> bool:
 		return false
 	if not await _grab_exact(blocker):
 		return false
-	var to := desk.surface.to_global(SPOIL[_spoil % SPOIL.size()])
-	_spoil += 1
+	var to := desk.surface.to_global(_park_spot(blocker))
 	await _carry_until(blocker, func() -> Vector2:
 		return blocker.global_position, to, 45.0, 120)
 	await _release()
@@ -235,7 +282,7 @@ func _grab_exact(who: Node2D) -> bool:
 func _grab(who: Node2D) -> bool:
 	if who == null or not is_instance_valid(who):
 		return false
-	for attempt in 3:
+	for attempt in 5:
 		if await _grab_exact(who):
 			return true
 		if not await _uncover(who):
@@ -761,6 +808,13 @@ func _play_day(label: String) -> void:
 			await get_tree().process_frame
 
 	await _await_stage(SessionController.Stage.LEDGER, 25.0)
+	day_end.append({
+		"day": label,
+		"burn": desk.candle.burn if desk.candle != null else 0.0,
+		"burnt_out": session.burnt_out,
+		"heard": ordinal,
+		"of": total,
+	})
 
 
 ## Turn the folded corner. Returns false when the week is over — which now has
@@ -828,9 +882,17 @@ func _print_report() -> void:
 				% [row["ordinal"], row["of"], String(row["title"]).left(32),
 					row["left_at_start"] * 100.0, row["spent_seconds"]])
 		var last: Dictionary = rows[-1]
+		# The candle's OWN reading, not the sum of the matters that finished. A
+		# drowned day spends its last stretch on a matter that never reaches
+		# `report`, so summing said burn 0.64 for a day that had burnt out at 1.00.
 		var burn: float = spent_total / maxf(1.0, float(last["day_seconds"]))
-		print("   ---- total deliberation %.1f s of %.0f s   (burn %.2f)"
-			% [spent_total, last["day_seconds"], burn])
+		var ended := ""
+		for row in day_end:
+			if row["day"] == label:
+				burn = float(row["burn"])
+				ended = " — BURNT OUT" if row["burnt_out"] else ""
+		print("   ---- total deliberation %.1f s of %.0f s   (burn %.2f)%s"
+			% [spent_total, last["day_seconds"], burn, ended])
 		# DID THE DAY EVER LOOK LIKE IT WAS ENDING?
 		#
 		# `Candle.GUTTERING_FROM` is 0.86, and everything the object does to say
