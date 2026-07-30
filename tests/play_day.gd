@@ -469,21 +469,33 @@ func _investigate() -> void:
 		else charter.global_position
 	if await _grab(charter):
 		await _wait(dwell)
+		if _stop_if_day_ended():
+			return
 		# HOLD IT TO THE FLAME. Needs the sheet in hand and light_level >= 0.45,
 		# so it has to actually go to the candle rather than merely be lifted.
 		await _carry_until(charter, func() -> Vector2:
 			return charter.global_position,
 			desk.candle.flame_world() + Vector2(40.0, -10.0), 22.0, 90)
+		if _stop_if_day_ended():
+			return
 		await _wait(1.2)
+		if _stop_if_day_ended():
+			return
 		await _carry_until(charter, func() -> Vector2:
 			return charter.global_position, home, 24.0, 90)
 		await _release()
+		if _stop_if_day_ended():
+			return
 
 	_trace("inv:glass")
 	# THE GLASS, on the two things it is for.
 	for seal in _seals_of(charter):
 		await _glass_over(seal, "seal")
+		if _stop_if_day_ended():
+			return
 	await _glass_over(charter, "closing formula")
+	if _stop_if_day_ended():
+		return
 
 	# THE BOOKS. Two of the four are loose on the desk; the Kalendar and the
 	# Register are in pigeonholes and have to be fetched.
@@ -494,6 +506,8 @@ func _investigate() -> void:
 		if b.data == null:
 			continue
 		await _consult(b)
+		if _stop_if_day_ended():
+			return
 
 
 func _seals_of(charter: Node2D) -> Array[Node2D]:
@@ -602,9 +616,13 @@ func _seal_it(verdict: int) -> bool:
 	if charter.wax_slot_world().distance_to(slot_want) > 30.0:
 		if not await _grab(charter):
 			return _note("could not square the charter up to seal it")
+		if _stop_if_day_ended():
+			return false
 		await _carry_until(charter, func() -> Vector2:
 			return charter.wax_slot_world(), slot_want, 22.0, 180)
 		await _release()
+		if _stop_if_day_ended():
+			return false
 		# Verified, not assumed. Silently continuing from a failed placement is
 		# what turned an unreachable wax slot into a mystery 200 lines later.
 		var off := charter.wax_slot_world().distance_to(slot_want)
@@ -618,6 +636,8 @@ func _seal_it(verdict: int) -> bool:
 	_trace("seal:grab_spoon")
 	if not await _grab(spoon):
 		return _note("could not pick up the spoon")
+	if _stop_if_day_ended():
+		return false
 	# The bowl is 54 units out along the shaft, so it swings through an arc every
 	# time the drag solver rotates the spoon a few degrees. Position has to be
 	# HELD for the whole melt, not reached once.
@@ -625,10 +645,14 @@ func _seal_it(verdict: int) -> bool:
 	var over_flame := func() -> Vector2:
 		return desk.candle.flame_world() + Vector2(0.0, -52.0)
 	if not await _carry_until(spoon, bowl, over_flame.call(), 10.0, 200):
+		if _stop_if_day_ended():
+			return false
 		return _note("could not bring the spoon to the flame")
 	_trace("seal:melting")
 	if not await _hold_until(spoon, bowl, over_flame.call(),
 			func() -> bool: return spoon.is_pourable(feel), 900):
+		if _stop_if_day_ended():
+			return false
 		var off: Vector2 = bowl.call() - desk.candle.flame_world()
 		return _note("the wax never melted (bowl off flame by %s, temp %.2f, melt %.2f)"
 			% [str(off), spoon.temperature, spoon.melt])
@@ -638,6 +662,8 @@ func _seal_it(verdict: int) -> bool:
 	var lip := func() -> Vector2: return spoon.lip_world(feel)
 	var foot := charter.wax_slot_world()
 	if not await _carry_until(spoon, lip, foot, 12.0, 240):
+		if _stop_if_day_ended():
+			return false
 		return _note("could not carry the wax to the foot of the charter")
 	_trace("seal:pouring")
 	# Enough for a GOOD grade and short of a blot: good_low 0.52, good_high 1.06,
@@ -646,6 +672,8 @@ func _seal_it(verdict: int) -> bool:
 	await _hold_until(spoon, lip, foot, func() -> bool:
 		return desk.press.pool != null and is_instance_valid(desk.press.pool) \
 			and desk.press.pool.amount >= want, 900)
+	if _stop_if_day_ended():
+		return false
 	if desk.press.pool == null or not is_instance_valid(desk.press.pool):
 		return _note("no wax reached the parchment (tilt %.2f, pourable %s)"
 			% [spoon.tilt, str(spoon.is_pourable(feel))])
@@ -654,6 +682,8 @@ func _seal_it(verdict: int) -> bool:
 		return spoon.global_position,
 		desk.surface.to_global(Vector2(-620.0, 250.0)), 40.0, 150)
 	await _release()
+	if _stop_if_day_ended():
+		return false
 
 	# PRESS. Take the ring the law asks for and hold it in the wax.
 	_trace("seal:ring")
@@ -664,7 +694,13 @@ func _seal_it(verdict: int) -> bool:
 	if ring == null:
 		return _note("no ring for verdict %s" % Lex.verdict_name(verdict))
 	if not await _grab(ring):
+		if _stop_if_day_ended():
+			return false
 		return _note("could not pick up the %s ring" % ring.word())
+	if _stop_if_day_ended():
+		return false
+	if desk.press.pool == null or not is_instance_valid(desk.press.pool):
+		return _note("the wax disappeared before the die reached it")
 	var at_ring := func() -> Vector2: return ring.global_position
 	var on_wax := desk.press.pool.global_position
 	# THE PRESS ITSELF DECIDES WHEN THE RING HAS ARRIVED, not a distance.
@@ -677,6 +713,8 @@ func _seal_it(verdict: int) -> bool:
 	# wax take it.
 	if not await _carry_until(ring, at_ring, on_wax,
 			feel.press_radius * 0.42, 240):
+		if _stop_if_day_ended():
+			return false
 		return _note(("could not bring the ring to the wax: %.0f off; "
 			+ "ring at %s, wax at %s, held=%s, bounds=%s, phase=%s, cursor=%s")
 			% [(at_ring.call() as Vector2).distance_to(on_wax),
@@ -690,16 +728,22 @@ func _seal_it(verdict: int) -> bool:
 	_trace("seal:pressing")
 	var seated := 0
 	for i in 240:
+		if _work_was_interrupted():
+			break
 		if desk.press.phase == PressController.Phase.HOLD:
 			seated += 1
 			if seated > 60:
 				break
 		await get_tree().process_frame
 	await _release()
+	if _stop_if_day_ended():
+		return false
 	# Peel is 0.30 s and the ruling lands at the end of it.
 	if not await _hold_until(null, at_ring, on_wax, func() -> bool:
 			return desk.press.phase == PressController.Phase.DONE \
 				or session.stage != SessionController.Stage.WORKING, 180):
+		if _stop_if_day_ended():
+			return false
 		return _note("the press never finished (phase %s)"
 			% desk.press.phase_name())
 	_trace("seal:done")
@@ -711,6 +755,27 @@ func _note(why: String) -> bool:
 		session._current.id if session._current != null else "?"])
 	push_error("[play] " + why)
 	return false
+
+
+## A drowned candle legitimately interrupts whatever real-input gesture was in
+## progress. It is not a harness failure, but stale references to the swept
+## charter and its WaxPool are. Stop touching the abandoned objects, release any
+## surviving tool, and let `_play_day` wait for the ledger.
+func _work_was_interrupted() -> bool:
+	return session.stage in [
+		SessionController.Stage.CLOSING,
+		SessionController.Stage.LEDGER,
+		SessionController.Stage.OVER,
+	] or (desk.candle != null and desk.candle.is_spent())
+
+
+func _stop_if_day_ended() -> bool:
+	if not _work_was_interrupted():
+		return false
+	if desk._held != null:
+		desk.cancel_hand_for_view()
+	_trace("matter:interrupted", {"reason": "candle"})
+	return true
 
 
 # -------------------------------------------------------------------- the day
@@ -801,6 +866,8 @@ func _play_day(label: String) -> void:
 
 		_trace("matter:investigate", {"ordinal": ordinal})
 		await _investigate()
+		if _stop_if_day_ended():
+			break
 
 		var lawful := Adjudicator.adjudicate_case(here, Lore.data, session.register)
 		var ok := await _seal_it(lawful.verdict)
