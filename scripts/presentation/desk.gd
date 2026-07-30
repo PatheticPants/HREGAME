@@ -538,6 +538,7 @@ func remove_docket(case_id: StringName) -> void:
 ## reaches for and whether the glass lingers over their wax, then the session
 ## decides whether this particular person has something authored to say.
 func _on_lens_focus_confirmed(subject: Node2D) -> void:
+	SessionLog.act(&"glass_on", {"subject": SessionLog.describe(subject)}, candle)
 	if subject is SealTag:
 		investigation_performed.emit(&"inspect_seal")
 	elif subject is CharterView:
@@ -547,6 +548,16 @@ func _on_lens_focus_confirmed(subject: Node2D) -> void:
 
 
 func _on_book_consulted(book_id: StringName) -> void:
+	# `consulted` fires on open AND on every page turn, so the spread is the part
+	# worth recording: "opened the Kalendar" and "turned to the Chancery's own
+	# dead" are materially different acts and only one of them is investigation.
+	var spread := -1
+	for b in books:
+		if b.data != null and b.data.id == book_id:
+			spread = b.spread
+			break
+	SessionLog.act(&"consult_book",
+		{"book": String(book_id), "spread": spread}, candle)
 	investigation_performed.emit(StringName("consult_" + String(book_id)))
 	_report_open_roll(book_id)
 
@@ -572,6 +583,9 @@ func _report_open_roll(book_id: StringName) -> void:
 				continue
 			var page: BookPage = b.data.pages[i]
 			if page.roll_id != &"":
+				SessionLog.act(&"read_roll",
+					{"roll": String(page.roll_id), "book": String(book_id)},
+					candle)
 				investigation_performed.emit(
 					StringName("read_" + String(page.roll_id)))
 		return
@@ -590,6 +604,7 @@ func _check_backlight() -> void:
 	if _backlit_reported:
 		return
 	_backlit_reported = true
+	SessionLog.act(&"hold_to_flame", {}, candle)
 	investigation_performed.emit(&"hold_to_light")
 
 
@@ -744,8 +759,10 @@ func _begin_press() -> void:
 	_dragged = false
 	var target := _pick(p)
 	if target == null:
+		SessionLog.act(&"click_empty", {}, candle)
 		_click_empty()
 		return
+	SessionLog.act(&"pick_up", {"what": SessionLog.describe(target)}, candle)
 	# The permanent memorandum describes the office; rearranging it is not
 	# handling the live matter. Everything evidentiary or instrumental still
 	# starts working time, including references and political correspondence.
@@ -763,6 +780,11 @@ func _end_press() -> void:
 	var local := was.to_local(get_global_mouse_position())
 	was.drop()
 	_held = null
+	# A press and release in nearly the same place is a click; anything else is a
+	# carry. Distinguished here because "how long was the glass in the hand" and
+	# "how many times was a book opened" are different questions.
+	SessionLog.act(&"put_down" if _dragged else &"click",
+		{"what": SessionLog.describe(was)}, candle)
 	if _dragged and was is DocketSlip:
 		_try_hear_docket(was as DocketSlip)
 		return
@@ -798,12 +820,15 @@ func _park_in_rack(who: Draggable, slot: int) -> void:
 	var at := ledge.slot_position(slot)
 	who.solver.place(at, 0.0)
 	who.position = at
-	_try_rack(who)
+	# Not logged: this is the build placing furniture, not the notary shelving a
+	# book. A log that reports three things put away before the room exists is a
+	# log whose first question is "what happened at t=0".
+	_try_rack(who, false)
 
 
 ## Let go over a pigeonhole and the thing goes in it. Nothing else puts anything
 ## away, and nothing ever puts itself away.
-func _try_rack(who: Draggable) -> void:
+func _try_rack(who: Draggable, log_it := true) -> void:
 	if ledge == null or who == null or not is_instance_valid(who):
 		return
 	ledge.armed_slot = -1
@@ -811,6 +836,9 @@ func _try_rack(who: Draggable) -> void:
 	if slot < 0:
 		ledge.release(who)
 		return
+	if log_it:
+		SessionLog.act(&"shelved",
+			{"what": SessionLog.describe(who), "slot": slot}, candle)
 	ledge.take(slot, who)
 	# Books close when they are shelved. An open book in a pigeonhole is not a
 	# thing, and it would also keep its huge open hit box.

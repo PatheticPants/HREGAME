@@ -160,6 +160,19 @@ func _begin_day(which: int) -> void:
 
 	if day_index > 0:
 		desk.reset_for_next_day()
+	# After reset_for_next_day, so last_candle_remaining is the value this day is
+	# actually scaled by rather than the previous day's.
+	SessionLog.day_id = current_day.id
+	SessionLog.day_seconds = day_seconds()
+	SessionLog.case_id = &""
+	_log(&"day_begins", {
+		"index": day_index,
+		"authored_seconds": current_day.day_seconds,
+		"carried": snappedf(desk.last_candle_remaining, 0.0001),
+		"day_seconds": snappedf(day_seconds(), 0.01),
+		"matters": cases.size(),
+		"selection": String(current_day.selection_mode),
+	})
 	desk.lay_out_day_documents(current_day.resolve_opening_documents(register))
 	if current_day.selection_mode == &"tray":
 		desk.show_docket_tray(remaining_cases)
@@ -258,6 +271,11 @@ func _end_day_by_candle() -> void:
 	if stage == Stage.LEDGER or stage == Stage.OVER or stage == Stage.CLOSING:
 		return
 	burnt_out = true
+	_log(&"day_ends", {
+		"how": "burnt_out",
+		"unheard": remaining_cases.size(),
+		"unfinished": _current != null,
+	})
 	# The one at the desk was heard and simply never ruled on. The rest never
 	# got through the door at all.
 	if _current != null:
@@ -299,6 +317,9 @@ func _advance_case() -> void:
 	if remaining_cases.is_empty():
 		# Finished on the notary's own terms. He puts his own candle out, which
 		# is a different ending from having it put out for him.
+		# Logged BEFORE snuff(), or the line records a spent candle and the whole
+		# reward for finishing early is invisible in the data.
+		_log(&"day_ends", {"how": "finished", "unheard": 0})
 		if desk != null:
 			if desk.candle != null:
 				desk.candle.snuff()
@@ -338,6 +359,15 @@ func _start_case(next: CaseData) -> void:
 	# been given for free.
 	if desk != null and desk.candle != null:
 		desk.candle.mark_work_rested()
+	SessionLog.case_id = _current.id
+	# `ordinal` is what makes "candle remaining at the start of the LAST matter"
+	# a grep rather than an interpretation.
+	_log(&"matter_arrives", {
+		"ordinal": index + 1,
+		"of": cases.size(),
+		"title": _current.title,
+		"last": remaining_cases.is_empty(),
+	})
 	_enter(Stage.KNOCK)
 
 
@@ -349,6 +379,10 @@ func _on_docket_selected(case_id: StringName) -> void:
 			continue
 		remaining_cases.erase(c)
 		index += 1
+		_log(&"docket_chosen", {
+			"chose": String(case_id),
+			"from": remaining_cases.size() + 1,
+		})
 		desk.remove_docket(case_id)
 		desk.lock_docket_tray()
 		_start_case(c)
@@ -364,6 +398,14 @@ func _on_next_day_requested() -> void:
 func _enter(s: int) -> void:
 	stage = s
 	_timer = 0.0
+	SessionLog.stage = SessionLog.stage_name(s)
+	_log(&"stage")
+
+
+## Every log line carries the candle, because a line without it cannot answer the
+## only question the log exists for. Costs nothing when the flag is off.
+func _log(what: StringName, detail: Dictionary = {}) -> void:
+	SessionLog.act(what, detail, desk.candle if desk != null else null)
 
 
 func _tick_knock() -> void:
@@ -524,13 +566,16 @@ func _on_practice_lens_dropped(_lens: Draggable) -> void:
 ## whether the petitioner has finished speaking. This closes both timing holes:
 ## arrival dialogue is no longer free research time, and an authored interjection
 ## no longer changes whether the flame burns.
-func _on_case_work_engaged(_who: Draggable) -> void:
+func _on_case_work_engaged(who: Draggable) -> void:
 	if _current == null:
 		return
 	if stage not in [Stage.ENTERING, Stage.SPEAKING, Stage.WORKING]:
 		return
 	if not _work_engaged and desk.candle != null:
 		desk.candle.mark_work_engaged()
+		# THE CLOCK STARTS HERE, and this is the line that proves it. Everything
+		# before it on this matter was free.
+		_log(&"clock_starts", {"on": SessionLog.describe(who)})
 	# Hand to the packet means the reading has started, so put the head back down
 	# to the work. Only ever from the lift this controller performed itself: a
 	# player who chose to look up is not overruled.
@@ -566,6 +611,14 @@ func _on_impression_finished(verdict: int, record: ImpressionRecord) -> void:
 		return
 	if stage != Stage.WORKING or _current == null:
 		return
+	# Logged before the adjudication, so the line records the ruling as an ACT
+	# with the candle at the instant of the press — not after the office has had
+	# its say about it.
+	_log(&"ruled", {
+		"verdict": Lex.verdict_name(verdict),
+		"grade": Lex.grade_name(record.grade) if record != null else "",
+		"work_seconds": snappedf(_work_time, 0.01),
+	})
 	desk.press.enabled = false
 	# Remembered so the office can react to THIS matter once the man who brought
 	# it has gone. See _deliver_arrivals.
