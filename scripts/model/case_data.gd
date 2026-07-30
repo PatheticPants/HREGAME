@@ -13,6 +13,11 @@ extends Resource
 @export var petitioner: PetitionerData = null
 @export var documents: Array[DocumentData] = []
 
+## Most callers stay to hear the ruling. A messenger may instead deliver the
+## packet, say the authored arrival lines, and leave the instrument in the
+## notary's hands. The judgment is still this case; only its attendance changes.
+@export var petitioner_waits := true
+
 ## Expected office procedure. Kept under the compatibility name used by content.
 @export var correct_verdict: int = Lex.Verdict.NONE
 ## Some follow-up matters deliberately have no context-free answer: the Register

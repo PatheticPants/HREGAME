@@ -31,6 +31,7 @@ func _run() -> void:
 	await _work_clock_contract()
 	await _full_day()
 	await _day_two_tray()
+	await _servant_delivery_contract()
 	await _full_thursday()
 	await _day_cut_short()
 	await _the_week_chases_you()
@@ -286,6 +287,94 @@ func _day_two_tray() -> void:
 		"Thursday's ledger does not reprint Tuesday's judgments")
 	_is_true(session.register.entries_for_day(&"day_01").size() == day_one.size(),
 		"the earlier Register survives the new day unchanged")
+
+	_close(main)
+
+
+# ------------------------------------------------------ unattended delivery
+
+func _servant_delivery_contract() -> void:
+	print("-- one Thursday packet is delivered and left with the notary")
+	var main := _open()
+	var desk := main.get_node("desk") as Desk
+	var session := desk.session
+	session._begin_day(1)
+	session.current_day.day_seconds = 60.0
+
+	var delivered := Lore.data.case_by_id(&"case_09_breitenau_weir")
+	var ordinary := Lore.data.case_by_id(&"case_04_second_lion")
+	var unattended := 0
+	for case_data in Lore.data.cases:
+		if not case_data.petitioner_waits:
+			unattended += 1
+	_is_true(delivered != null and not delivered.petitioner_waits,
+		"the six-seal matter is the servant-delivered matter")
+	_is_true(unattended == 1,
+		"exactly one authored matter uses unattended delivery")
+	_is_true(ordinary != null and ordinary.petitioner_waits,
+		"the following Thursday matter keeps an attending petitioner")
+
+	var same_candle := desk.candle
+	desk.docket_selected.emit(delivered.id)
+	_is_true(await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0),
+		"the servant reaches the desk and gives the handover")
+	await _hear_them_out(desk)
+	_is_true(await _await_stage(desk, SessionController.Stage.WORKING, 8.0)
+			and desk.press.enabled,
+		"the packet becomes sealable when the handover ends")
+
+	# No hand has touched the matter yet, so the candle remains free while the
+	# servant crosses back to the door.
+	var before_work := same_candle.burn
+	await _step(3.0)
+	_is_true(desk.petitioner.data == null and desk.door_is_settled(),
+		"the servant has left and the door is shut before deliberation")
+	_is_true(is_equal_approx(same_candle.burn, before_work),
+		"the messenger's departure itself spends no candle")
+
+	# An unattended packet can still cost working time, but cannot speak an
+	# investigation line from an empty room.
+	desk.case_work_engaged.emit(desk.current_charter)
+	await _step(0.5)
+	_is_true(same_candle.burn > before_work,
+		"work on the unattended packet burns the same Thursday candle")
+	session._on_investigation_performed(&"inspect_seal")
+	await get_tree().process_frame
+	_is_true(not desk.petitioner.is_speaking(),
+		"an absent servant never answers an investigation beat")
+
+	var impression := ImpressionRecord.new()
+	impression.grade = Lex.Grade.GOOD
+	session._on_impression_finished(delivered.correct_verdict, impression)
+	await get_tree().process_frame
+	_is_true(not desk.petitioner.is_speaking(),
+		"an absent servant never voices the authored outcome reaction")
+	_is_true(await _await_stage(desk, SessionController.Stage.CHOOSING, 12.0),
+		"the delivered matter clears back to the same passage tray")
+	var after_delivery := same_candle.burn
+
+	# Choose the untouched ordinary matter immediately after it. No day turn, no
+	# new candle, and this caller stays in the room through WORKING.
+	desk.docket_selected.emit(ordinary.id)
+	_is_true(await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0),
+		"the ordinary matter follows the servant delivery back-to-back")
+	_is_true(desk.candle == same_candle
+			and is_equal_approx(same_candle.burn, after_delivery),
+		"both matters use one continuous Thursday candle")
+	await _hear_them_out(desk)
+	_is_true(await _await_stage(desk, SessionController.Stage.WORKING, 8.0)
+			and desk.petitioner.has_arrived()
+			and desk.petitioner.data != null,
+		"the ordinary petitioner remains present while the next matter is worked")
+
+	session.unfinished = delivered.petitioner.name
+	session.unfinished_unattended = true
+	var ledger_text := ""
+	for line: Dictionary in session._ledger_unheard():
+		ledger_text += String(line.get("text", "")) + "\n"
+	_is_true(ledger_text.contains("Delivered, not ruled")
+			and not ledger_text.contains("Stood at the desk"),
+		"an unfinished delivery is not recorded as a waiting petitioner")
 
 	_close(main)
 

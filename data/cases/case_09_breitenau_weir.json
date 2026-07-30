@@ -5,10 +5,11 @@
   "correct_verdict": "CONFIRM",
   "correct_reason": "nothing_against",
   "correct_reason_text": "Five consenting parties and one authenticating Chancery seal are present. All six answer to live dies.",
+  "petitioner_waits": false,
   "petitioner": {
     "id": "bertold_leyser",
     "name": "Bertold Leyser",
-    "style": "clerk of the works at Breitenau",
+    "style": "servant of the works at Breitenau",
     "polity_id": "aachen_verd",
     "portrait_path": "res://art/petitioners/matthias_erken_bust.png",
     "height": 246,
@@ -32,7 +33,7 @@
       ],
       "start_angle_deg": -2.5,
       "petitioner_name": "Bertold Leyser",
-      "petitioner_style": "clerk of the works at Breitenau",
+      "petitioner_style": "servant of the works at Breitenau",
       "claim_summary": "Presents the common consent for rebuilding the weir: five named parties, authenticated by the Imperial Chancery.",
       "received_note": "Called from the Thursday tray.",
       "doorkeeper_note": "The packet clatters."
@@ -147,7 +148,7 @@
   "lines": [
     {
       "beat": "arrival",
-      "text": "Five parties made one agreement. The Chancery put it into one packet."
+      "text": "My masters send their common act. Five parties made one agreement; the Chancery put it into one packet."
     },
     {
       "beat": "inspect_seal",

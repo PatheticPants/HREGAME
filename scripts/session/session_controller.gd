@@ -63,6 +63,9 @@ var unheard: Array[String] = []
 ## ruling. A different and worse thing than never being called, and the ledger
 ## says so — this is the one the notary has to think about on the way home.
 var unfinished := ""
+## True when the unfinished instrument was left by a messenger who had already
+## gone. The ledger must not claim that person stood waiting for the wick.
+var unfinished_unattended := false
 
 var _timer := 0.0
 var _knocked := false
@@ -152,6 +155,7 @@ func _begin_day(which: int) -> void:
 	burnt_out = false
 	unheard.clear()
 	unfinished = ""
+	unfinished_unattended = false
 	_current = null
 	_adjudication = null
 	index = -1
@@ -210,6 +214,18 @@ func _process(delta: float) -> void:
 ## work — the point is presence, not nagging.
 func _tick_working(delta: float) -> void:
 	_work_time += delta
+	if _current != null and not _current.petitioner_waits:
+		# The messenger may still be crossing back to the door during the first
+		# moments of work. Close it behind him, then remove the empty portrait;
+		# no waiting or social-response beats belong to an unattended packet.
+		if not _door_closed and desk.petitioner.is_offstage():
+			_door_closed = true
+			desk.close_door()
+		if _door_closed and desk.door_is_settled() \
+				and desk.petitioner.is_offstage() \
+				and desk.petitioner.data != null:
+			desk.petitioner.clear()
+		return
 	if desk.petitioner.is_speaking():
 		return
 	if _work_time > WAIT_LONG:
@@ -238,11 +254,12 @@ func _speak_beat(beat: StringName) -> bool:
 
 ## One candle is one working day.
 ##
-## It burns only during WORKING — while somebody is standing at the desk waiting
-## on a ruling and the player is deciding. Not while they are speaking, not
-## between callers, not while the ledger is open. That restriction is the whole
-## reason this is fair rather than a stopwatch: it measures deliberation, and
-## deliberation is the only thing the player controls.
+## It burns only during WORKING — while a matter is in the notary's hands and
+## the player is deciding. Usually its petitioner is standing at the desk; a
+## servant-delivered packet remains work after its messenger has gone. Not while
+## they are speaking, not between matters, not while the ledger is open. That
+## restriction is the whole reason this is fair rather than a stopwatch: it
+## measures deliberation, and deliberation is the only thing the player controls.
 ##
 ## When it drowns, the day ends where it has got to.
 func _burn_the_day(delta: float) -> void:
@@ -286,6 +303,7 @@ func _end_day_by_candle() -> void:
 	# got through the door at all.
 	if _current != null:
 		unfinished = _current.petitioner.name
+		unfinished_unattended = not _current.petitioner_waits
 	for pending in remaining_cases:
 		unheard.append(pending.petitioner.name)
 	desk.press.enabled = false
@@ -483,10 +501,23 @@ func _tick_speaking() -> void:
 	# The rings do nothing until the petitioner has finished. You cannot seal a
 	# document before you have been told what it is.
 	desk.press.enabled = true
+	if not _current.petitioner_waits:
+		# A servant delivers, identifies the packet, and goes. The instrument
+		# stays on the desk; only the social witness to the work is absent.
+		desk.open_door()
+		_door_closed = false
+		desk.petitioner.depart()
+		_log(&"presenter_departs", {"before_work": true})
 	_enter(Stage.WORKING)
 
 
 func _tick_reacting() -> void:
+	if _current != null and not _current.petitioner_waits:
+		# There is nobody here to react and nobody to send away a second time.
+		# The packet sweep is the only physical end beat still required.
+		desk.sweep_packet_away()
+		_enter(Stage.DEPARTING)
+		return
 	if desk.petitioner.is_speaking() or _timer < REACT_DELAY * _beat:
 		return
 	desk.open_door()
@@ -538,7 +569,8 @@ func _on_investigation_performed(beat: StringName) -> void:
 	# Doing something resets the silence. A player actively working the packet
 	# should not be prompted as though they had gone to sleep.
 	_work_time = 0.0
-	_speak_beat(beat)
+	if _current == null or _current.petitioner_waits:
+		_speak_beat(beat)
 	_deliver_investigation_arrivals(beat)
 
 
@@ -722,7 +754,8 @@ func _on_impression_finished(verdict: int, record: ImpressionRecord) -> void:
 	if review_due:
 		desk.reveal_register_review()
 
-	if outcome != null and not outcome.reaction.is_empty():
+	if outcome != null and not outcome.reaction.is_empty() \
+			and _current.petitioner_waits:
 		desk.petitioner.say(outcome.reaction, _current.petitioner.name)
 	_enter(Stage.REACTING)
 
@@ -758,17 +791,23 @@ func _ledger_unheard() -> Array[Dictionary]:
 	if unheard.is_empty() and unfinished.is_empty():
 		return out
 
-	# The person who was actually standing there gets their own entry, and it is
-	# the worse one: they came in, they said their piece, and the light went out
-	# while somebody looked at their charter.
+	# The active matter gets its own entry, distinct from anybody never called.
+	# An unattended delivery cannot be described as a person left standing.
 	if not unfinished.is_empty():
-		out.append(Ledger.heading("Heard, not ruled", 13))
+		out.append(Ledger.heading(
+			"Delivered, not ruled" if unfinished_unattended \
+			else "Heard, not ruled", 13))
 		out.append(Ledger.text(unfinished, 10, Ink.FADED))
 		out.append(Ledger.gap(4))
 		out.append(Ledger.rubric("Ruled:  —", 12))
-		out.append(Ledger.text(
-			"Stood at the desk until the wick went. Told to come again.", 10,
-			Ink.CHANCERY, 10.0))
+		if unfinished_unattended:
+			out.append(Ledger.text(
+				"Left in the notary's hands until the wick went. Returned "
+				+ "through the passage.", 10, Ink.CHANCERY, 10.0))
+		else:
+			out.append(Ledger.text(
+				"Stood at the desk until the wick went. Told to come again.", 10,
+				Ink.CHANCERY, 10.0))
 		out.append(Ledger.gap(12))
 		out.append(Ledger.rule_line())
 		out.append(Ledger.gap(8))

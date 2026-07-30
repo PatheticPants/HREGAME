@@ -272,6 +272,7 @@ static func _build_case(d: Variant, path: String, lore: LoreData) -> CaseData:
 	pd.cloth = _color(praw, "cloth", Color(0.35, 0.32, 0.30))
 	pd.restlessness = _f(praw, "restlessness", 0.5)
 	c.petitioner = pd
+	c.petitioner_waits = _b(d, "petitioner_waits", true)
 
 	var docs: Array[DocumentData] = []
 	for raw in _arr(d, "documents"):

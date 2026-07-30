@@ -32,6 +32,9 @@ extends Node
 ##   57  the glass resolving only the charter's physical closing formula
 ##   58  the same parchment, ink and optical edge at inspection scale
 ##   59  an open book throwing a guttered shadow under grazing candlelight
+##   64  the servant identifying the six-seal packet at the desk
+##   65  the same packet left in an empty room after the servant has gone
+##   66  the following ordinary petitioner still present for his matter
 
 const OUT := "res://.tools/"
 
@@ -182,6 +185,7 @@ func _run() -> void:
 	await _inspect_own_seal()
 	await _show_day_two()
 	await _show_seals_in_a_row()
+	await _show_servant_delivery()
 	await _the_knife()
 	await _candle_close()
 	await _write_on_tablet()
@@ -275,6 +279,73 @@ func _show_seals_in_a_row() -> void:
 		await _settle(20)
 		await _shot("63_one_pendant_tag_lifted")
 		pulled.is_held = false
+
+
+## The second Thursday matter type, followed immediately by the ordinary one.
+## Session tests prove the state machine and candle continuity; these frames make
+## the social difference reviewable at the pixels rather than only in a log.
+func _show_servant_delivery() -> void:
+	var delivered := Lore.data.case_by_id(&"case_09_breitenau_weir")
+	var ordinary := Lore.data.case_by_id(&"case_04_second_lion")
+	if delivered == null or ordinary == null:
+		return
+	var view := _main.get_node_or_null("view_controller")
+
+	# Re-lay the packet so all six tags begin in their countable row after shot
+	# 63 pulled one aside.
+	_desk.sweep_packet_away()
+	_desk._finish_sweep()
+	_desk.lay_out_packet(delivered.documents)
+	_desk.petitioner.bind(delivered.petitioner)
+	_desk.petitioner.arrive()
+	_desk.open_door()
+	if view != null and view.has_method("look_up"):
+		view.look_up()
+	await _settle(90)
+	var handover := delivered.lines_for(&"arrival", _desk.session.register)
+	_desk.petitioner.say(
+		handover[0].text if not handover.is_empty() else "This packet is left.",
+		delivered.petitioner.name)
+	await _settle(38)
+	await _shot("64_servant_handover")
+
+	_desk.petitioner.on_click()
+	_desk.petitioner.on_click()
+	_desk.open_door()
+	_desk.petitioner.depart()
+	await _settle(90)
+	_desk.close_door()
+	await _settle(55)
+	_desk.petitioner.clear()
+	if view != null and view.has_method("look_down"):
+		view.look_down()
+	await _settle(80)
+	await _shot("65_servant_gone_packet_remains")
+
+	# The next authored docket is still an ordinary attended hearing. Keep the
+	# same candle exactly where it was; only the packet and person change.
+	_desk.sweep_packet_away()
+	_desk._finish_sweep()
+	_desk.lay_out_packet(ordinary.documents)
+	_desk.petitioner.bind(ordinary.petitioner)
+	_desk.petitioner.arrive()
+	_desk.open_door()
+	if view != null and view.has_method("look_up"):
+		view.look_up()
+	await _settle(90)
+	var arrival := ordinary.lines_for(&"arrival", _desk.session.register)
+	_desk.petitioner.say(
+		arrival[0].text if not arrival.is_empty() else "I await the ruling.",
+		ordinary.petitioner.name)
+	await _settle(38)
+	await _shot("66_next_ordinary_petitioner_waits")
+	_desk.petitioner.on_click()
+	_desk.petitioner.on_click()
+	_desk.petitioner.clear()
+	_desk.close_door()
+	if view != null and view.has_method("look_down"):
+		view.look_down()
+	await _settle(80)
 
 
 ## Close on the foot of the charter: the witness list, the chancery annotation
