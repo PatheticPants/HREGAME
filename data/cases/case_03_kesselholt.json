@@ -1,13 +1,10 @@
 {
   "id": "case_03_kesselholt",
   "title": "The Woodland of Kesselholt",
-
   "_design": "The impossible date that is not impossible. Fourteenth year of Aldric: by imperial accession reckoning that is 1217 and Aldric died in 1215, so it cannot exist. By the church's election reckoning it is 1214, and it is unremarkable. The chancery that drew it is Saint Wend, which dates from election, and that fact is in the closing formula at the foot of the parchment in the smallest hand on the page.\n\nConfirm chooses the Church's law. Deny chooses the Empire's. Refer follows office procedure and chooses neither. All three are legally intelligible; only their commitments and consequences differ.\n\nA trap for the hasty: the text is about an ABBEY, but the seal is the CATHEDRAL CHAPTER's — keys, not a crook — and the closing line says so. Look up the wrong die and you will find a device mismatch and be completely wrong. The Book of Matrices warns about this two pages earlier.\n\nAnselm is an advocate, not the tutorial. He will quote your ruling on the widow back at you, correctly.",
-
   "correct_verdict": "REFER",
   "correct_reason": "reckoning_contested",
   "correct_reason_text": "Read by imperial accession, the fourteenth year of Aldric falls after his death. Read by Saint Wend's election reckoning, it falls during his life. Both readings are ancient. The office directs referral; confirmation and denial remain substantive choices of authority.",
-
   "petitioner": {
     "id": "brother_anselm",
     "name": "Brother Anselm",
@@ -19,15 +16,20 @@
     "cloth": "#2c2734",
     "restlessness": 0.1
   },
-
   "documents": [
     {
       "kind": "docket",
       "id": "docket_03",
       "title": "Docket",
-      "size": [330, 235],
+      "size": [
+        330,
+        235
+      ],
       "tint": "#dbd0b6",
-      "start_offset": [-355, -100],
+      "start_offset": [
+        -355,
+        -100
+      ],
       "start_angle_deg": 3.5,
       "petitioner_name": "Brother Anselm",
       "petitioner_style": "cellarer, the Abbey of Saint Wend's-in-the-Wood",
@@ -39,30 +41,46 @@
       "kind": "charter",
       "id": "charter_kesselholt",
       "title": "Grant of Wendelin, Bishop of Saint Wend",
-      "size": [430, 585],
+      "size": [
+        430,
+        585
+      ],
       "tint": "#e2d8bd",
-      "start_offset": [-40, 60],
+      "start_offset": [
+        -40,
+        60
+      ],
       "start_angle_deg": -1.5,
       "takes_seal": true,
-
-      "body_text": "Wendelin, by the sufferance of God Bishop of Saint Wend, to all sons of holy Church, greeting.\n\nWe make known that we have granted in perpetual alms to the abbey of Saint Wend's-in-the-Wood the woodland called Kesselholt, lying in the Nether March from the ford at Grellenbach to the standing stone above it, with pannage and with timber for the fabric of the church, free of all secular exaction.\n\nAnd for the greater security of this our act the chapter of our cathedral has set its seal hereto.",
-
+      "body_text": "Wendelin, by the sufferance of God Bishop of Saint Wend.\n\nGranted in perpetual alms, free of all secular exaction.\n\nAnd for the greater security of this our act the chapter of our cathedral has set its seal hereto.",
       "date_emperor": "aldric_i",
       "date_regnal_year": 14,
       "drawn_by_polity": "saint_wend",
-
       "grantor": "Wendelin, Bishop of Saint Wend",
       "claimant": "The Abbey of Saint Wend's-in-the-Wood",
       "property": "The woodland called Kesselholt, in the Nether March, from the ford at Grellenbach to the standing stone",
       "subject_id": "kesselholt_wood",
       "claimant_id": "saint_wend_abbey",
-
       "witnesses": [
-        { "name": "Adalbero", "person_id": "adalbero_dean", "house": "saint_wend", "title": "dean of the chapter" },
-        { "name": "Meinhard", "person_id": "meinhard", "house": "saint_wend", "title": "abbot of Saint Wend's-in-the-Wood" },
-        { "name": "Gozwin", "person_id": "gozwin", "house": "saint_wend", "title": "notary of the bishop's chancery" }
+        {
+          "name": "Adalbero",
+          "person_id": "adalbero_dean",
+          "house": "saint_wend",
+          "title": "dean of the chapter"
+        },
+        {
+          "name": "Meinhard",
+          "person_id": "meinhard",
+          "house": "saint_wend",
+          "title": "abbot of Saint Wend's-in-the-Wood"
+        },
+        {
+          "name": "Gozwin",
+          "person_id": "gozwin",
+          "house": "saint_wend",
+          "title": "notary of the bishop's chancery"
+        }
       ],
-
       "seal": {
         "id": "seal_kesselholt",
         "claims_owner": "The Cathedral Chapter of Saint Wend",
@@ -74,10 +92,10 @@
         "wear": 0.1,
         "shape_seed": 6153,
         "note": "Keys and a pointed oval: the chapter, not the house. The abbey's own die bears a crook and is nothing to do with this."
-      }
+      },
+      "_body_note": "ARENGA CUT 2026-07-30. What was deleted: the address formula ('to all who shall see or hear this present writing... greeting'), which is boilerplate; and the disposition prose, which said in flowing sentences exactly what the Granted by / To / Of block below already says in three lines. No rule has ever read body_text — grep scripts/rules/ — so every word of it was there for the human, and half of it was there twice.\n\nWhat was KEPT, and why each: the intitulatio, because a grantor's style is checked against his seal's legend; any clause of tenure or service, because that is not in the parties block; and the corroboration ONLY where it names WHICH seal, because that is evidence. A plain 'in witness whereof we have set our seal' is a sentence describing an object hanging off the page, so it went."
     }
   ],
-
   "lines": [
     {
       "beat": "arrival",
@@ -139,7 +157,6 @@
       "text": "There. Three beginnings to one reign. You keep a very handsome table for an argument nobody intends to finish."
     }
   ],
-
   "outcomes": [
     {
       "verdict": "REFER",
@@ -150,14 +167,20 @@
     },
     {
       "verdict": "CONFIRM",
-      "favor": { "church": 2, "imperial": -2 },
+      "favor": {
+        "church": 2,
+        "imperial": -2
+      },
       "reaction": "Thank you, notary. The Church will hear that you can read.",
       "register_note": "Fourteenth of Aldric, reduced by the church reckoning to 1214. Chapter seal sound, die live. Confirmed.",
       "aftermath": "Saint Wend has the wood. The Chancellor's office now has a note of a notary who applies the church reckoning in an imperial court, and the Nether March has a precedent that will be read back to it the next time it objects to anything at all."
     },
     {
       "verdict": "DENY",
-      "favor": { "imperial": 2, "church": -2 },
+      "favor": {
+        "imperial": 2,
+        "church": -2
+      },
       "reaction": "By your reckoning. Yes. Not by ours, and not by the one that will matter in the end, but by yours.",
       "register_note": "Fourteenth of Aldric. Aldric reigned twelve years. Refused.",
       "aftermath": "The abbey has appealed under the Church's reckoning. It will be remembered at Saint Wend that the Chancery chose accession over a reckoning older than itself."

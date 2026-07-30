@@ -1,13 +1,10 @@
 {
   "id": "case_02_grellwater",
   "title": "The Mill at Grellwater",
-
   "_design": "The forgery, and the whole point is that denying it is correct and cruel. She is not the forger. Her charter burnt in a real fire and she paid a man in Thurnstadt four marks to draw it again; he worked from an old impression and used Dietrich's first die, which was defaced in 1207. The instrument is dated 1213. No die of Dietrich's existed by then — the second was broken at his death in 1211.\n\nTwo routes to the truth, one easy and one hard. Easy: the body text styles him DEI GRATIA but the legend does not, and the book shows he changed the legend when he took the style. Hard: the die was dead. Both land on the same answer.\n\nAnd confirming it out of pity does not save her. It turns her charter into evidence.",
-
   "correct_verdict": "DENY",
   "correct_reason": "matrix_not_live",
   "correct_reason_text": "The impression answers exactly to Dietrich's first die, which was defaced in 1207. The instrument is dated 1213. His second die was broken at his death in 1211. On the day this charter claims to have been sealed, no die of Dietrich of Thurn existed anywhere in the Empire.",
-
   "petitioner": {
     "id": "adelheid_vesser",
     "name": "Frau Adelheid Vesser",
@@ -19,15 +16,20 @@
     "cloth": "#3b3238",
     "restlessness": 0.22
   },
-
   "documents": [
     {
       "kind": "docket",
       "id": "docket_02",
       "title": "Docket",
-      "size": [330, 235],
+      "size": [
+        330,
+        235
+      ],
       "tint": "#d9cdae",
-      "start_offset": [-350, -85],
+      "start_offset": [
+        -350,
+        -85
+      ],
       "start_angle_deg": -6.0,
       "petitioner_name": "Frau Adelheid Vesser",
       "petitioner_style": "widow of Konrad Vesser, ministerialis of Thurn",
@@ -39,24 +41,26 @@
       "kind": "charter",
       "id": "charter_grellwater",
       "title": "Grant of Dietrich, Margrave of Thurn",
-      "size": [430, 585],
+      "size": [
+        430,
+        585
+      ],
       "tint": "#ddd0ad",
-      "start_offset": [-30, 70],
+      "start_offset": [
+        -30,
+        70
+      ],
       "start_angle_deg": 2.5,
       "takes_seal": true,
-
-      "body_text": "Dietrich, by the grace of God Margrave of Thurn, to all his faithful men, greeting.\n\nBe it known that we have given and granted to Konrad Vesser, our ministerialis, and to his heirs after him, the mill at Grellwater with the weir belonging to it and the fishing in the water above the weir, to hold of us for the service of one armed man forty days in the year.\n\nIn witness whereof we have set our seal.",
-
+      "body_text": "Dietrich, by the grace of God Margrave of Thurn.\n\nTo hold of us for the service of one armed man forty days in the year.",
       "date_emperor": "aldric_i",
       "date_regnal_year": 10,
       "drawn_by_polity": "thurn",
-
       "grantor": "Dietrich, Margrave of Thurn",
       "claimant": "Konrad Vesser, ministerialis, and his heirs",
       "property": "The mill at Grellwater, with the weir and the fishing above it",
       "subject_id": "grellwater_mill",
       "claimant_id": "vesser_household",
-
       "witnesses": [
         {
           "name": "Eckhard von Melle",
@@ -67,10 +71,19 @@
           "died_regnal_year": 12,
           "died_dating_style": "accession"
         },
-        { "name": "Hugo Wend", "person_id": "hugo_wend", "house": "", "title": "of Grellwater" },
-        { "name": "Berthold Kalp", "person_id": "berthold_kalp", "house": "", "title": "miller of the lower weir" }
+        {
+          "name": "Hugo Wend",
+          "person_id": "hugo_wend",
+          "house": "",
+          "title": "of Grellwater"
+        },
+        {
+          "name": "Berthold Kalp",
+          "person_id": "berthold_kalp",
+          "house": "",
+          "title": "miller of the lower weir"
+        }
       ],
-
       "seal": {
         "id": "seal_grellwater",
         "claims_owner": "Dietrich, Margrave of Thurn",
@@ -82,10 +95,10 @@
         "wear": 0.07,
         "shape_seed": 8823,
         "note": "Crisp. Far crisper than a seal of 1213 has any right to be, and the legend is the one he gave up in 1207."
-      }
+      },
+      "_body_note": "ARENGA CUT 2026-07-30. What was deleted: the address formula ('to all who shall see or hear this present writing... greeting'), which is boilerplate; and the disposition prose, which said in flowing sentences exactly what the Granted by / To / Of block below already says in three lines. No rule has ever read body_text — grep scripts/rules/ — so every word of it was there for the human, and half of it was there twice.\n\nWhat was KEPT, and why each: the intitulatio, because a grantor's style is checked against his seal's legend; any clause of tenure or service, because that is not in the parties block; and the corroboration ONLY where it names WHICH seal, because that is evidence. A plain 'in witness whereof we have set our seal' is a sentence describing an object hanging off the page, so it went.\n\nTHE FIRST LINE IS THE INTITULATIO AND IT IS EVIDENCE, NOT DECORATION. A grantor's STYLE has to agree with the legend on his die. Dietrich of Thurn took 'Dei gratia' into his style in 1207 and cut a new matrix to match, so thurn_dietrich_i reads DIETRICVS MARCHIO TVRNENSIS and thurn_dietrich_ii reads DIETRICVS DEI GRATIA MARCHIO TVRNENSIS. This charter opens 'by the grace of God' and its wax does not, which is the whole tell, and Gero Kalt names it aloud on case_04: 'The widow's wax bore Dietrich's first words. Mine bears the words he used after 1207.' The `grantor` field drops the style, so this line is the ONLY place it appears. Do not trim it."
     }
   ],
-
   "lines": [
     {
       "beat": "arrival",
@@ -124,18 +137,21 @@
       "text": "The year is the one my husband took the mill. That much is true even if nothing else in front of you is. Ask anyone at Grellwater. I know you cannot."
     }
   ],
-
   "outcomes": [
     {
       "verdict": "DENY",
-      "favor": { "imperial": 1 },
+      "favor": {
+        "imperial": 1
+      },
       "reaction": "I see. ... Might I ask — is it the man in Thurnstadt who has done wrong, or is it me? I would like to know which it is before I go home.",
       "register_note": "Impression of Dietrich's first die, defaced 1207. Instrument dated 1213; his second die broken 1211. No die of his existed. Refused.",
       "aftermath": "She did not appeal. The mill is entered to nobody, which at Grellwater means the Margrave's men mill there until somebody with a seal says otherwise — so this once the correct answer and the convenient one were the same answer. Do not expect that twice."
     },
     {
       "verdict": "CONFIRM",
-      "favor": { "imperial": -1 },
+      "favor": {
+        "imperial": -1
+      },
       "reaction": "Thank you. Thank you, sir, truly. I did not think it would be so quick.",
       "register_note": "Thurn seal, lion rampant, legend agrees with the recorded die. Confirmed.",
       "aftermath": "Entered, and then read at Thurnstadt by a clerk who knew to the month when Dietrich's dies were broken. The instrument is now evidence. She has been called to answer for it, the man who drew it cannot be found, and the four marks were his fee for making her a criminal. She came here with a mill she could not prove and she leaves with a charge she cannot answer."

@@ -52,7 +52,7 @@
       ],
       "start_angle_deg": -2.5,
       "takes_seal": true,
-      "body_text": "Berthold, by the grace of God Duke of Ostmark, to all who shall see this writing, greeting.\n\nKnow that we have granted to Reimbold Zant and to his heirs the mill upon the Aue below Tanneck with the two meadows above the race, to hold of us for the yearly render of six measures of meal.\n\nAnd we will that this grant bind our inheritance whole, and every portion of it hereafter.\n\nIn witness whereof we have set our seal.",
+      "body_text": "Berthold, by the grace of God Duke of Ostmark.\n\nTo hold of us for the yearly render of six measures of meal.\n\nAnd we will that this grant bind our inheritance whole, and every portion of it hereafter.",
       "date_emperor": "aldric_i",
       "date_regnal_year": 8,
       "drawn_by_polity": "ostmark",
@@ -84,9 +84,9 @@
       "erasures": [
         {
           "x": 0.054,
-          "y": 0.5718,
+          "y": 0.395,
           "w": 0.633,
-          "h": 0.0513,
+          "h": 0.058,
           "altered_field": "The year of the grant",
           "original_value": "in the eleventh year of Aldric I",
           "innocent": false,
@@ -95,7 +95,7 @@
         },
         {
           "x": 0.1,
-          "y": 0.846,
+          "y": 0.649,
           "w": 0.44,
           "h": 0.052,
           "altered_field": "The style given to the second witness",
@@ -116,7 +116,9 @@
         "wear": 0.09,
         "shape_seed": 3319,
         "note": "Sound in every particular, and worth nothing. The wax is the one part of this instrument nobody has touched."
-      }
+      },
+      "_body_note": "ARENGA CUT 2026-07-30. What was deleted: the address formula ('to all who shall see or hear this present writing... greeting'), which is boilerplate; and the disposition prose, which said in flowing sentences exactly what the Granted by / To / Of block below already says in three lines. No rule has ever read body_text — grep scripts/rules/ — so every word of it was there for the human, and half of it was there twice.\n\nWhat was KEPT, and why each: the intitulatio, because a grantor's style is checked against his seal's legend; any clause of tenure or service, because that is not in the parties block; and the corroboration ONLY where it names WHICH seal, because that is evidence. A plain 'in witness whereof we have set our seal' is a sentence describing an object hanging off the page, so it went.",
+      "_erasure_note": "ERASURE REGIONS ARE FRACTIONS OF THE SHEET, AND THE SHEET'S LAYOUT FLOWS. Nothing anchors a scrape to the thing it is scraping: x/y/w/h are read straight off the parchment's own rect, so ANY change to body_text length slides every erasure on that charter off its target silently. Cutting the arenga on 2026-07-30 moved this date block from about y 0.60 to y 0.403 and left the knife hanging over blank parchment 17% of a sheet below the year it claims to have altered.\n\nIt was caught only because test_presentation asserts that a dispositive erasure naming a year intersects CharterView.date_rect_local. There is no equivalent guard on the innocent one over the witness list — that was re-placed by the same measured delta and checked in shot_35, by eye.\n\nIf you change this charter's prose, re-measure. The date block currently sits at fractions y 0.403..0.449."
     }
   ],
   "lines": [

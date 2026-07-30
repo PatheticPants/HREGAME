@@ -21,9 +21,15 @@
       "kind": "docket",
       "id": "docket_04",
       "title": "Passage docket",
-      "size": [330, 235],
+      "size": [
+        330,
+        235
+      ],
       "tint": "#d8c9aa",
-      "start_offset": [-350, -92],
+      "start_offset": [
+        -350,
+        -92
+      ],
       "start_angle_deg": 4.0,
       "petitioner_name": "Gero Kalt",
       "petitioner_style": "serjeant, the household of Thurn",
@@ -35,12 +41,18 @@
       "kind": "charter",
       "id": "charter_second_lion",
       "title": "Grant of Dietrich, Margrave of Thurn",
-      "size": [430, 585],
+      "size": [
+        430,
+        585
+      ],
       "tint": "#dfd1ae",
-      "start_offset": [-25, 65],
+      "start_offset": [
+        -25,
+        65
+      ],
       "start_angle_deg": -2.0,
       "takes_seal": true,
-      "body_text": "Dietrich, by the grace of God Margrave of Thurn, to all his faithful men, greeting.\n\nFor the long service of Gero Kalt in our household we grant him the meadow above the Vech, between the alder bank and the old road, to hold for his life free of every service except the keeping of one horse.\n\nIn witness whereof we have set our seal.",
+      "body_text": "Dietrich, by the grace of God Margrave of Thurn.\n\nFor long service in our household. To hold for his life, free of every service but the keeping of one horse.",
       "date_emperor": "aldric_i",
       "date_regnal_year": 7,
       "drawn_by_polity": "thurn",
@@ -50,9 +62,24 @@
       "subject_id": "vech_meadow",
       "claimant_id": "gero_kalt",
       "witnesses": [
-        { "name": "Eckhard von Melle", "person_id": "eckhard_von_melle", "house": "thurn", "title": "marshal of Thurn" },
-        { "name": "Herbord Gantz", "person_id": "herbord_gantz", "house": "thurn", "title": "castellan of Thurnstadt" },
-        { "name": "Hugo Wend", "person_id": "hugo_wend", "house": "", "title": "of Grellwater" }
+        {
+          "name": "Eckhard von Melle",
+          "person_id": "eckhard_von_melle",
+          "house": "thurn",
+          "title": "marshal of Thurn"
+        },
+        {
+          "name": "Herbord Gantz",
+          "person_id": "herbord_gantz",
+          "house": "thurn",
+          "title": "castellan of Thurnstadt"
+        },
+        {
+          "name": "Hugo Wend",
+          "person_id": "hugo_wend",
+          "house": "",
+          "title": "of Grellwater"
+        }
       ],
       "seal": {
         "id": "seal_second_lion",
@@ -65,7 +92,8 @@
         "wear": 0.12,
         "shape_seed": 2407,
         "note": "The second lion, with DEI GRATIA in full."
-      }
+      },
+      "_body_note": "ARENGA CUT 2026-07-30. What was deleted: the address formula ('to all who shall see or hear this present writing... greeting'), which is boilerplate; and the disposition prose, which said in flowing sentences exactly what the Granted by / To / Of block below already says in three lines. No rule has ever read body_text — grep scripts/rules/ — so every word of it was there for the human, and half of it was there twice.\n\nWhat was KEPT, and why each: the intitulatio, because a grantor's style is checked against his seal's legend; any clause of tenure or service, because that is not in the parties block; and the corroboration ONLY where it names WHICH seal, because that is evidence. A plain 'in witness whereof we have set our seal' is a sentence describing an object hanging off the page, so it went.\n\nTHE FIRST LINE IS THE INTITULATIO AND IT IS EVIDENCE, NOT DECORATION. A grantor's STYLE has to agree with the legend on his die. Dietrich of Thurn took 'Dei gratia' into his style in 1207 and cut a new matrix to match, so thurn_dietrich_i reads DIETRICVS MARCHIO TVRNENSIS and thurn_dietrich_ii reads DIETRICVS DEI GRATIA MARCHIO TVRNENSIS. This charter opens 'by the grace of God' and its wax does not, which is the whole tell, and Gero Kalt names it aloud on case_04: 'The widow's wax bore Dietrich's first words. Mine bears the words he used after 1207.' The `grantor` field drops the style, so this line is the ONLY place it appears. Do not trim it."
     }
   ],
   "lines": [
@@ -114,21 +142,29 @@
   "outcomes": [
     {
       "verdict": "CONFIRM",
-      "favor": { "imperial": -1, "custom": 1 },
+      "favor": {
+        "imperial": -1,
+        "custom": 1
+      },
       "reaction": "Good. I had begun to fear a second lion required a second morning.",
       "register_note": "Confirmed on a live die and a sound date. The witness list was not carried against the rolls.",
       "aftermath": "The meadow was entered. Four years later the chapel at Thurnstadt was asked for its roll in another matter, and the castellan's obit was read out in open court; the grant was reopened, and the men who had confirmed it were named."
     },
     {
       "verdict": "DENY",
-      "favor": { "imperial": -1 },
+      "favor": {
+        "imperial": -1
+      },
       "reaction": "Then write down which part died before Dietrich did. I would like to know what I am meant to mourn.",
       "register_note": "Refused. The die was live at the date and the grant itself was not impeached.",
       "aftermath": "Thurn asked on what ground a live seal had been refused. The packet recorded a dead witness and no finding that the grant was false, which are not the same objection."
     },
     {
       "verdict": "REFER",
-      "favor": { "imperial": 1, "custom": -1 },
+      "favor": {
+        "imperial": 1,
+        "custom": -1
+      },
       "reaction": "Upstairs, for a name. He was at the muster that year, I would have sworn it. But I was not the one holding the pen.",
       "register_note": "Referred for correction. Herbord Gantz, castellan of Thurnstadt, is entered in the Margrave's chapel roll as dead in the fifth year of Aldric; the instrument is dated the seventh. The seal and the date stand.",
       "aftermath": "The chapel returned a corrected list with two names struck and one added. The meadow was granted again on the amended instrument, to the same man, in the following spring."

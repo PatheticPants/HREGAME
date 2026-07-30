@@ -53,7 +53,7 @@
       ],
       "start_angle_deg": 1.5,
       "takes_seal": true,
-      "body_text": "Kunrad, by divine favour Emperor of the Romans, ever august, to all present and future, greeting.\n\nThe mill at Grellwater having returned to our hand for want of a title admitted before our Chancery, we grant it with its weir and upper fishery to our faithful steward Emmerich Hove, to hold during our pleasure for the accustomed service.\n\nGiven at Verd under the seal of our Chancery.",
+      "body_text": "Kunrad, by divine favour Emperor of the Romans, ever august.\n\nReturned to our hand for want of a title admitted before our Chancery. To hold during our pleasure for the accustomed service.\n\nGiven at Verd under the seal of our Chancery.",
       "date_emperor": "kunrad_iv",
       "date_regnal_year": 7,
       "drawn_by_polity": "aachen_verd",
@@ -87,7 +87,8 @@
         "wear": 0.04,
         "shape_seed": 5911,
         "note": "The Chancery's own double eagle, fresh and unambiguous."
-      }
+      },
+      "_body_note": "ARENGA CUT 2026-07-30. What was deleted: the address formula ('to all who shall see or hear this present writing... greeting'), which is boilerplate; and the disposition prose, which said in flowing sentences exactly what the Granted by / To / Of block below already says in three lines. No rule has ever read body_text — grep scripts/rules/ — so every word of it was there for the human, and half of it was there twice.\n\nWhat was KEPT, and why each: the intitulatio, because a grantor's style is checked against his seal's legend; any clause of tenure or service, because that is not in the parties block; and the corroboration ONLY where it names WHICH seal, because that is evidence. A plain 'in witness whereof we have set our seal' is a sentence describing an object hanging off the page, so it went."
     }
   ],
   "lines": [

@@ -52,7 +52,7 @@
       ],
       "start_angle_deg": 2.0,
       "takes_seal": true,
-      "body_text": "To all who shall see this writing, the Council and Commune of Marchfeld send greeting.\n\nAt the request of Wilhelm Ott and his daughter Elsbeth we have inspected our city book and found entered there the grant to Heinrich Ott and his heirs of the plot on Küfergasse with its well-right. We exemplify and confirm the same for the entry of Elsbeth's marriage portion.\n\nGiven under our common seal.",
+      "body_text": "The Council and Commune of Marchfeld.\n\nWe have inspected our city book and found the grant to Heinrich Ott and his heirs entered there. We exemplify and confirm the same for Elsbeth's marriage portion.\n\nGiven under our common seal.",
       "date_emperor": "kunrad_iv",
       "date_regnal_year": 7,
       "drawn_by_polity": "marchfeld",
@@ -87,7 +87,8 @@
         "wear": 0.18,
         "shape_seed": 7721,
         "note": "The same communal die, worn at the rim but fully legible."
-      }
+      },
+      "_body_note": "ARENGA CUT 2026-07-30. What was deleted: the address formula ('to all who shall see or hear this present writing... greeting'), which is boilerplate; and the disposition prose, which said in flowing sentences exactly what the Granted by / To / Of block below already says in three lines. No rule has ever read body_text — grep scripts/rules/ — so every word of it was there for the human, and half of it was there twice.\n\nWhat was KEPT, and why each: the intitulatio, because a grantor's style is checked against his seal's legend; any clause of tenure or service, because that is not in the parties block; and the corroboration ONLY where it names WHICH seal, because that is evidence. A plain 'in witness whereof we have set our seal' is a sentence describing an object hanging off the page, so it went."
     }
   ],
   "lines": [

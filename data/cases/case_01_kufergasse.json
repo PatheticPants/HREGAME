@@ -1,13 +1,10 @@
 {
   "id": "case_01_kufergasse",
   "title": "The Plot on Küfergasse",
-
   "_design": "Teaches the verbs and one lesson: an anomaly is not a crime. The seal is rubbed to the point where four letters of the legend are gone, and a witness died in the very year of the charter. Both are alarming and both are fine. A player who denies this one has learned the wrong reflex, and the ledger tells them so plainly.",
-
   "correct_verdict": "CONFIRM",
   "correct_reason": "nothing_against",
   "correct_reason_text": "The die is the Marchfeld commune's, which belongs to the office and has never been broken. What survives of the legend agrees with it. The date reduces to 1217 and nothing in the packet stands against it.",
-
   "petitioner": {
     "id": "wilhelm_ott",
     "name": "Wilhelm Ott",
@@ -19,15 +16,20 @@
     "cloth": "#5c4a33",
     "restlessness": 0.85
   },
-
   "documents": [
     {
       "kind": "docket",
       "id": "docket_01",
       "title": "Docket",
-      "size": [330, 235],
+      "size": [
+        330,
+        235
+      ],
       "tint": "#ddd2b4",
-      "start_offset": [-345, -95],
+      "start_offset": [
+        -345,
+        -95
+      ],
       "start_angle_deg": 5.5,
       "petitioner_name": "Wilhelm Ott",
       "petitioner_style": "cooper, of the Free City of Marchfeld",
@@ -39,24 +41,26 @@
       "kind": "charter",
       "id": "charter_kufergasse",
       "title": "Grant of the Commune of Marchfeld",
-      "size": [430, 585],
+      "size": [
+        430,
+        585
+      ],
       "tint": "#e0d4b2",
-      "start_offset": [-45, 55],
+      "start_offset": [
+        -45,
+        55
+      ],
       "start_angle_deg": -3.0,
       "takes_seal": true,
-
-      "body_text": "To all who shall see or hear this present writing, the Council and Commune of the city of Marchfeld send greeting in the Lord.\n\nKnow that we have granted, and by this our charter confirmed, to Heinrich Ott, cooper, and to his heirs after him, one plot of ground lying in the Küfergasse within our walls, of twenty-two feet by forty, together with the right of the well that stands upon it.\n\nAnd that this may stand firm we have caused our common seal to be appended.",
-
+      "body_text": "The Council and Commune of the city of Marchfeld.\n\nGranted within our walls, to hold to him and to his heirs after him.",
       "date_emperor": "kunrad_iv",
       "date_regnal_year": 3,
       "drawn_by_polity": "marchfeld",
-
       "grantor": "The Council and Commune of Marchfeld",
       "claimant": "Heinrich Ott, cooper, and his heirs",
       "property": "A plot on Küfergasse, 22 feet by 40, with the well-right",
       "subject_id": "kufergasse_plot",
       "claimant_id": "ott_household",
-
       "witnesses": [
         {
           "name": "Reinmar Vogt",
@@ -68,10 +72,19 @@
           "died_dating_style": "accession",
           "note": "Died the same year the charter was drawn. Alarming, and nothing at all."
         },
-        { "name": "Aldebrand Stoss", "person_id": "aldebrand_stoss", "house": "marchfeld", "title": "of the lesser council" },
-        { "name": "Gerhoh Lamp", "person_id": "gerhoh_lamp", "house": "marchfeld", "title": "sworn measurer of the city" }
+        {
+          "name": "Aldebrand Stoss",
+          "person_id": "aldebrand_stoss",
+          "house": "marchfeld",
+          "title": "of the lesser council"
+        },
+        {
+          "name": "Gerhoh Lamp",
+          "person_id": "gerhoh_lamp",
+          "house": "marchfeld",
+          "title": "sworn measurer of the city"
+        }
       ],
-
       "seal": {
         "id": "seal_kufergasse",
         "claims_owner": "The Commune of Marchfeld",
@@ -83,10 +96,10 @@
         "wear": 0.34,
         "shape_seed": 4417,
         "note": "Four letters gone at the rim. Four winters in a chest under a bad roof."
-      }
+      },
+      "_body_note": "ARENGA CUT 2026-07-30. What was deleted: the address formula ('to all who shall see or hear this present writing... greeting'), which is boilerplate; and the disposition prose, which said in flowing sentences exactly what the Granted by / To / Of block below already says in three lines. No rule has ever read body_text — grep scripts/rules/ — so every word of it was there for the human, and half of it was there twice.\n\nWhat was KEPT, and why each: the intitulatio, because a grantor's style is checked against his seal's legend; any clause of tenure or service, because that is not in the parties block; and the corroboration ONLY where it names WHICH seal, because that is evidence. A plain 'in witness whereof we have set our seal' is a sentence describing an object hanging off the page, so it went."
     }
   ],
-
   "lines": [
     {
       "beat": "arrival",
@@ -125,25 +138,30 @@
       "text": "Third year of Kunrad. The year the south well froze in September. I remember the cooperage splitting. Dates are easier when they ruin something."
     }
   ],
-
   "outcomes": [
     {
       "verdict": "CONFIRM",
-      "favor": { "custom": 1 },
+      "favor": {
+        "custom": 1
+      },
       "reaction": "That's — thank you. Thank you, sir. My daughter's to be married at Whitsun and the plot is her portion, so. Thank you.",
       "register_note": "Marchfeld commune die, live and never broken. Rim rubbed, legend short four letters; what survives agrees. Confirmed.",
       "aftermath": "Entered in the city book at Marchfeld on the twentieth. Nothing further, and nothing further wanted."
     },
     {
       "verdict": "DENY",
-      "favor": { "custom": -2 },
+      "favor": {
+        "custom": -2
+      },
       "reaction": "...Right. Right, of course. It's the wax, isn't it. I should have brought it in something. I'm sorry to have taken your morning.",
       "register_note": "Seal of the Marchfeld commune, rubbed at the rim. Refused on the state of the wax.",
       "aftermath": "The die was live and had never been broken; the commune seals with it still. The damage was four winters under a bad roof. The council has entered the plot as vacant. They were not pleased about it, and said so at length to the clerk who took the entry."
     },
     {
       "verdict": "REFER",
-      "favor": { "custom": -1 },
+      "favor": {
+        "custom": -1
+      },
       "reaction": "Referred. That's — how long is referred, usually? No. No, of course not. Thank you, sir.",
       "register_note": "Marchfeld commune, damaged impression. Sent up rather than decided.",
       "aftermath": "Still with the Bishop's court. He came back twice in November and was told both times to wait. The wedding is at Whitsun."
