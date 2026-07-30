@@ -565,8 +565,17 @@ func leaf_rect() -> Rect2:
 		Vector2(pw - 9, full.size.y - 12))
 
 
-## How far down the leaf a text page's content reaches, including its marginalia.
-## Only meaningful for `text` pages; the generated kinds size themselves.
+## How far down the leaf a page's content reaches, including its marginalia.
+##
+## "The generated kinds size themselves" was true of the plates and FALSE of the
+## obit rolls, which is the more dangerous half. `KalendarBook` paginates on a
+## flat `ENTRIES_PER_PAGE = 6` — a NAME count, not a height budget — so a leaf's
+## height depends entirely on how many of those six carry a note. Three of the
+## four rolls' first entry leaves currently sit under 5 px clear of the folio
+## number, and nothing in this game clips its own text, so one more line of note
+## would be drawn onto the desk and lost. That is the same defect class as the
+## Almanac's ring-doctrine page and it was found by hand rather than by this
+## function, twice.
 func page_bottom(index: int) -> float:
 	if data == null or index >= data.pages.size():
 		return 0.0
@@ -579,12 +588,46 @@ func page_bottom(index: int) -> float:
 	if not page.subheading.is_empty():
 		y += Ink.line_height(11)
 	y += 5.0
-	if not page.body.is_empty():
+	# On a roll the prose leads the names; see _draw_page's `body_leads`.
+	var body_leads := page.kind == &"obits" or page.kind == &"silence"
+	if body_leads and not page.body.is_empty():
+		y += Ink.measure(page.body, 11, w).y + 4.0
+	if page.kind == &"obits":
+		y += _obit_roll_height(w, page)
+	if not body_leads and not page.body.is_empty():
 		y += Ink.measure(page.body, 11, w).y + 11 * 0.25
 	if not page.marginalia.is_empty():
 		var note_h := Ink.measure(page.marginalia, 10, w).y + 6.0
 		y = maxf(y + 6.0, r.end.y - MARGIN - note_h) + note_h
 	return y
+
+
+## Mirrors `_draw_obit_roll` line for line. KEEP THE TWO IN STEP.
+func _obit_roll_height(w: float, page: BookPage) -> float:
+	var roll := Lore.obit_roll(page.roll_id)
+	if roll == null:
+		return Ink.line_height(11)
+	var y := 0.0
+	if page.entry_count <= 0:
+		y += Ink.line_height(10)
+		if Lore.data.reign(roll.written_up_to_emperor) != null:
+			y += Ink.line_height(11)
+		return y + 10.0
+	var last := mini(roll.entries.size(), page.entry_from + page.entry_count)
+	for i in range(page.entry_from, last):
+		var o: Obit = roll.entries[i]
+		y += Ink.line_height(11) + Ink.line_height(10)
+		if not o.note.is_empty():
+			y += Ink.measure("  " + o.note, 9, w).y
+		y += 3.0
+	return y
+
+
+## Where the folio number sits. Content that reaches this is not off the board
+## yet, but it is printed through the page number, which is the first visible
+## symptom of a leaf about to overflow.
+func folio_baseline() -> float:
+	return leaf_rect().end.y - 20.0
 
 
 func _draw_page(r: Rect2, index: int) -> void:

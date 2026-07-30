@@ -54,6 +54,15 @@
           "note": ""
         },
         {
+          "_comment": "THE FIRST DEATH THE PARCHMENT DOES NOT MENTION. Gozwin witnesses case_03 and carries no died_ fields, so nothing on the charter says he is dead; only this line does. Aldric I 14 reduces under this roll's own ELECTION reckoning to 1214, which is exactly the year the Saint Wend chancery drew the Kesselholt grant — so WitnessCheck emits witness_died_that_year, a NOTE, and the REFER verdict is untouched. It is also reckoning-invariant: a clerk who wrongly reduces this roll by accession still lands on the same year as the charter, so the one no-stakes lesson cannot be turned into an unfair one by the very mistake the roll's note warns about.\n\nThe note field must stay EMPTY. Measured: this leaf's first spread already sits 4.8 px clear of the folio number, one line of note collides with the digit and two lines run off the board — and nothing in this game clips its own text, so it would be drawn on the desk and lost. See docs/CONTINUITY.md.",
+          "person_id": "gozwin",
+          "name": "Gozwin",
+          "title": "notary of the bishop's chancery",
+          "died_emperor": "aldric_i",
+          "died_regnal_year": 14,
+          "note": ""
+        },
+        {
           "person_id": "irmingard_fust",
           "name": "Irmingard Fust",
           "title": "consoror of this church",

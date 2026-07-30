@@ -218,6 +218,7 @@ func _test_dockets_fit(desk: Desk) -> void:
 func _test_every_leaf_fits(desk: Desk) -> void:
 	print("-- every leaf fits its board")
 	var checked := 0
+	var rolls := 0
 	var books: Array[ReferenceBook] = desk.books
 	for book in books:
 		if book.data == null:
@@ -225,19 +226,36 @@ func _test_every_leaf_fits(desk: Desk) -> void:
 		var leaf := book.leaf_rect()
 		for i in book.data.pages.size():
 			var page: BookPage = book.data.pages[i]
-			# The generated kinds size themselves from their own data; this is
-			# about authored prose, which is where every overflow has been.
-			if page.kind != &"text" and page.marginalia.is_empty():
+			# OBIT LEAVES ARE IN NOW, AND THEY ARE THE TIGHT ONES.
+			#
+			# They were skipped under "the generated kinds size themselves from
+			# their own data", which is true of the plates and false of these:
+			# KalendarBook paginates on a flat six NAMES per leaf with no regard
+			# to how tall those six are, so a leaf's height is set by how many of
+			# them carry a note. Measured, the first entry leaf of a roll clears
+			# the folio number by under 5 px — one added note would print through
+			# the page number and a second would run off the board onto the desk.
+			# Nothing here clips, so that text is not truncated, it is lost.
+			if page.kind != &"text" and page.kind != &"obits" \
+					and page.marginalia.is_empty():
 				continue
 			checked += 1
+			if page.kind == &"obits":
+				rolls += 1
 			var bottom := book.page_bottom(i)
 			if bottom > leaf.end.y:
 				_fail("%s leaf %d overruns its board by %.0f px (%s)"
 					% [book.data.id, i, bottom - leaf.end.y, page.heading])
+			elif bottom > book.folio_baseline():
+				_fail("%s leaf %d prints through its folio number by %.0f px (%s)"
+					% [book.data.id, i, bottom - book.folio_baseline(),
+						page.heading])
 			else:
 				checks += 1
 	_is_true(checked >= 8,
 		"there are authored leaves to check (%d)" % checked)
+	_is_true(rolls >= 4,
+		"and the necrology's own entry leaves are among them (%d)" % rolls)
 
 
 ## A TURNING LEAF IS WIDEST LYING FLAT AND INVISIBLE EDGE-ON.
