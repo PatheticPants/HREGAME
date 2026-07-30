@@ -38,32 +38,9 @@ var _focus_amount := 0.0
 var _focus_dwell := 0.0
 ## How settled the glass is, 0..1, from its own speed.
 ##
-## KEPT, UNUSED BY THE SHADER, AND HERE IS WHY. The owner's report is right and
-## unfixed: the glass magnifies two of the seventeen objects on the desk, because
-## only `CharterView` and `SealTag` implement the detail contract and everything
-## else — the four books, the dockets, the letters, the tablet — gets nothing.
-##
-## The obvious fix is the screen-space path that already exists: the shader
-## samples `hint_screen_texture` behind a `BackBufferCopy`, so raising the
-## magnification enlarges ANY object without it implementing a thing, and cannot
-## see through a page because a page on top is what is in the picture. Tried, at
-## 0.85..1.30. Two things came out of it, both measured:
-##
-##   - Over authored evidence it double-draws: the same sentence in the aperture
-##     at two sizes, the screen copy ghosting under the redraw. A/B with the
-##     magnification forced to zero isolates it. Cross-fading against
-##     `_focus_amount` fixes that part cleanly.
-##   - At PLAY zoom the aperture goes black. It only looked right in the capture
-##     harness's 2.45x poses, which is not a camera the game is ever in — so both
-##     frames that appeared to prove it were taken under a condition no player
-##     sees. `lens_center_screen` is derived from the canvas transform and
-##     `SCREEN_UV` from the framebuffer, and those two stop agreeing somewhere.
-##
-## A black aperture is a worse defect than a weak one, so the magnification is
-## back at its old value and this is the note for whoever finishes it. The other
-## route, if the screen path stays stubborn, is a generic `draw_detail` on Sheet
-## and ReferenceBook — more code, but deterministic and resolution-independent.
-## Frames 60 and 61 are the evidence, at harness zoom and at play zoom.
+## This is deliberately independent of `_focus_amount`: the composited screen
+## path magnifies every visible object, including books, dockets, correspondence
+## and the tablet, while `_focus_amount` belongs only to authored evidence.
 var _settle := 0.0
 var _reported: Dictionary = {}
 var _optical_lag := Vector2.ZERO
@@ -177,26 +154,14 @@ func _process(delta: float) -> void:
 		var centre_px := get_global_transform_with_canvas().origin
 		_optics_material.set_shader_parameter("lens_center_screen",
 			centre_px / viewport_size)
-		# THE GLASS MAGNIFIES WHATEVER IS UNDER IT, ALWAYS, AND THAT IS THE WHOLE
-		# JOB. It used to be 0.048..0.070 — a five per cent bulge — so it proved
-		# there was glass in the aperture and did nothing else. Everything on this
-		# desk that was not a seal, a closing formula or your own impression got
-		# no enlargement at all: two of the seventeen objects on the desk, counted.
-		# The books, the dockets, the letters, the tablet, all of it, nothing.
+		# THE GLASS MAGNIFIES WHATEVER IS UNDER IT, ALWAYS.
 		#
 		# This samples the composited screen, so it enlarges EVERY object without
 		# any of them implementing anything — and it cannot see through a page,
 		# because a page that is on top is what is in the picture.
 		#
-		# It sharpens as the glass settles: a moving glass is a glance, a still one
-		# is a reading. `body` in the shader falls to zero at the rim, so the edge
-		# stays true and only the middle swells, which is what a ground lens does.
-		# HELD AT THE OLD VALUE ON PURPOSE, AND IT IS STILL WRONG. See the note on
-		# `_settle`: raising this to a real magnification blacks the aperture out
-		# at play zoom, so the honest state is the weak-but-safe one until the
-		# screen-space path is understood rather than half-fixed.
 		_optics_material.set_shader_parameter("magnification",
-			lerpf(0.048, 0.070, _focus_amount))
+			optical_magnification())
 		# `active` WAS THE GATE AND WAS WIRED TO THE CONSTANT 1.0.
 		#
 		# The uniform exists to switch the optics off, and every frame of the
@@ -211,7 +176,15 @@ func _process(delta: float) -> void:
 		# be rebuilt when the glass comes back out of the hole.
 		if _optics_copy != null:
 			_optics_copy.copy_mode = BackBufferCopy.COPY_MODE_DISABLED \
-				if working <= 0.0 else BackBufferCopy.COPY_MODE_RECT
+				if working <= 0.0 else BackBufferCopy.COPY_MODE_VIEWPORT
+
+
+## A moving glass is a glance; a still one reaches 2x at the centre. Authored
+## evidence replaces rather than overlays the screen image as it resolves, so
+## the aperture never prints the same sentence at two sizes.
+func optical_magnification() -> float:
+	var generic := lerpf(0.16, 1.0, _settle)
+	return lerpf(generic, 0.0, _focus_amount)
 
 
 ## A petitioner reacts to an inspection once, not every time the glass wobbles
@@ -330,7 +303,11 @@ func _draw_hover() -> void:
 func _build_optics() -> void:
 	_optics_copy = BackBufferCopy.new()
 	_optics_copy.name = "lens_backbuffer"
-	_optics_copy.copy_mode = BackBufferCopy.COPY_MODE_RECT
+	# A regional copy makes every refracted read outside its transformed rect
+	# undefined. It appeared sound under the capture harness's 2.45x camera and
+	# sampled black at the game's real zoom. The viewport copy keeps every tap
+	# valid while the shader itself remains confined to this aperture.
+	_optics_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
 	_optics_copy.rect = Rect2(-Vector2.ONE * (APERTURE_RADIUS + 5.0),
 		Vector2.ONE * (APERTURE_RADIUS + 5.0) * 2.0)
 	_optics_copy.z_index = -1

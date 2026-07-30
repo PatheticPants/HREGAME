@@ -838,6 +838,21 @@ func _test_visual_invariants(desk: Desk) -> void:
 				"and it is 1x1, because Polygon2D divides uv by the texture size")
 		_is_true(quad != null and quad.material is ShaderMaterial,
 			"and the aperture still carries its refraction material")
+		var copy := lens.get_node_or_null("lens_backbuffer") as BackBufferCopy
+		_is_true(copy != null
+			and copy.copy_mode == BackBufferCopy.COPY_MODE_VIEWPORT,
+			"refracted taps have a complete backbuffer at every camera zoom")
+		var old_settle := lens._settle
+		var old_focus := lens._focus_amount
+		lens._settle = 1.0
+		lens._focus_amount = 0.0
+		_is_true(lens.optical_magnification() >= 0.99,
+			"a settled glass reaches a true 2x magnification at its centre")
+		lens._focus_amount = 1.0
+		_is_true(lens.optical_magnification() <= 0.01,
+			"authored evidence replaces the screen image instead of double-printing")
+		lens._settle = old_settle
+		lens._focus_amount = old_focus
 
 	var spoon := desk.press.spoon if desk.press != null else null
 	_is_true(spoon != null, "the wax spoon exists for silhouette checks")
