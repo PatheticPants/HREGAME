@@ -74,6 +74,131 @@
           "HOUSEHOLD"
         ]
       }
+    },
+    {
+      "_note": "THE DIE, AT THE MOMENT OF TEMPTATION. Case 01's whole visible surface is a seal rubbed to nothing and its correct verdict is CONFIRM; the trap is 'damaged therefore false', and the game's opening move is to punish the reflex the player walked in with. On the memorandum this sat in a paragraph with nine other instructions. Keyed to the glass going onto wax, and again to reaching for the Book of Matrices, because those are the same thought. Same document id in both entries: _deliver_investigation_arrivals dedupes on doc.id for the whole session, so it arrives exactly once.",
+      "after_investigation": "inspect_seal",
+      "document": {
+        "kind": "docket",
+        "id": "memo_leaf_the_die",
+        "title": "Memorandum",
+        "size": [
+          300,
+          200
+        ],
+        "tint": "#d5c6a1",
+        "start_offset": [
+          -350,
+          -186
+        ],
+        "start_angle_deg": 3.5,
+        "takes_seal": false,
+        "petitioner_name": "TO THE THIRD HAND",
+        "petitioner_style": "",
+        "claim_summary": "A live die can leave a bad mark; a dead die cannot leave any mark at all.",
+        "received_note": "",
+        "doorkeeper_note": "- R.V."
+      }
+    },
+    {
+      "_note": "The second key for the same leaf.",
+      "after_investigation": "consult_matrix_book",
+      "document": {
+        "kind": "docket",
+        "id": "memo_leaf_the_die",
+        "title": "Memorandum",
+        "size": [
+          300,
+          200
+        ],
+        "tint": "#d5c6a1",
+        "start_offset": [
+          -350,
+          -186
+        ],
+        "start_angle_deg": 3.5,
+        "takes_seal": false,
+        "petitioner_name": "TO THE THIRD HAND",
+        "petitioner_style": "",
+        "claim_summary": "A live die can leave a bad mark; a dead die cannot leave any mark at all.",
+        "received_note": "",
+        "doorkeeper_note": "- R.V."
+      }
+    },
+    {
+      "_note": "THE TABLET'S SECOND VERB, once there is something worth writing down. Scratching is discovered in three seconds by moving the nib; erasing is not, and this is the only statement of it anywhere. Delivered in the gap after the first matter, where _burn_the_day is not running and the reading is free.",
+      "after_case": "case_01_kufergasse",
+      "document": {
+        "kind": "docket",
+        "id": "memo_leaf_the_tablet",
+        "title": "Memorandum",
+        "size": [
+          320,
+          220
+        ],
+        "tint": "#d5c6a1",
+        "start_offset": [
+          656,
+          232
+        ],
+        "start_angle_deg": -4.0,
+        "takes_seal": false,
+        "petitioner_name": "TO THE THIRD HAND",
+        "petitioner_style": "",
+        "claim_summary": "Scratch down what you cannot hold in your head, and rest the nib on the wax to take it out again. Nobody will ever read it but you.",
+        "received_note": "",
+        "doorkeeper_note": "- R.V."
+      }
+    },
+    {
+      "_note": "THE FLAME, AS A DIAGNOSIS RATHER THAN A VERB. The practice leaf teaches the gesture and the player performs it before the first knock; what this adds is when to reach for it unprompted. Keyed to the act, so on cases 01-03 — which carry no erasure findings — it arrives as the answer to 'I tried that and nothing happened'. Deliberately NOT keyed to after_case case_03: delivering 'hold up a parchment you cannot fault' in the gap immediately before the knife would telegraph the day's authored sting.",
+      "after_investigation": "hold_to_light",
+      "document": {
+        "kind": "docket",
+        "id": "memo_leaf_the_flame",
+        "title": "Memorandum",
+        "size": [
+          340,
+          250
+        ],
+        "tint": "#d5c6a1",
+        "start_offset": [
+          -352,
+          300
+        ],
+        "start_angle_deg": 2.5,
+        "takes_seal": false,
+        "petitioner_name": "TO THE THIRD HAND",
+        "petitioner_style": "",
+        "claim_summary": "When a parchment is wrong and you cannot say where, pick it up and put it in front of the flame. Skin that has been scraped is thin, and thin skin lets the light through.",
+        "received_note": "",
+        "doorkeeper_note": "- R.V."
+      }
+    },
+    {
+      "_note": "THE THREE RINGS, in the gap before the matter they decide. Case 03 is the contested reckoning and the first time CONFIRM and DENY are a choice of law rather than a finding of fact. Case 02 ends in a hard clean DENY on a dead die, so this reads as the syllabus moving on rather than as a hint about the next packet. The Almanac says the same at greater length on pages 4 and 5, but that is spread 2 of 3 and two page-turns in.",
+      "after_case": "case_02_grellwater",
+      "document": {
+        "kind": "docket",
+        "id": "memo_leaf_the_rings",
+        "title": "Memorandum",
+        "size": [
+          340,
+          250
+        ],
+        "tint": "#d5c6a1",
+        "start_offset": [
+          656,
+          -96
+        ],
+        "start_angle_deg": -3.0,
+        "takes_seal": false,
+        "petitioner_name": "TO THE THIRD HAND",
+        "petitioner_style": "",
+        "claim_summary": "When two laws disagree, CONFIRM or DENY names the law you chose. REFER follows this office's procedure without choosing. Do not confuse procedure with truth.",
+        "received_note": "",
+        "doorkeeper_note": "- R.V."
+      }
     }
   ]
 }

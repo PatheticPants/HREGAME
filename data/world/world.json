@@ -12,23 +12,23 @@
     "kind": "docket",
     "id": "third_desk_memorandum",
     "title": "Memorandum",
-    "_geometry_note": "Left edge must clear the right edge of the widest charter (430 wide, laid at x=-45, so ending at x=175); this sheet spans 198..598. Width and height must also hold the whole of received_note plus the doorkeeper's footer — at 330 wide it overran the foot and R.V.'s last three rules were drawn off the parchment.",
+    "_geometry_note": "Left edge must clear the right edge of the widest charter (430 wide, laid at x=-45, so ending at x=175); this sheet spans 198..598. It is built AFTER the books in Desk._build_fixtures so it draws on top of them; before that change the Almanac covered 255 units of it and everything below 'It is not a man alive' was unreadable at dawn.\n\nNINE SENTENCES. Thirteen more were here and they were the whole over-teaching problem: eleven teachable things before the second knock. Four moved onto leaves delivered by day_01's after_case / after_investigation channels, and four were retired to the books that already carry them permanently — a delivered slip is destroyed at the next dawn (lay_out_day_documents frees every day_paper), so deferring a sentence a book already holds would make it LESS available, not more.\n\nWhat survives is only what a cold player is harmed by not knowing: the glass bites at the foot of a charter and nowhere else (lens.gd:175 picks by detail_centre within 98.6 units), a regnal year has to be reduced, the tablet and stylus exist at all (both are near-invisible in the dark), the Kalendar is the green one, how to make wax at all — without which the player is STUCK rather than merely wrong — that the wax is final, and the candle rule. The candle rule cannot be deferred by any channel: after_investigation requires stage WORKING, by which time the clock is already running.",
     "size": [
       400,
-      585
+      400
     ],
     "tint": "#d5c6a1",
     "start_offset": [
       398,
-      -22
+      -40
     ],
     "start_angle_deg": -5.0,
     "takes_seal": false,
     "petitioner_name": "TO THE THIRD HAND",
     "petitioner_style": "left beneath the Register, in R.V.'s hand",
-    "claim_summary": "Read the wax with the glass, and the small hand at the foot of a charter with it. Read the years against the Almanac. A live die can leave a bad mark; a dead die cannot leave any mark at all.",
-    "received_note": "There is a tablet in the rack and a stylus by your left hand. Scratch down what you cannot hold in your head, and rest the nib on the wax to take it out again. Nobody will ever read it but you.\n\nThe green book in the rack is the Kalendar. It is not ours — it is what other houses have troubled to send us of their dead, and three of them send nothing at all. A name it does not carry is a name nobody has written to us about. It is not a man alive.\n\nWhen a parchment is wrong and you cannot say where, pick it up and put it in front of the flame. Skin that has been scraped is thin, and thin skin lets the light through.\n\nMelt the resin cake in the brass spoon, lift it clear of the flame, and pour. One ring. When the wax gives, judgment is made. Hold for the device, then lift cleanly. There is no second impression.\n\nOnce you disturb a matter, the candle waits on neither thought nor tongue.",
-    "doorkeeper_note": "When two laws disagree, CONFIRM or DENY names the law you chose. REFER follows this office's procedure without choosing. Do not confuse procedure with truth. — R.V."
+    "claim_summary": "Read the wax with the glass, and the small hand at the foot of a charter with it. Read the years against the Almanac.",
+    "received_note": "There is a tablet in the rack and a stylus by your left hand. The green book in the rack is the Kalendar.\n\nMelt the resin cake in the brass spoon, lift it clear of the flame, and pour. One ring. When the wax gives, judgment is made. There is no second impression.",
+    "doorkeeper_note": "Once you disturb a matter, the candle waits on neither thought nor tongue. — R.V."
   },
   "practice_documents": [
     {

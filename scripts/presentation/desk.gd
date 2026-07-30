@@ -264,11 +264,25 @@ func _build_fixtures() -> void:
 	surface.add_child(stylus)
 	stylus.setup(Vector2(-548, 352), deg_to_rad(9.0), DESK_RECT)
 
-	_build_desk_note()
 	_build_book(&"matrix_book", Vector2(-430, 210))
 	_build_book(&"almanac", Vector2(400, 235))
 	_build_kalendar_book()
 	_build_register_book()
+	# THE MEMORANDUM GOES ON TOP OF THE BOOKS, AND IT DID NOT.
+	#
+	# It was built before them, and draw order on this desk is child order — so
+	# the Almanac (x 245..565, y 15..445) lay across the memorandum (x 198..598,
+	# y -314..270) and hid 255 units of it. Measured in shot_19, which is the
+	# untouched first-load frame: a cold player could read as far as "It is not a
+	# man alive" and no further. Under the book were the melt/pour/one-ring
+	# instruction, "there is no second impression", the candle rule, and the whole
+	# CONFIRM/DENY/REFER footer — the two most irreversible things in the game and
+	# the fairness contract the whole clock rests on.
+	#
+	# Child order, not z_index. The note is a permanent fixture and a memorandum
+	# left on the desk for you to read lies ON the furniture; picking any book up
+	# brings it to the front anyway, so nothing is buried in the other direction.
+	_build_desk_note()
 
 	ledger = Ledger.new()
 	surface.add_child(ledger)

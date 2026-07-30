@@ -164,6 +164,40 @@ func _test_the_office_notices_what_you_read(desk: Desk) -> void:
 	_is_true(not dawn.has("letter_steward_second"),
 		"and it is not lying on the desk at dawn, before it was earned")
 
+	# THE MEMORANDUM'S DEFERRED LEAVES ACTUALLY ARRIVE.
+	#
+	# Four instructions were taken off the dawn memorandum and keyed to the
+	# moment each one is about. A mis-keyed beat is silent: nothing errors, the
+	# sentence simply never reaches the player, and the only symptom is a
+	# tutorial with a hole in it. So assert the keys, not the intent.
+	var by_beat := {
+		&"inspect_seal": &"memo_leaf_the_die",
+		&"consult_matrix_book": &"memo_leaf_the_die",
+		&"hold_to_light": &"memo_leaf_the_flame",
+	}
+	for beat: StringName in by_beat:
+		var got := PackedStringArray()
+		for doc in tuesday.resolve_investigation_arrivals(Register.new(), beat):
+			got.append(String(doc.id))
+		_is_true(got.has(String(by_beat[beat])),
+			"'%s' fetches the leaf that explains it" % beat)
+	# And the two that wait for a matter to close, where the candle is stopped.
+	var after := {
+		&"case_01_kufergasse": &"memo_leaf_the_tablet",
+		&"case_02_grellwater": &"memo_leaf_the_rings",
+	}
+	for ruled: StringName in after:
+		var got := PackedStringArray()
+		for doc in tuesday.resolve_arrivals(Register.new(), ruled):
+			got.append(String(doc.id))
+		_is_true(got.has(String(after[ruled])),
+			"the leaf for %s arrives once that matter is closed" % ruled)
+	# NONE of them may be lying there at dawn, or nothing has been staged at all.
+	for leaf: String in ["memo_leaf_the_die", "memo_leaf_the_tablet",
+			"memo_leaf_the_flame", "memo_leaf_the_rings"]:
+		_is_true(not dawn.has(leaf),
+			"%s is not on the desk before it is wanted" % leaf)
+
 
 ## AND EVERY DOCKET FITS ITS SLIP.
 ##
@@ -175,26 +209,42 @@ func _test_the_office_notices_what_you_read(desk: Desk) -> void:
 func _test_dockets_fit(desk: Desk) -> void:
 	print("-- every docket fits its slip")
 	var seen := 0
+	var slips: Array[DocketData] = []
 	for case_data in _lore_data.cases:
 		for doc in case_data.documents:
-			if not (doc is DocketData):
-				continue
-			var v := DocketView.new()
-			desk.add_child(v)
-			v.bind(doc, Desk.DESK_RECT)
-			var foot := v.rect().end.y
-			var bottom := v.content_bottom()
-			seen += 1
-			# 4 px of slack: the doorkeeper's note is drawn on a -2.5 degree
-			# slant, so its true extent is a shade under what Ink.measure reports
-			# for an unrotated block. Anything past that is real.
-			if bottom > foot + 4.0:
-				_fail("%s docket overruns its parchment by %.0f px"
-					% [case_data.id, bottom - foot])
-			else:
-				checks += 1
-			v.queue_free()
-	_is_true(seen >= 8, "every case's docket was measured (%d)" % seen)
+			if doc is DocketData:
+				slips.append(doc as DocketData)
+	# AND THE ONES THE OFFICE DELIVERS DURING THE DAY, which this loop did not
+	# reach. It walked `cases` only, so every DayOpeningDocument was unmeasured —
+	# and the memorandum's deferred leaves are exactly that kind. Nothing in this
+	# game clips its own text, so an over-long slip is drawn onto the desk and
+	# lost rather than truncated.
+	for day in _lore_data.days:
+		for opening in day.opening_documents:
+			if opening.document is DocketData:
+				slips.append(opening.document as DocketData)
+	# The permanent memorandum has its own dedicated measurement elsewhere, but
+	# it costs nothing to hold it to the same rule here too.
+	if _lore_data.desk_note is DocketData:
+		slips.append(_lore_data.desk_note as DocketData)
+	for doc in slips:
+		var v := DocketView.new()
+		desk.add_child(v)
+		v.bind(doc, Desk.DESK_RECT)
+		var foot := v.rect().end.y
+		var bottom := v.content_bottom()
+		seen += 1
+		# 4 px of slack: the doorkeeper's note is drawn on a -2.5 degree
+		# slant, so its true extent is a shade under what Ink.measure reports
+		# for an unrotated block. Anything past that is real.
+		if bottom > foot + 4.0:
+			_fail("%s slip overruns its parchment by %.0f px"
+				% [doc.id, bottom - foot])
+		else:
+			checks += 1
+		v.queue_free()
+	_is_true(seen >= 13,
+		"every docket AND every delivered slip was measured (%d)" % seen)
 
 
 ## EVERY LEAF FITS THE BOARD IT IS PRINTED ON.
