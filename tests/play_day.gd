@@ -70,21 +70,46 @@ func _arg(name: String, fallback: float) -> float:
 	return fallback
 
 
+## Override every day's authored length. Not a cheat: it is the same week played
+## on a shorter wick, which is exactly what a slow player experiences, and it is
+## the only way to reach the third day — Saturday holds the matters the week
+## FAILED to hear, so a run that hears everything is correctly never offered it.
+## Playing a day I have only ever verified synthetically is the whole point.
+var day_seconds_override := 0.0
+
+
 func _run() -> void:
 	dwell = _arg("--dwell", DEFAULT_DWELL)
+	day_seconds_override = _arg("--day-seconds", 0.0)
 	print("\n=== Hand and Seal — a working week, played ===")
-	print("reading dwell: %.1f s per document / per leaf\n" % dwell)
+	print("reading dwell: %.1f s per document / per leaf" % dwell)
+	if day_seconds_override > 0.0:
+		print("candle overridden to %.0f s a day — a week somebody loses"
+			% day_seconds_override)
+	print("")
 
 	main = (load("res://scenes/main.tscn") as PackedScene).instantiate()
 	add_child(main)
 	desk = main.get_node("desk") as Desk
 	session = desk.session
+	# BEFORE the first _begin_day, not inside _play_day. Applying it later left
+	# SessionLog.day_seconds holding the authored figure, so every `burn_s` in
+	# the log was scaled by a day length the game was not actually using — the
+	# run was right and its own record of it was wrong.
+	if day_seconds_override > 0.0:
+		for d in Lore.data.days:
+			d.day_seconds = day_seconds_override
 	await _frames(4)
 
 	await _practice()
-	await _play_day("TUESDAY")
-	await _turn_the_ledger()
-	await _play_day("THURSDAY")
+	# EVERY AUTHORED DAY, not two named ones. The week grew a third day and this
+	# harness would have gone on playing the first two and reporting success.
+	var guard := 0
+	while session.current_day != null and guard < 8:
+		guard += 1
+		await _play_day(session.current_day.entry_label)
+		if not await _turn_the_ledger():
+			break
 
 	_print_report()
 	get_tree().quit(1 if not failures.is_empty() else 0)
@@ -738,25 +763,38 @@ func _play_day(label: String) -> void:
 	await _await_stage(SessionController.Stage.LEDGER, 25.0)
 
 
-func _turn_the_ledger() -> void:
+## Turn the folded corner. Returns false when the week is over — which now has
+## two meanings, and the difference is the third day's whole design: either there
+## is no further day authored, or there is one and nobody is waiting for it.
+func _turn_the_ledger() -> bool:
 	if session.stage != SessionController.Stage.LEDGER:
-		return
+		return false
 	if not desk.ledger.allow_next_day:
-		return
+		var more := session.day_index + 1 < session.days.size()
+		print("   [no corner] %s" % ("the week is over, and there was a day "
+			+ "left in it — nobody is waiting" if more
+			else "there is no further day authored"))
+		return false
+	var was := session.current_day.id
+	var label := desk.ledger.next_day_label
 	desk.ledger.skip_to_end()
 	desk.ledger.spread = maxi(0, desk.ledger.spread_count() - 1)
 	await _frames(4)
 	# The folded corner, through the real click path.
-	if not await _grab(desk.ledger):
-		return
-	await _release()
-	await _frames(6)
-	if session.current_day != null and session.current_day.id == &"day_01":
+	if await _grab(desk.ledger):
+		await _release()
+		await _frames(6)
+	if session.current_day != null and session.current_day.id == was:
 		# The corner is a small target; fall back to the same entry point
 		# test_session uses rather than failing the whole run on a hit test.
 		desk.ledger.on_click(Vector2(Ledger.SIZE.x * 0.5 - 20,
 			Ledger.SIZE.y * 0.5 - 20))
-		await _frames(6)
+		await _frames(8)
+	if session.current_day == null or session.current_day.id == was:
+		_note("the %s corner would not turn" % label)
+		return false
+	print("   [corner turned] -> %s" % label)
+	return true
 
 
 # ----------------------------------------------------------------- the answer
@@ -764,10 +802,17 @@ func _turn_the_ledger() -> void:
 func _print_report() -> void:
 	print("\n\n================ WHAT THE DAY COST ================")
 	print("reading dwell: %.1f s\n" % dwell)
-	var last_of_day := {}
+	# Derived from what was played, not from two names written in here. The week
+	# grew a third day and a hardcoded list would have reported success without
+	# ever mentioning that Saturday was never reached.
+	var labels := PackedStringArray()
 	for row in report:
-		last_of_day[row["day"]] = row
-	for label in ["TUESDAY", "THURSDAY"]:
+		if not labels.has(String(row["day"])):
+			labels.append(String(row["day"]))
+	for day in Lore.data.days:
+		if not labels.has(day.entry_label):
+			labels.append(day.entry_label)
+	for label in labels:
 		var rows: Array[Dictionary] = []
 		for row in report:
 			if row["day"] == label:
