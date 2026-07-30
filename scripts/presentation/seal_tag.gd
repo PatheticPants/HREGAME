@@ -38,9 +38,14 @@ extends Draggable
 ## move that instead, and it can be picked up and put under the glass on its own.
 const TETHER := 26.0
 const RADIUS := 46.0
+const PENDANT_DROP := 170.0
+const PENDANT_TETHER := 215.0
+const ROW_SCALE := 0.62
 
 var impression: SealImpression = null
 var charter: CharterView = null
+var tag_index := 0
+var tag_count := 1
 
 var _unit: PackedVector2Array = PackedVector2Array()
 var _rim_ticks := 0
@@ -48,9 +53,12 @@ var _wear_marks: PackedVector3Array = PackedVector3Array()
 var _detail_pits: PackedVector3Array = PackedVector3Array()
 
 
-func bind(imp: SealImpression, owner_charter: CharterView, desk_bounds: Rect2) -> void:
+func bind(imp: SealImpression, owner_charter: CharterView, desk_bounds: Rect2,
+		index := 0, count := 1) -> void:
 	impression = imp
 	charter = owner_charter
+	tag_index = index
+	tag_count = maxi(1, count)
 	name = "seal_" + String(imp.id)
 	hit_size = Vector2(RADIUS * 2.2, RADIUS * 2.4)
 	pickup_sound = &"paper_pickup"
@@ -62,16 +70,20 @@ func bind(imp: SealImpression, owner_charter: CharterView, desk_bounds: Rect2) -
 	_unit = WaxShape.outline(imp.shape, imp.shape_seed, 0.055, 26)
 	_rim_ticks = 34 if imp.shape == &"round" else 28
 	_build_surface_marks()
+	if tag_count > 1:
+		base_scale = ROW_SCALE
+		_visual_scale = ROW_SCALE
 
-	# setup() takes a position in our parent's space. cord_world() is global, so
+	# setup() takes a position in our parent's space. The anchor is global, so
 	# convert it before adding the hanging offset. Without this conversion the
 	# seal spawned a whole desk-width away and snapped violently down its cord.
 	var parent_space := get_parent() as Node2D
-	# APPLIED, NOT PENDANT. It starts exactly on its patch of the parchment's
-	# blank foot rather than draped 110 units down and to the left of the sheet's
-	# bottom edge. A small rotation only, so it reads as a struck disc pressed on
-	# by a hand rather than as a decal.
-	var start: Vector2 = parent_space.to_local(owner_charter.cord_world())
+	var anchor := owner_charter.seal_anchor_local(tag_index, tag_count)
+	var start_local := anchor
+	if tag_count > 1:
+		start_local += Vector2(0.0, PENDANT_DROP)
+	var start: Vector2 = parent_space.to_local(
+		owner_charter.to_global(start_local))
 	setup(start, deg_to_rad(randf_range(-6.0, 6.0)), desk_bounds)
 
 
@@ -107,9 +119,14 @@ func _apply_tether(delta: float) -> void:
 	# and its seal are freed in the same frame, and a freed Node is not null.
 	if charter == null or not is_instance_valid(charter) or is_held:
 		return
-	var anchor := charter.cord_world()
-	var to_anchor := anchor - global_position
-	var slack := to_anchor.length() - TETHER
+	# Solver velocity is in the surface's coordinates. Measuring this in global
+	# space made the desk's foreshortening shorten and skew the tether.
+	var parent_space := get_parent() as Node2D
+	var anchor := parent_space.to_local(
+		charter.seal_anchor_world(tag_index, tag_count))
+	var to_anchor := anchor - position
+	var tether := PENDANT_TETHER if tag_count > 1 else TETHER
+	var slack := to_anchor.length() - tether
 	if slack <= 0.0:
 		return
 	# Only the overshoot pulls, so within the cord's length nothing happens at
@@ -188,7 +205,15 @@ func _draw_wear(wax: Color) -> void:
 func _draw_cord() -> void:
 	if charter == null or not is_instance_valid(charter):
 		return
-	var a := to_local(charter.cord_world())
+	var a := to_local(charter.seal_anchor_world(tag_index, tag_count))
+	if tag_count > 1:
+		var b := a.normalized() * RADIUS * 0.82
+		var normal := (b - a).orthogonal().normalized()
+		var pale := Color(0.76, 0.66, 0.43, 0.86)
+		var dark := Color(0.37, 0.27, 0.16, 0.78)
+		draw_line(a + normal * 1.8, b + normal * 1.8, pale, 2.5)
+		draw_line(a - normal * 1.8, b - normal * 1.8, dark, 2.2)
+		return
 	var lifted := clampf(a.length() / TETHER, 0.0, 1.0)
 	if lifted < 0.25:
 		return

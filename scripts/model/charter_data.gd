@@ -31,11 +31,26 @@ extends DocumentData
 ## The attached wax. Physically a separate object on a cord, legally part of the
 ## charter — which is why forging one is worth doing.
 @export var seal: SealImpression = null
+## Additional parties may attach their own tags to the same instrument. `seal`
+## remains the primary authentication for compatibility with existing content.
+@export var seals: Array[SealImpression] = []
+
+## Names whose consent the row of tags records. Kept separate from witnesses:
+## these parties execute the act rather than attest that they saw it.
+@export var consenting_parties: PackedStringArray = []
 
 ## Places where the skin has been scraped and rewritten. Invisible to every other
 ## check in the project, because every other check reads what the parchment says
 ## and this is about what it used to say. See scripts/model/erasure.gd.
 @export var erasures: Array[Erasure] = []
+
+
+func attached_seals() -> Array[SealImpression]:
+	var out: Array[SealImpression] = []
+	if seal != null:
+		out.append(seal)
+	out.append_array(seals)
+	return out
 
 
 func date_phrase(reign_name: String) -> String:

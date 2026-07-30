@@ -31,10 +31,16 @@ func label() -> String:
 func run(ctx: CheckContext) -> Array[Finding]:
 	var out: Array[Finding] = []
 	var ch := ctx.charter()
-	if ch == null or ch.seal == null:
+	if ch == null:
 		return out
-	var seal := ch.seal
+	for seal in ch.attached_seals():
+		out.append_array(_run_seal(ctx, ch, seal))
+	return out
 
+
+func _run_seal(ctx: CheckContext, ch: CharterData,
+		seal: SealImpression) -> Array[Finding]:
+	var out: Array[Finding] = []
 	# A polity that keeps no seals cannot have sealed anything. A rule made
 	# entirely of absence, and the easiest one in the game to walk straight past.
 	var claimed := ctx.polity(seal.claims_polity)

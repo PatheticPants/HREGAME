@@ -2,7 +2,7 @@
   "id": "day_03",
   "entry_label": "SATURDAY",
 
-  "_note": "THE DAY OF ARREARS, AND IT IS A CONSEQUENCE RATHER THAN A FIXTURE.\n\nEvery slot here is gated requires_unruled on ITSELF with no fallback, so Saturday holds exactly the matters the week never heard and nothing else. Hear all eight and this day does not exist: SessionController._tick_closing only offers the Thursday-to-Saturday corner when the next day actually resolves to somebody, so a notary who cleared his week is never called in.\n\nWHY THIS SHAPE AND NOT A RE-SEQUENCED WEEK. Moving matters between Tuesday and Thursday was designed and rejected: every case's docket states when it was received in player-visible prose ('Received at the door, the eleventh of October', 'Called from the Thursday tray'), and three of case_06's arrival lines open 'On Tuesday you admitted'. Re-sequencing means rewriting six cases' shipped prose, and prose waits while the Checks are in flux.\n\nArrears need none of it. A docket records when a matter was RECEIVED, not when it was heard — so an unheard Thursday matter arriving here still says 'Called from the Thursday tray' and is telling the truth. That is why this is free and the re-sequencing was not.\n\nORDER. Thursday's own slots already give an unheard Tuesday matter one second chance through requires_ruled/fallback. This is the third, and the last. The Tuesday matters stand first because they have been waiting longest.\n\nEMPTY FALLBACKS ARE DELIBERATE. LoreData.case_by_id(&\"\") returns null and DayData.resolve_cases() skips nulls, so a slot whose matter was ruled simply is not there. No substitute, no filler.",
+  "_note": "THE DAY OF ARREARS, AND IT IS A CONSEQUENCE RATHER THAN A FIXTURE.\n\nEvery slot here is gated requires_unruled on ITSELF with no fallback, so Saturday holds exactly the matters the week never heard and nothing else. Hear every matter and this day does not exist: SessionController._tick_closing only offers the Thursday-to-Saturday corner when the next day actually resolves to somebody, so a notary who cleared his week is never called in.\n\nWHY THIS SHAPE AND NOT A RE-SEQUENCED WEEK. Moving matters between Tuesday and Thursday was designed and rejected: every case's docket states when it was received in player-visible prose ('Received at the door, the eleventh of October', 'Called from the Thursday tray'), and three of case_06's arrival lines open 'On Tuesday you admitted'. Re-sequencing means rewriting six cases' shipped prose, and prose waits while the Checks are in flux.\n\nArrears need none of it. A docket records when a matter was RECEIVED, not when it was heard — so an unheard Thursday matter arriving here still says 'Called from the Thursday tray' and is telling the truth. That is why this is free and the re-sequencing was not.\n\nORDER. Thursday's own slots already give an unheard Tuesday matter one second chance through requires_ruled/fallback. This is the third, and the last. The Tuesday matters stand first because they have been waiting longest.\n\nEMPTY FALLBACKS ARE DELIBERATE. LoreData.case_by_id(&\"\") returns null and DayData.resolve_cases() skips nulls, so a slot whose matter was ruled simply is not there. No substitute, no filler.",
 
   "heading": "The sixteenth day of October, in the seventh year of Kunrad IV. Third desk, second floor. What the week did not reach.",
 
@@ -48,6 +48,10 @@
     {
       "case_id": "case_07_daughters_portion",
       "requires_unruled": "case_07_daughters_portion"
+    },
+    {
+      "case_id": "case_09_breitenau_weir",
+      "requires_unruled": "case_09_breitenau_weir"
     }
   ],
 

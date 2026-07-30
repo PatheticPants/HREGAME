@@ -481,7 +481,8 @@ func _investigate() -> void:
 
 	_trace("inv:glass")
 	# THE GLASS, on the two things it is for.
-	await _glass_over(_seal_of(charter), "seal")
+	for seal in _seals_of(charter):
+		await _glass_over(seal, "seal")
 	await _glass_over(charter, "closing formula")
 
 	# THE BOOKS. Two of the four are loose on the desk; the Kalendar and the
@@ -495,27 +496,43 @@ func _investigate() -> void:
 		await _consult(b)
 
 
-func _seal_of(charter: Node2D) -> Node2D:
+func _seals_of(charter: Node2D) -> Array[Node2D]:
+	var out: Array[Node2D] = []
 	for child in desk.surface.get_children():
-		if child is SealTag:
-			return child
+		if child is SealTag and child.charter == charter:
+			out.append(child)
 	for child in charter.get_children():
 		if child is SealTag:
-			return child
-	return null
+			out.append(child)
+	out.sort_custom(func(a: SealTag, b: SealTag) -> bool:
+		return a.tag_index < b.tag_index)
+	return out
 
 
-func _glass_over(subject: Node2D, _what: String) -> void:
+func _glass_over(subject: Node2D, what: String) -> void:
 	if subject == null or not is_instance_valid(subject):
 		return
 	var lens := desk.lens
 	if not await _grab(lens):
 		return
+	# Aim at the authored detail, not the node origin. A struck WaxPool records
+	# the die's actual off-centre landing in `press_offset`, and a charter's
+	# inspectable closing formula is likewise not at the middle of the sheet.
+	# The lens correctly focuses those physical points; the old harness carried
+	# its centre to `subject.global_position`, then mistook a nearby miss for a
+	# completed inspection.
+	var detail := subject.call("detail_centre") as Vector2 \
+		if subject.has_method("detail_centre") else subject.global_position
 	await _carry_until(lens, func() -> Vector2:
-		return lens.global_position, subject.global_position, 14.0, 120)
+		return lens.global_position, detail, 14.0, 120)
 	# The lens confirms focus after 0.55 s of dwell (lens.gd:128). Anything under
 	# that is a glance and the office never hears about it.
 	await _wait(maxf(1.1, dwell * 0.35))
+	_trace("glass:settled", {
+		"what": what,
+		"distance": snappedf(lens.global_position.distance_to(detail), 0.1),
+		"focus": SessionLog.describe(lens._focus),
+	})
 	await _release()
 
 
@@ -706,6 +723,18 @@ func _practice() -> void:
 	# that the hand can do it.
 	await _seal_it(Lex.Verdict.CONFIRM)
 	await _await_stage(SessionController.Stage.PRACTICE_REVIEW, 8.0)
+	# The die is still lying on the wax after the press. The lens now obeys the
+	# desk's real occlusion order, so it quite properly sees brass rather than an
+	# impression through brass. Put the tool away before trying to read the work.
+	for ring in desk.rings:
+		if ring.verdict != Lex.Verdict.CONFIRM:
+			continue
+		if await _grab(ring):
+			await _carry_until(ring, func() -> Vector2:
+				return ring.global_position,
+				desk.surface.to_global(ring.home_position), 18.0, 120)
+			await _release()
+		break
 	# Completion is welded to reading your own impression through the glass.
 	var pool := desk.press.pool
 	if pool != null and is_instance_valid(pool):

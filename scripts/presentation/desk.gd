@@ -429,14 +429,16 @@ func lay_out_packet(documents: Array[DocumentData]) -> void:
 		if doc is CharterData:
 			current_charter = node as CharterView
 
-	# The seal comes in on the end of a cord, so it has to be built after the
-	# charter it hangs from.
+	# Attached wax is built after the charter because every tag takes its anchor
+	# from the flowed sheet. Ordinary instruments have one applied seal; a
+	# multi-party act can carry a countable row of pendant tags.
 	if current_charter != null:
 		var ch := current_charter.charter_data()
-		if ch.seal != null:
+		var attached := ch.attached_seals()
+		for i in attached.size():
 			var tag := SealTag.new()
 			surface.add_child(tag)
-			tag.bind(ch.seal, current_charter, DESK_RECT)
+			tag.bind(attached[i], current_charter, DESK_RECT, i, attached.size())
 			case_papers.append(tag)
 
 	_refresh_lens_subjects()

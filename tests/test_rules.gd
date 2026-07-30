@@ -161,6 +161,30 @@ func _test_cases(lore: LoreData) -> void:
 		"a worn seal is not a forgery")
 	_case_lacks(lore, &"case_01_kufergasse", Lex.Severity.DEFECT,
 		"a witness dying that year is not a defect")
+	_test_seals_in_a_row(lore)
+
+
+func _test_seals_in_a_row(lore: LoreData) -> void:
+	var c := lore.case_by_id(&"case_09_breitenau_weir")
+	_is_true(c != null, "the seals-in-a-row matter is authored")
+	if c == null:
+		return
+	var ch := c.charter()
+	_is_true(ch != null, "the seals-in-a-row matter has one charter")
+	if ch == null:
+		return
+	_is_true(ch.consenting_parties.size() == 5,
+		"the charter names five consenting parties")
+	_is_true(ch.attached_seals().size() == 6,
+		"five consent tags plus the Chancery tag make six")
+	var decision := Adjudicator.adjudicate_case(c, lore, null)
+	var sound := 0
+	for finding in decision.findings:
+		if finding.code == &"seal_sound":
+			sound += 1
+	_is_true(sound == 6, "all six tags answer through the existing SealCheck")
+	_eq(decision.verdict, Lex.Verdict.CONFIRM,
+		"the counted and checked row is clean rather than a planted forgery")
 
 
 ## Written where the screenshots go: gitignored, regenerated on every run, and
@@ -655,12 +679,12 @@ func _test_campaign_data(lore: LoreData) -> void:
 		return
 
 	var nothing_heard := saturday.resolve_cases(lore, Register.new())
-	_is_true(nothing_heard.size() == 8,
+	_is_true(nothing_heard.size() == lore.cases.size(),
 		"a week in which nothing was ruled leaves every matter waiting (%d)"
 		% nothing_heard.size())
 
 	# The whole week cleared. If requires_unruled is not parsed this returns all
-	# eight and the assertion fails loudly, which is exactly what it is for.
+	# authored matters and the assertion fails loudly, which is exactly its job.
 	var whole_week := Register.new()
 	for c in lore.cases:
 		whole_week.add(_prior_record(c, c.correct_verdict))

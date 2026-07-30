@@ -217,8 +217,10 @@ func _day_two_tray() -> void:
 		"turning the folded Thursday corner lights the second candle")
 	_is_true(session.stage == SessionController.Stage.CHOOSING,
 		"Thursday waits for the notary to choose a docket")
-	_is_true(desk.docket_slips.size() == 4,
-		"four named matters protrude from the passage tray")
+	var thursday_case_count := Lore.data.day_by_id(&"day_02").resolve_cases(
+		Lore.data, session.register).size()
+	_is_true(desk.docket_slips.size() == thursday_case_count,
+		"every named Thursday matter protrudes from the passage tray")
 	# Counted by CONTENT, not by size. Thursday used to deliver exactly one
 	# document — the Kesselholt letter — because that was the only Tuesday matter
 	# with any next-day consequence at all. The knife answers for itself now, so
@@ -254,7 +256,7 @@ func _day_two_tray() -> void:
 	_is_true(chosen == &"case_07_daughters_portion"
 			and session._current.id == chosen,
 		"the last docket may be heard first")
-	_is_true(desk.docket_slips.size() == 3,
+	_is_true(desk.docket_slips.size() == thursday_case_count - 1,
 		"the selected docket disappears exactly once")
 	var still_there := 0
 	for paper in desk.day_papers:
@@ -265,7 +267,7 @@ func _day_two_tray() -> void:
 	_is_true(is_equal_approx(candle_before, desk.candle.burn),
 		"choosing from the tray spends no candle")
 
-	# Drown this candle with Elsbeth heard and the other three still in the tray.
+	# Drown this candle with Elsbeth heard and the other matters still in the tray.
 	session.current_day.day_seconds = 0.6
 	await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0)
 	await _hear_them_out(desk)
@@ -274,8 +276,8 @@ func _day_two_tray() -> void:
 	await _await_stage(desk, SessionController.Stage.LEDGER, 12.0)
 	_is_true(session.unfinished == session._current.petitioner.name,
 		"Thursday records the selected petitioner as heard but unruled")
-	_is_true(session.unheard.size() == 3,
-		"the three unselected tray matters remain unheard")
+	_is_true(session.unheard.size() == thursday_case_count - 1,
+		"the unselected tray matters remain unheard")
 	var day_two_ledger := ""
 	for line: Dictionary in session._compose_ledger():
 		day_two_ledger += String(line.get("text", "")) + "\n"
@@ -341,13 +343,15 @@ func _full_thursday() -> void:
 			[SessionController.Stage.REACTING, SessionController.Stage.DEPARTING],
 			14.0)
 
-	_is_true(chosen_order.size() == 4
+	var thursday_count := Lore.data.day_by_id(&"day_02").resolve_cases(
+		Lore.data, Register.new()).size()
+	_is_true(chosen_order.size() == thursday_count
 			and chosen_order[0] == &"case_07_daughters_portion",
-		"all four Thursday dockets may be heard in reverse order")
+		"all Thursday dockets may be heard in reverse order")
 	_is_true(await _await_stage(desk, SessionController.Stage.LEDGER, 20.0),
 		"the final Thursday ruling closes into its ledger")
-	_is_true(session.register.entries_for_day(&"day_02").size() == 4,
-		"Thursday binds four rulings into the persistent Register")
+	_is_true(session.register.entries_for_day(&"day_02").size() == thursday_count,
+		"Thursday binds every ruling into the persistent Register")
 	var dynamic_reviews_ready := true
 	for entry in session.register.entries_for_day(&"day_02"):
 		var case_data := Lore.data.case_by_id(entry.case_id)

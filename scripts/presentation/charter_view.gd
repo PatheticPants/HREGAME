@@ -79,6 +79,22 @@ func cord_world() -> Vector2:
 	return to_global(cord_local())
 
 
+## A single applied seal keeps its flowed writing anchor. A multi-party act uses
+## six separate tag holes across the foot, so their order can be counted before
+## any legend is read.
+func seal_anchor_local(index: int, count: int) -> Vector2:
+	if count <= 1:
+		return cord_local()
+	var t := float(index) / float(maxi(1, count - 1))
+	return Vector2(
+		lerpf(-data.size.x * 0.37, data.size.x * 0.37, t),
+		data.size.y * 0.5 - 66.0)
+
+
+func seal_anchor_world(index: int, count: int) -> Vector2:
+	return to_global(seal_anchor_local(index, count))
+
+
 func _draw_face(r: Rect2) -> void:
 	var ch := charter_data()
 	if ch == null:
@@ -99,6 +115,10 @@ func _draw_face(r: Rect2) -> void:
 
 	at.y += _draw_parties(at, w, ch)
 	at.y += 8.0
+
+	at.y += _draw_consents(at, w, ch)
+	if not ch.consenting_parties.is_empty():
+		at.y += 8.0
 
 	at.y += _draw_witnesses(at, w, ch)
 
@@ -154,6 +174,17 @@ func _draw_parties(at: Vector2, w: float, ch: CharterData) -> float:
 	if not ch.property.is_empty():
 		y += Ink.block(self, at + Vector2(0, y), "Of:  " + ch.property, 13,
 			Ink.CHANCERY, w)
+	return y
+
+
+func _draw_consents(at: Vector2, w: float, ch: CharterData) -> float:
+	if ch.consenting_parties.is_empty():
+		return 0.0
+	var y := Ink.label(self, at, "consenting parties", 10, Ink.FADED)
+	y += 2.0
+	for party in ch.consenting_parties:
+		y += Ink.line(self, at + Vector2(8, y), "+  " + party, 11,
+			Ink.CHANCERY, HORIZONTAL_ALIGNMENT_LEFT, w - 8.0)
 	return y
 
 
@@ -302,10 +333,13 @@ func draw_detail(c: CanvasItem, at: Vector2, radius: float) -> void:
 		PI * 1.05, PI * 1.82, 14, Color(Ink.CHANCERY, 0.28), 0.8)
 
 
-## The cord: a plaited tag of parchment or silk through the foot of the sheet,
-## which the seal hangs from. Drawn here so it stays put when the charter moves;
-## the tag itself is a separate object that swings on the end of it.
+## The holes through which the applied tongue or pendant tags are fixed.
 func _draw_cord() -> void:
-	var a := cord_local()
-	draw_circle(a, 3.0, Color(0.30, 0.24, 0.18, 0.55))
-	draw_circle(a, 1.6, data.tint.darkened(0.5))
+	var ch := charter_data()
+	if ch == null:
+		return
+	var count := ch.attached_seals().size()
+	for i in count:
+		var a := seal_anchor_local(i, count)
+		draw_circle(a, 3.0, Color(0.30, 0.24, 0.18, 0.55))
+		draw_circle(a, 1.6, data.tint.darkened(0.5))

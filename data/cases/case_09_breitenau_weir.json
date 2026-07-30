@@ -1,0 +1,190 @@
+{
+  "id": "case_09_breitenau_weir",
+  "title": "The Weir at Breitenau",
+  "_design": "THE SEALS IN A ROW. Five named parties consent; their five tags and the Chancery's authenticating tag make six. Count first, then compare each impression with the Book of Matrices. Every die is live in 1221 and every impression answers. This is a clean CONFIRM and introduces no new Check. Portrait reuse is deliberate scaffold.",
+  "correct_verdict": "CONFIRM",
+  "correct_reason": "nothing_against",
+  "correct_reason_text": "Five consenting parties and one authenticating Chancery seal are present. All six answer to live dies.",
+  "petitioner": {
+    "id": "bertold_leyser",
+    "name": "Bertold Leyser",
+    "style": "clerk of the works at Breitenau",
+    "polity_id": "aachen_verd",
+    "portrait_path": "res://art/petitioners/matthias_erken_bust.png",
+    "height": 246,
+    "build": 86,
+    "cloth": "#4c493f",
+    "restlessness": 0.28
+  },
+  "documents": [
+    {
+      "kind": "docket",
+      "id": "docket_09",
+      "title": "Passage docket",
+      "size": [
+        330,
+        235
+      ],
+      "tint": "#d9cdb0",
+      "start_offset": [
+        -345,
+        -95
+      ],
+      "start_angle_deg": -2.5,
+      "petitioner_name": "Bertold Leyser",
+      "petitioner_style": "clerk of the works at Breitenau",
+      "claim_summary": "Presents the common consent for rebuilding the weir: five named parties, authenticated by the Imperial Chancery.",
+      "received_note": "Called from the Thursday tray.",
+      "doorkeeper_note": "The packet clatters."
+    },
+    {
+      "kind": "charter",
+      "id": "charter_breitenau_weir",
+      "title": "Common Consent for the Weir at Breitenau",
+      "size": [
+        430,
+        585
+      ],
+      "tint": "#e1d4b4",
+      "start_offset": [
+        -38,
+        -10
+      ],
+      "start_angle_deg": 1.0,
+      "takes_seal": true,
+      "body_text": "The five parties named below consent to rebuild the weir at Breitenau. Each bears one fifth of the work and may draw one fifth of the water.\n\nThe Imperial Chancery authenticates their common act under its own seal.",
+      "date_emperor": "kunrad_iv",
+      "date_regnal_year": 7,
+      "drawn_by_polity": "aachen_verd",
+      "grantor": "The five consenting parties named below",
+      "claimant": "The market town of Breitenau",
+      "property": "The common weir, mill race, and five water shares",
+      "subject_id": "breitenau_weir",
+      "claimant_id": "breitenau_common",
+      "consenting_parties": [
+        "The Commune of Marchfeld",
+        "The Abbey of Saint Wend's-in-the-Wood",
+        "The Cathedral Chapter of Saint Wend",
+        "Berthold, Duke of Ostmark",
+        "Ulrich, Count of Hallenstein"
+      ],
+      "seal": {
+        "id": "seal_breitenau_chancery",
+        "claims_owner": "The Imperial Chancery",
+        "claims_polity": "aachen_verd",
+        "device": "double_eagle",
+        "legend": "SIGILLVM CANCELLARIE IMPERII",
+        "shape": "round",
+        "wax_color": "#c9a227",
+        "wear": 0.02,
+        "shape_seed": 9101,
+        "note": "The Chancery's authenticating seal."
+      },
+      "seals": [
+        {
+          "id": "seal_breitenau_marchfeld",
+          "claims_owner": "The Commune of Marchfeld",
+          "claims_polity": "marchfeld",
+          "device": "three_towers",
+          "legend": "SIGILLVM CIVITATIS MARCHFELDENSIS",
+          "shape": "round",
+          "wax_color": "#2f6b3f",
+          "wear": 0.06,
+          "shape_seed": 9102,
+          "note": ""
+        },
+        {
+          "id": "seal_breitenau_abbey",
+          "claims_owner": "The Abbey of Saint Wend's-in-the-Wood",
+          "claims_polity": "saint_wend",
+          "device": "crozier",
+          "legend": "SIGILLVM ABBATIE SANCTI WENDELINI IN SILVA",
+          "shape": "vesica",
+          "wax_color": "#5b3a8c",
+          "wear": 0.04,
+          "shape_seed": 9103,
+          "note": ""
+        },
+        {
+          "id": "seal_breitenau_chapter",
+          "claims_owner": "The Cathedral Chapter of Saint Wend",
+          "claims_polity": "saint_wend",
+          "device": "crossed_keys",
+          "legend": "SIGILLVM CAPITVLI SANCTI WENDELINI",
+          "shape": "vesica",
+          "wax_color": "#5b3a8c",
+          "wear": 0.03,
+          "shape_seed": 9104,
+          "note": ""
+        },
+        {
+          "id": "seal_breitenau_ostmark",
+          "claims_owner": "Berthold, Duke of Ostmark",
+          "claims_polity": "ostmark",
+          "device": "stag",
+          "legend": "BERTHOLDVS DVX ORIENTALIS MARCHIE",
+          "shape": "round",
+          "wax_color": "#2d4f8c",
+          "wear": 0.08,
+          "shape_seed": 9105,
+          "note": ""
+        },
+        {
+          "id": "seal_breitenau_hallenstein",
+          "claims_owner": "Ulrich, Count of Hallenstein",
+          "claims_polity": "hallenstein",
+          "device": "wolf_head",
+          "legend": "VLRICVS COMES DE HALLENSTEIN",
+          "shape": "round",
+          "wax_color": "#3a3540",
+          "wear": 0.05,
+          "shape_seed": 9106,
+          "note": ""
+        }
+      ]
+    }
+  ],
+  "lines": [
+    {
+      "beat": "arrival",
+      "text": "Five parties made one agreement. The Chancery put it into one packet."
+    },
+    {
+      "beat": "inspect_seal",
+      "text": "There should be five for consent and one for the office."
+    },
+    {
+      "beat": "consult_matrix_book",
+      "text": "All six were struck before the packet left the press."
+    }
+  ],
+  "outcomes": [
+    {
+      "verdict": "CONFIRM",
+      "favor": {
+        "imperial": 1
+      },
+      "reaction": "Good. The masons can open the race.",
+      "register_note": "Common consent for the Breitenau weir. Six live seals present. Confirmed.",
+      "aftermath": "The five parties rebuilt the weir under the admitted consent."
+    },
+    {
+      "verdict": "DENY",
+      "favor": {
+        "imperial": -2
+      },
+      "reaction": "Then six offices carried wax here for nothing.",
+      "register_note": "Common consent for the Breitenau weir refused.",
+      "aftermath": "The race remained shut while five parties disputed the refusal."
+    },
+    {
+      "verdict": "REFER",
+      "favor": {
+        "imperial": -1
+      },
+      "reaction": "The Chancery has authenticated it already.",
+      "register_note": "Common consent for the Breitenau weir sent upward.",
+      "aftermath": "The packet returned to the same office whose seal already hung from it."
+    }
+  ]
+}

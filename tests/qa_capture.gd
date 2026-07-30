@@ -181,6 +181,7 @@ func _run() -> void:
 	await _show_reviewed_register()
 	await _inspect_own_seal()
 	await _show_day_two()
+	await _show_seals_in_a_row()
 	await _the_knife()
 	await _candle_close()
 	await _write_on_tablet()
@@ -207,7 +208,7 @@ func _show_packet_sweep() -> void:
 
 
 ## Thursday as it first appears: the chosen Kesselholt consequence on paper,
-## four protruding passage tabs, and a new person rather than a menu.
+## every passage tab protruding, and a new person rather than a menu.
 func _show_day_two() -> void:
 	# Pose the real CHOOSING composition: no stale Tuesday packet and nobody at
 	# the desk until a docket has actually been laid in the hearing notch.
@@ -240,6 +241,40 @@ func _show_day_two() -> void:
 	_desk.hide_docket_tray()
 	_desk.lay_out_day_documents([])
 	_desk.session.register.entries.erase(prior)
+
+
+## The new inspection shape at actual play zoom: five named consents, six
+## separately tethered tags. The second frame pulls one tag away from the row so
+## the separate pendant cord is visible rather than inferred from six discs.
+func _show_seals_in_a_row() -> void:
+	var matter := Lore.data.case_by_id(&"case_09_breitenau_weir")
+	if matter == null:
+		return
+	_desk.sweep_packet_away()
+	_desk._finish_sweep()
+	_desk.lay_out_packet(matter.documents)
+	var camera := _main.get_node("camera") as Camera2D
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	await _move_candle(Vector2(290.0, 50.0))
+	await _settle(60)
+	await _shot("62_six_seals_in_a_row")
+
+	var tags: Array[SealTag] = []
+	for paper in _desk.case_papers:
+		if paper is SealTag:
+			tags.append(paper)
+	tags.sort_custom(func(a: SealTag, b: SealTag) -> bool:
+		return a.tag_index < b.tag_index)
+	if tags.size() == 6:
+		var pulled := tags[2]
+		pulled.is_held = true
+		var at := pulled.position + Vector2(-105.0, -95.0)
+		pulled.solver.place(at, pulled.rotation)
+		pulled.position = at
+		await _settle(20)
+		await _shot("63_one_pendant_tag_lifted")
+		pulled.is_held = false
 
 
 ## Close on the foot of the charter: the witness list, the chancery annotation

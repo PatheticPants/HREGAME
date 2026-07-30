@@ -77,6 +77,8 @@ var stowed := false
 ## What fraction of its normal size an object is drawn at once racked. Books need
 ## to shrink further than a docket slip does to fit the same hole.
 @export var stow_scale := 0.46
+## Stable physical scale before pickup, stow, and perspective animation.
+@export var base_scale := 1.0
 
 var _visual_scale := 1.0
 var _stow_amount := 0.0
@@ -142,6 +144,7 @@ func _process(delta: float) -> void:
 	# A small lift on pickup. Deliberately subtle — the shadow does the heavy
 	# lifting for "this is off the pile"; scale alone reads as a zoom.
 	var want := _feel.pickup_scale if is_held else 1.0
+	want *= base_scale
 	# Racking shrinks the object into its hole. Eased rather than snapped so a
 	# book visibly slides in and settles.
 	_stow_amount = move_toward(_stow_amount, 1.0 if stowed else 0.0, delta * 4.6)

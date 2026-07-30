@@ -64,6 +64,7 @@ func _run() -> void:
 	await _test_a_delivered_slip_arrives(desk)
 	_test_dockets_fit(desk)
 	_test_reachability(desk)
+	await _test_seals_in_a_row(desk)
 	await _test_view_transition(main, desk)
 	await _test_candle_light(desk)
 	await _test_storage(desk)
@@ -1074,6 +1075,54 @@ func _test_reachability(desk: Desk) -> void:
 		"and it sits below the date rather than over it")
 
 
+func _test_seals_in_a_row(desk: Desk) -> void:
+	print("-- six pendant seals in a row")
+	var matter := _lore_data.case_by_id(&"case_09_breitenau_weir")
+	_is_true(matter != null, "the multi-party consent matter loads")
+	if matter == null:
+		return
+
+	desk.sweep_packet_away()
+	desk._finish_sweep()
+	await get_tree().process_frame
+	desk.lay_out_packet(matter.documents)
+	for _i in 12:
+		await get_tree().process_frame
+
+	var tags: Array[SealTag] = []
+	for paper in desk.case_papers:
+		if paper is SealTag:
+			tags.append(paper)
+	tags.sort_custom(func(a: SealTag, b: SealTag) -> bool:
+		return a.tag_index < b.tag_index)
+	_is_true(tags.size() == 6, "the charter builds six separate draggable tags")
+	var ordered := tags.size() == 6
+	var all_pendant := tags.size() == 6
+	var pendant_notes := PackedStringArray()
+	for i in tags.size():
+		var tag := tags[i]
+		ordered = ordered and tag.tag_count == 6 and tag.tag_index == i
+		var hanging_distance := tag.charter.to_local(tag.global_position) \
+			.distance_to(tag.charter.seal_anchor_local(i, 6))
+		pendant_notes.append("%.1f@%.2f" % [hanging_distance, tag.base_scale])
+		all_pendant = all_pendant and tag.base_scale == SealTag.ROW_SCALE \
+			and hanging_distance > SealTag.TETHER * 2.0 \
+			and hanging_distance <= SealTag.PENDANT_TETHER + 2.0
+		_is_true(Desk.DESK_RECT.has_point(tag.position),
+			"%s begins within reach" % tag.impression.claims_owner)
+	_is_true(ordered, "the six tags preserve their countable left-to-right order")
+	_is_true(all_pendant,
+		"each tag hangs from its own foot anchor instead of becoming applied wax "
+		+ "(distance@scale %s)" % ", ".join(pendant_notes))
+
+	desk.sweep_packet_away()
+	desk._finish_sweep()
+	await get_tree().process_frame
+	desk.lay_out_packet(_lore_data.cases[0].documents)
+	for _i in 12:
+		await get_tree().process_frame
+
+
 func _test_view_transition(main: Node, desk: Desk) -> void:
 	print("-- two-plane view")
 	var view := main.get_node_or_null("view_controller") as ViewController
@@ -1983,8 +2032,8 @@ func _test_docket_tray(desk: Desk) -> void:
 	var day_two := _lore_data.day_by_id(&"day_02").resolve_cases(
 		_lore_data, desk.session.register)
 	desk.show_docket_tray(day_two)
-	_is_true(desk.docket_slips.size() == 4,
-		"four physical docket tabs are authored for Thursday")
+	_is_true(desk.docket_slips.size() == day_two.size(),
+		"every authored Thursday docket has a physical tab")
 	for slip in desk.docket_slips:
 		_is_true(Desk.DESK_RECT.has_point(slip.position),
 			"%s begins within reach" % slip.case_data.title)

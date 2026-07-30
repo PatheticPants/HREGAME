@@ -142,9 +142,15 @@ def mismatch_code(seal, candidates):
 
 def seal_findings(charter, world, matrices, present):
     out = []
-    seal = charter.get("seal")
-    if not seal:
-        return out
+    seals = ([charter["seal"]] if charter.get("seal") else [])
+    seals += charter.get("seals", [])
+    for seal in seals:
+        out.extend(one_seal_findings(charter, seal, world, matrices, present))
+    return out
+
+
+def one_seal_findings(charter, seal, world, matrices, present):
+    out = []
 
     polity = world["polities"].get(seal["claims_polity"])
     if polity and not polity.get("seals_used", True):
@@ -654,8 +660,8 @@ def main():
                  "findings.\n      godot : %s\n      python: %s"
                  % (case_id, ", ".join(theirs), ", ".join(mine)))
 
-        seal = ch.get("seal")
-        if seal:
+        seals = ([ch["seal"]] if ch.get("seal") else []) + ch.get("seals", [])
+        for seal in seals:
             owned = [m for m in matrices
                      if m["owner_name"].strip().lower()
                      == seal["claims_owner"].strip().lower()]

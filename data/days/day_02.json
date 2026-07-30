@@ -1,7 +1,7 @@
 {
   "id": "day_02",
   "entry_label": "THURSDAY",
-  "heading": "The fourteenth day of October, in the seventh year of Kunrad IV. Third desk, second floor. Four dockets in the passage.",
+  "heading": "The fourteenth day of October, in the seventh year of Kunrad IV. Third desk, second floor. Five dockets in the passage.",
   "day_seconds": 720,
   "burnt_out_text": "The second candle drowned with dockets still in the tray. The doorkeeper copied their names into tomorrow's passage list.",
   "selection_mode": "tray",
@@ -246,6 +246,9 @@
     }
   ],
   "case_slots": [
+    {
+      "case_id": "case_09_breitenau_weir"
+    },
     {
       "case_id": "case_04_second_lion"
     },

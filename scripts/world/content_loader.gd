@@ -409,6 +409,8 @@ static func _build_document(raw: Variant, path: String, lore: LoreData) -> Docum
 				w._note = _s(wraw, "_note", _s(wraw, "note"))
 				ws.append(w)
 			ch.witnesses = ws
+			for party in _arr(raw, "consenting_parties"):
+				ch.consenting_parties.append(str(party))
 			# Where the skin has been scraped. Regions are fractions of the
 			# sheet's own size so a patch stays registered whatever the
 			# document's dimensions are.
@@ -426,18 +428,10 @@ static func _build_document(raw: Variant, path: String, lore: LoreData) -> Docum
 			ch.erasures = es
 			var sraw = raw.get("seal", null)
 			if sraw is Dictionary:
-				var s := SealImpression.new()
-				s.id = _sn(sraw, "id")
-				s.claims_owner = _s(sraw, "claims_owner")
-				s.claims_polity = _sn(sraw, "claims_polity")
-				s.device = _sn(sraw, "device")
-				s.legend = _s(sraw, "legend")
-				s.shape = _sn(sraw, "shape", &"round")
-				s.wax_color = _color(sraw, "wax_color", Color(0.55, 0.11, 0.17))
-				s.wear = _f(sraw, "wear")
-				s.shape_seed = _i(sraw, "shape_seed", 1)
-				s.note = _s(sraw, "note")
-				ch.seal = s
+				ch.seal = _build_seal(sraw)
+			for extra_raw in _arr(raw, "seals"):
+				if extra_raw is Dictionary:
+					ch.seals.append(_build_seal(extra_raw))
 			doc = ch
 		&"docket":
 			var dk := DocketData.new()
@@ -469,6 +463,21 @@ static func _build_document(raw: Variant, path: String, lore: LoreData) -> Docum
 	doc.start_angle_deg = _f(raw, "start_angle_deg")
 	doc.takes_seal = _b(raw, "takes_seal", kind == &"charter")
 	return doc
+
+
+static func _build_seal(raw: Dictionary) -> SealImpression:
+	var s := SealImpression.new()
+	s.id = _sn(raw, "id")
+	s.claims_owner = _s(raw, "claims_owner")
+	s.claims_polity = _sn(raw, "claims_polity")
+	s.device = _sn(raw, "device")
+	s.legend = _s(raw, "legend")
+	s.shape = _sn(raw, "shape", &"round")
+	s.wax_color = _color(raw, "wax_color", Color(0.55, 0.11, 0.17))
+	s.wear = _f(raw, "wear")
+	s.shape_seed = _i(raw, "shape_seed", 1)
+	s.note = _s(raw, "note")
+	return s
 
 
 # --------------------------------------------------------------------- tuning
@@ -534,6 +543,18 @@ static func _validate(lore: LoreData) -> void:
 		if not lore.polities.has(ch.drawn_by_polity):
 			lore.errors.append("case '%s': unknown drawing polity '%s'"
 				% [c.id, ch.drawn_by_polity])
+		for seal in ch.attached_seals():
+			if not lore.polities.has(seal.claims_polity):
+				lore.errors.append("case '%s': seal '%s' names unknown polity '%s'"
+					% [c.id, seal.id, seal.claims_polity])
+			var owner_known := false
+			for matrix in lore.matrices:
+				if matrix.owner_name.to_lower() == seal.claims_owner.to_lower():
+					owner_known = true
+					break
+			if not owner_known:
+				lore.errors.append("case '%s': seal '%s' claims unknown owner '%s'"
+					% [c.id, seal.id, seal.claims_owner])
 
 	for day in lore.days:
 		if day.id == &"":
