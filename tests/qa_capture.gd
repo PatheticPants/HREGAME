@@ -62,6 +62,7 @@ func _run() -> void:
 	await _shot("01_desk_default")
 	await _inspect_pendant_seal()
 	await _inspect_charter_formula()
+	await _glass_over_unauthored()
 	await _show_packet_sweep()
 	_desk.lay_out_packet(Lore.data.cases[0].documents)
 	await _settle(60)
@@ -299,6 +300,63 @@ func _inspect_charter_formula() -> void:
 	_desk.lens.position = Lens.HOME_POSITION
 	_desk.candle.solver.place(candle_home, candle_angle)
 	_desk.candle.position = candle_home
+	if view != null:
+		view.set_process(true)
+		view.set_process_input(true)
+	await _settle(14)
+
+
+## THE GLASS OVER SOMETHING NOTHING WAS AUTHORED FOR.
+##
+## The other fifteen objects on the desk. Only two implement the detail contract
+## — a charter's closing formula and a struck seal — so for the whole life of
+## this prop the glass did nothing whatever over a docket, a letter, a book, the
+## tablet or the rack, and the owner reported it plainly as "it should magnify
+## everything". It samples the composited screen now, so it enlarges anything
+## under it without that object implementing a thing, and it cannot see through
+## a page because a page on top is what is in the picture.
+##
+## This frame is the proof, and it has to be a book: an open leaf is the densest
+## small text in the game and it is the thing a player most wants larger.
+func _glass_over_unauthored() -> void:
+	if _desk.books.is_empty():
+		return
+	var book: ReferenceBook = _desk.books[0]
+	var view := _main.get_node_or_null("view_controller")
+	var camera := _main.get_node("camera") as Camera2D
+	var candle_home := _desk.candle.position
+	var candle_angle := _desk.candle.rotation
+	if view != null:
+		view.set_process(false)
+		view.set_process_input(false)
+
+	book.is_open = true
+	await _settle(30)
+	var over := book.position + Vector2(-book.page_size().x * 0.45, -30.0)
+	await _move_candle(over + Vector2(150.0, -120.0))
+	_desk.bring_to_front(_desk.lens)
+	_desk.lens.solver.place(over, deg_to_rad(-4.0))
+	_desk.lens.position = over
+	await _settle(50)
+	camera.position = _desk.lens.global_position
+	camera.zoom = Vector2(2.45, 2.45)
+	await _settle(12)
+	await _shot("60_glass_over_a_book_leaf")
+	# AND AT PLAY ZOOM. The screen-space magnifier samples SCREEN_UV against a
+	# lens centre taken from the canvas transform, and the capture harness's 2.45x
+	# camera is not a condition the game is ever in. A frame shot under it is not
+	# evidence about what a player sees.
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	await _settle(14)
+	await _shot("61_glass_over_a_book_leaf_play_zoom")
+	camera.zoom = Vector2.ONE
+	camera.position = Vector2(960, 590)
+	_desk.lens.solver.place(Lens.HOME_POSITION, deg_to_rad(Lens.HOME_ANGLE))
+	_desk.lens.position = Lens.HOME_POSITION
+	_desk.candle.solver.place(candle_home, candle_angle)
+	_desk.candle.position = candle_home
+	book.is_open = false
 	if view != null:
 		view.set_process(true)
 		view.set_process_input(true)

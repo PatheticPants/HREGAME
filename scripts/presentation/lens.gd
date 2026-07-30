@@ -36,6 +36,35 @@ var subjects: Array[Node2D] = []
 var _focus: Node2D = null
 var _focus_amount := 0.0
 var _focus_dwell := 0.0
+## How settled the glass is, 0..1, from its own speed.
+##
+## KEPT, UNUSED BY THE SHADER, AND HERE IS WHY. The owner's report is right and
+## unfixed: the glass magnifies two of the seventeen objects on the desk, because
+## only `CharterView` and `SealTag` implement the detail contract and everything
+## else — the four books, the dockets, the letters, the tablet — gets nothing.
+##
+## The obvious fix is the screen-space path that already exists: the shader
+## samples `hint_screen_texture` behind a `BackBufferCopy`, so raising the
+## magnification enlarges ANY object without it implementing a thing, and cannot
+## see through a page because a page on top is what is in the picture. Tried, at
+## 0.85..1.30. Two things came out of it, both measured:
+##
+##   - Over authored evidence it double-draws: the same sentence in the aperture
+##     at two sizes, the screen copy ghosting under the redraw. A/B with the
+##     magnification forced to zero isolates it. Cross-fading against
+##     `_focus_amount` fixes that part cleanly.
+##   - At PLAY zoom the aperture goes black. It only looked right in the capture
+##     harness's 2.45x poses, which is not a camera the game is ever in — so both
+##     frames that appeared to prove it were taken under a condition no player
+##     sees. `lens_center_screen` is derived from the canvas transform and
+##     `SCREEN_UV` from the framebuffer, and those two stop agreeing somewhere.
+##
+## A black aperture is a worse defect than a weak one, so the magnification is
+## back at its old value and this is the note for whoever finishes it. The other
+## route, if the screen path stays stubborn, is a generic `draw_detail` on Sheet
+## and ReferenceBook — more code, but deterministic and resolution-independent.
+## Frames 60 and 61 are the evidence, at harness zoom and at play zoom.
+var _settle := 0.0
 var _reported: Dictionary = {}
 var _optical_lag := Vector2.ZERO
 var _optics_copy: BackBufferCopy
@@ -100,6 +129,12 @@ func _process(delta: float) -> void:
 	# than one set down: the high-detail face is something the player focuses,
 	# not a decal that turns on at the edge of a hit radius.
 	var motion := solver.speed()
+	# HOW STILL THE GLASS IS, independent of whether there is anything authored
+	# under it. `_focus_amount` cannot do this job: it only rises when one of the
+	# two objects that implement the detail contract is in range, so keying the
+	# magnification to it would have left the glass weakest over everything else
+	# on the desk — which is the complaint.
+	_settle = move_toward(_settle, 1.0 if motion < 60.0 else 0.0, delta * 3.2)
 	var focus_rate := 6.2 if motion < 90.0 else 2.8
 	_focus_amount = move_toward(_focus_amount, 1.0 if _focus != null else 0.0,
 		delta * focus_rate)
@@ -142,6 +177,24 @@ func _process(delta: float) -> void:
 		var centre_px := get_global_transform_with_canvas().origin
 		_optics_material.set_shader_parameter("lens_center_screen",
 			centre_px / viewport_size)
+		# THE GLASS MAGNIFIES WHATEVER IS UNDER IT, ALWAYS, AND THAT IS THE WHOLE
+		# JOB. It used to be 0.048..0.070 — a five per cent bulge — so it proved
+		# there was glass in the aperture and did nothing else. Everything on this
+		# desk that was not a seal, a closing formula or your own impression got
+		# no enlargement at all: two of the seventeen objects on the desk, counted.
+		# The books, the dockets, the letters, the tablet, all of it, nothing.
+		#
+		# This samples the composited screen, so it enlarges EVERY object without
+		# any of them implementing anything — and it cannot see through a page,
+		# because a page that is on top is what is in the picture.
+		#
+		# It sharpens as the glass settles: a moving glass is a glance, a still one
+		# is a reading. `body` in the shader falls to zero at the rim, so the edge
+		# stays true and only the middle swells, which is what a ground lens does.
+		# HELD AT THE OLD VALUE ON PURPOSE, AND IT IS STILL WRONG. See the note on
+		# `_settle`: raising this to a real magnification blacks the aperture out
+		# at play zoom, so the honest state is the weak-but-safe one until the
+		# screen-space path is understood rather than half-fixed.
 		_optics_material.set_shader_parameter("magnification",
 			lerpf(0.048, 0.070, _focus_amount))
 		# `active` WAS THE GATE AND WAS WIRED TO THE CONSTANT 1.0.
@@ -172,21 +225,77 @@ func begin_case() -> void:
 	_optical_lag = Vector2.ZERO
 
 
+## What is under the glass — and it has to be UNDER it, not merely near it.
+##
+## This used to take the nearest `detail_centre()` within a radius and nothing
+## else: no check that the subject was visible, and none that anything was lying
+## on top of it. So the glass read a charter through a letter covering it, and
+## snapped to a pendant seal a hand's width away while sitting on the closing
+## formula. The owner reported it as the glass "seeing through pages and doing
+## all sorts of wacky things", which is exactly what eight lines of pure
+## proximity produce on a desk where everything overlaps.
+##
+## Two rules now, both borrowed from the desk's own hit test: the topmost
+## candidate wins rather than the nearest, and a candidate covered at that point
+## by something drawn above it is not a candidate at all.
 func _find_subject() -> Node2D:
+	var reach := RADIUS * 0.85
 	var best: Node2D = null
-	var best_d := RADIUS * 0.85
+	var best_order := -(1 << 30)
 	for s in subjects:
 		if s == null or not is_instance_valid(s) or s == self:
+			continue
+		if not s.visible:
 			continue
 		if not s.has_method("has_detail") or not s.call("has_detail"):
 			continue
 		var centre: Vector2 = s.call("detail_centre") if s.has_method("detail_centre") \
 			else s.global_position
-		var d := centre.distance_to(global_position)
-		if d < best_d:
-			best_d = d
+		if centre.distance_to(global_position) >= reach:
+			continue
+		if _is_buried(s):
+			continue
+		# Draw order, the same key the renderer sorts by: z first, then position
+		# in the tree. Nearest is the wrong question when two things overlap —
+		# what the player can SEE is the one on top.
+		var order := s.z_index * 100000 + _draw_index(s)
+		if order >= best_order:
+			best_order = order
 			best = s
 	return best
+
+
+## Where this node falls in the order things are painted in. Siblings of the
+## glass are compared by child index; a subject parented to another object (the
+## poured pool rides on its sheet) inherits its parent's place.
+func _draw_index(who: Node2D) -> int:
+	var top: Node = who
+	while top != null and top.get_parent() != get_parent():
+		top = top.get_parent()
+	return (top as Node2D).get_index() if top is Node2D else -1
+
+
+## Is something opaque lying over this subject, right where the glass is?
+##
+## Only siblings that draw ABOVE it count, and only if the glass's own centre is
+## inside them — a paper overlapping the far corner of a charter does not hide
+## the bit being looked at.
+func _is_buried(subject: Node2D) -> bool:
+	var deck := get_parent()
+	if deck == null:
+		return false
+	var subject_order := subject.z_index * 100000 + _draw_index(subject)
+	for i in deck.get_child_count():
+		var other := deck.get_child(i) as Draggable
+		if other == null or other == self or other == subject:
+			continue
+		if not other.visible or other.stowed:
+			continue
+		if other.z_index * 100000 + i <= subject_order:
+			continue
+		if other.contains_point(global_position):
+			return true
+	return false
 
 
 ## The old rectangular hit box made empty corners around the circular bezel win

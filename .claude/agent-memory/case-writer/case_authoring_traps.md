@@ -84,4 +84,21 @@ desk as pure evidence with zero code. Set `takes_seal: false` explicitly, keep t
 of the sheet's own size) to land in the same place, and explain the missing wax
 in prose because there is no way to render a detached seal or a cancellation slash.
 
-Related: [[user-role]], [[owner-loop-direction]].
+**8. A PACKET IS ONE CHARTER. The engine disagrees with itself about which one.**
+`CheckContext.charter()` (scripts/rules/check_context.gd:40-45) returns the FIRST
+`CharterData` in `documents`, and every one of the six checks opens with
+`var ch := ctx.charter()`. `Desk.lay_out_packet` (scripts/presentation/desk.gd:429-430)
+assigns `current_charter` inside the loop, so it holds the LAST one — and
+`current_charter` is what gets the only `SealTag`, the only pourable wax
+(`press.reset_for_new_case`), and the only `hold_to_light` beat.
+**Why:** author two charters in one packet and the office adjudicates one sheet
+while the player can only seal and backlight the other. Silent, and it looks fine.
+**How to apply:** exactly one `CharterData` per case. A second instrument goes in
+as a `letter`/`docket`, or as a day document (see 7). Corollaries worth knowing:
+only ONE pendant seal is ever built (`ch.seal`, singular); `_make_document_view` is
+typed `-> Sheet` so nothing that is not a sheet can arrive in a packet; and
+`lay_out_day_documents` never calls `_refresh_lens_subjects()`, so a dawn document
+implementing `has_detail` is not magnifiable until the player picks anything up
+(`deliver_day_document` is fine — it calls `bring_to_front`).
+
+Related: [[user-role]], [[owner-loop-direction]], [[matter-shape-redesign]].

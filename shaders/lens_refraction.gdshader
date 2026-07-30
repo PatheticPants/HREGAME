@@ -6,7 +6,12 @@ render_mode unshaded, blend_mix;
 // the crown glass bend enough to prove that the aperture contains glass.
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_nearest;
 uniform vec2 lens_center_screen = vec2(0.5);
-uniform float magnification : hint_range(0.0, 0.12) = 0.065;
+// IT IS A MAGNIFYING GLASS. It spent its whole life set between 0.048 and
+// 0.070 — a five per cent bulge, which is a refraction and not a magnification,
+// and the owner reported it as "the glass does not magnify" because it did not.
+// At 1.0 the sample is drawn from half the radius, which is 2x. The range is
+// open now because the clamp was documenting the bug.
+uniform float magnification : hint_range(0.0, 3.0) = 1.0;
 uniform float fringe_pixels : hint_range(0.0, 1.0) = 0.42;
 uniform float active : hint_range(0.0, 1.0) = 1.0;
 
