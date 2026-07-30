@@ -1024,15 +1024,40 @@ func _test_reachability(desk: Desk) -> void:
 		if paper is SealTag:
 			seal = paper
 			break
-	_is_true(seal != null, "packet creates its pendant seal")
+	_is_true(seal != null, "packet creates the grantor's seal")
 	if seal == null:
 		return
 
 	var visible_desk := Desk.DESK_RECT.grow(-SealTag.RADIUS)
 	_is_true(visible_desk.has_point(seal.position),
-		"pendant seal begins fully visible")
-	_is_true(seal.global_position.distance_to(seal.charter.cord_world()) <= SealTag.TETHER,
-		"pendant seal begins with slack instead of snapping across the room")
+		"the seal begins fully visible")
+	# IT IS APPLIED TO THE PARCHMENT, NOT HUNG OFF IT.
+	#
+	# This used to assert only that the seal began within TETHER of its knot —
+	# a 155-unit cord — which was satisfied by a disc dangling off the bottom
+	# edge of the sheet. The owner reported that plainly: a seal on a string that
+	# should be on the page. The tether is 26 now and the contract is stronger:
+	# the wax starts ON its own patch of the charter's blank foot.
+	# Spawn lands on the FALLBACK slot, because seal_slot_local is only known
+	# once the charter has drawn once and the tag is built in the same frame as
+	# the sheet. The tether closes that gap in well under a second, and the three
+	# assertions below are the ones with teeth — this one only has to catch the
+	# original defect, which was a seal spawning a whole desk-width away.
+	_is_true(seal.global_position.distance_to(seal.charter.global_position)
+			<= seal.charter.data.size.length(),
+		"the seal begins on its own charter rather than across the room")
+	var on_page := Rect2(-seal.charter.data.size * 0.5, seal.charter.data.size)
+	_is_true(on_page.has_point(
+			seal.charter.to_local(seal.global_position)),
+		"and that patch is on the parchment itself")
+	# And not on the writing. The slot is measured from the bottom of the text
+	# by _draw_face precisely so that cutting prose cannot slide the wax onto
+	# the witness list, which is exactly what a fixed fraction did.
+	_is_true(seal.charter.seal_slot_local != Vector2.ZERO,
+		"the slot was measured from the writing rather than guessed")
+	_is_true(seal.charter.to_local(seal.global_position).y
+			> seal.charter.date_rect_local.end.y,
+		"and it sits below the date rather than over it")
 
 
 func _test_view_transition(main: Node, desk: Desk) -> void:

@@ -15,6 +15,9 @@ const MARGIN := 26.0
 ## Written by _draw_date; read only by the test that asserts an erasure claiming
 ## to sit on the year actually does. Empty until the sheet has drawn once.
 var date_rect_local := Rect2()
+## Where the applied seal rests, in sheet-local coordinates, measured from the
+## bottom of the writing by _draw_face. See cord_local().
+var seal_slot_local := Vector2.ZERO
 var _lens_fibres: Array[Dictionary] = []
 var _lens_ink: Array[Dictionary] = []
 
@@ -50,8 +53,26 @@ func charter_data() -> CharterData:
 
 
 ## Where the cord is knotted through the foot of the parchment.
+## WHERE THE GRANTOR'S SEAL SITS, and it sits ON the parchment.
+##
+## This used to be 6 units above the bottom EDGE of the sheet, with a 155-unit
+## cord, so the seal hung off the foot of the page and swung about below it. The
+## owner reported it plainly: "the papers that come in have a seal that is on a
+## string and it should be on the page itself."
+##
+## It is now the mirror of `wax_slot_local()` — the blank foot the chancery
+## leaves for wax, which the memorandum already tells the player about. The
+## grantor's seal takes the left of that foot and the notary's own impression
+## takes the right, which is how a foot with two seals on it actually looks and
+## keeps the player's wax from landing on top of the evidence.
 func cord_local() -> Vector2:
-	return Vector2(-data.size.x * 0.18, data.size.y * 0.5 - 6.0)
+	# Set by _draw_face from where the writing actually ended. Zero until the
+	# first draw, so fall back to the same place by proportion — the tether reads
+	# this every frame, so a seal that spawns on the fallback walks onto its real
+	# patch within a frame or two rather than sitting wrong.
+	if seal_slot_local != Vector2.ZERO:
+		return seal_slot_local
+	return Vector2(-data.size.x * 0.24, data.size.y * 0.30)
 
 
 func cord_world() -> Vector2:
@@ -80,6 +101,22 @@ func _draw_face(r: Rect2) -> void:
 	at.y += 8.0
 
 	at.y += _draw_witnesses(at, w, ch)
+
+	# WHERE THE GRANTOR'S SEAL GOES, measured from the writing rather than
+	# guessed at as a fraction of the sheet. A fraction is what put the seal on
+	# top of the witness list the moment the arenga was cut and the text got
+	# shorter — the same coupling that slid case_08's erasure off its year, and
+	# it will keep happening to anything anchored to the parchment instead of to
+	# the words on it.
+	# Clear of the writing by the seal's OWN radius, or the disc sits on the
+	# witness list — which is what `at.y + 44` did, because the wax is 46 across
+	# the middle and 44 put its top edge two units ABOVE the last line of text.
+	# Measured across all eight: the blank foot runs from 102 to 182 units deep,
+	# so the clamp is what keeps the longest writ's seal off its own closing
+	# formula.
+	var foot := r.end.y - MARGIN - 14.0
+	seal_slot_local = Vector2(r.position.x + r.size.x * 0.26,
+		minf(at.y + SealTag.RADIUS + 12.0, foot - SealTag.RADIUS - 6.0))
 
 	_draw_closing(r, ch, at.y)
 	_draw_cord()

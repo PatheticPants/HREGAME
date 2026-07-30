@@ -1,19 +1,42 @@
 class_name SealTag
 extends Draggable
 
-## The pendant seal that arrives attached to a charter.
+## The grantor's seal, applied to the foot of the charter it authenticates.
 ##
-## Physically separate, legally part of the instrument, and hanging off a cord —
-## which is how real ones worked and is also the right answer for play. You can
-## pull it out from under the pile to look at it without dragging the whole
-## charter, and it swings back when you let go, and it follows the charter across
-## the desk if you move that instead. All three of those are things a flat
-## rendered-on-the-page seal cannot do.
+## IT WAS A PENDANT ON A 155-UNIT CORD AND IT IS NOT ANY MORE. This docstring
+## used to argue for the cord: real ones hung that way, and a free body can be
+## pulled out from under a pile, swung back, and carried along when the charter
+## moves. The first of those is true history — chanceries used both, sur double
+## queue and sur simple queue — and the last two are properties of it being a
+## free BODY, not of it being on a string.
+##
+## The owner reported it and was right: "the papers that come in have a seal that
+## is on a string and it should be on the page itself." Hanging off the bottom
+## edge, the wax read as an accessory to the document rather than as the thing
+## that makes the document an instrument, and it spent most of its time over bare
+## desk where nothing could be compared to it.
+##
+## So it is applied now: it rests on its own patch of the blank foot the chancery
+## leaves for wax, the notary's own impression goes on the other side of that
+## foot, and all three of the free-body properties survive because it is still a
+## free body — just one with a 26-unit tether instead of a 155-unit one.
+##
+## The legend is deliberately NOT legible unaided. There is writing around the
+## rim and you can see that there is writing, and you need the lens to read it.
 ##
 ## The legend is deliberately NOT legible unaided. There is writing around the
 ## rim and you can see that there is writing, and you need the lens to read it.
 
-const TETHER := 155.0
+## How far the seal may be pulled off its patch of parchment before the wax
+## drags it back. It was 155 — most of a charter's height — which is a pendant on
+## a cord. An applied seal is fixed to the sheet, so this is now just enough
+## slack to lift it clear of the writing underneath it and no more.
+##
+## Not zero, and not parented. It stays a free body because the three things
+## that makes possible are all worth having: you can pull it out from under a
+## pile without dragging the whole charter, it travels with the charter when you
+## move that instead, and it can be picked up and put under the glass on its own.
+const TETHER := 26.0
 const RADIUS := 46.0
 
 var impression: SealImpression = null
@@ -44,11 +67,12 @@ func bind(imp: SealImpression, owner_charter: CharterView, desk_bounds: Rect2) -
 	# convert it before adding the hanging offset. Without this conversion the
 	# seal spawned a whole desk-width away and snapped violently down its cord.
 	var parent_space := get_parent() as Node2D
-	# The charter arrives near the desk's lower rim, so drape the pendant down
-	# and left rather than straight off-screen. It is still slack on the cord,
-	# but its whole face is available to the player's glass from frame one.
-	var start: Vector2 = parent_space.to_local(owner_charter.cord_world()) + Vector2(-110, 12)
-	setup(start, deg_to_rad(randf_range(-9.0, 9.0)), desk_bounds)
+	# APPLIED, NOT PENDANT. It starts exactly on its patch of the parchment's
+	# blank foot rather than draped 110 units down and to the left of the sheet's
+	# bottom edge. A small rotation only, so it reads as a struck disc pressed on
+	# by a hand rather than as a decal.
+	var start: Vector2 = parent_space.to_local(owner_charter.cord_world())
+	setup(start, deg_to_rad(randf_range(-6.0, 6.0)), desk_bounds)
 
 
 func _build_surface_marks() -> void:
@@ -151,22 +175,29 @@ func _draw_wear(wax: Color) -> void:
 			Color(wax.darkened(0.62), 0.75))
 
 
+## THE TAIL OF THE TAG, not a cord any more.
+##
+## This drew a bowing plaited cord from the sheet's bottom edge to the top of the
+## wax — the "string" the owner reported. An applied seal has no cord: it is wax
+## pressed onto the skin, usually over a slit tongue of the parchment itself.
+##
+## So it is now a short stub of that tongue showing at the wax's edge, drawn only
+## when the seal has been lifted off its patch, and fading out as it comes back
+## down. When the seal is where it belongs there is nothing to draw at all,
+## because the wax is sitting on the page.
 func _draw_cord() -> void:
 	if charter == null or not is_instance_valid(charter):
 		return
 	var a := to_local(charter.cord_world())
-	var b := Vector2(0, -RADIUS * 0.86)
-	# A slack cord bows under its own weight; a straight line reads as wire.
-	var sag := Vector2(0, clampf(a.distance_to(b) * 0.16, 3.0, 26.0))
-	var mid := (a + b) * 0.5 + sag.rotated(-global_rotation)
-	var col := Color(0.42, 0.34, 0.24, 0.9)
-	var prev := a
-	for i in range(1, 13):
-		var t := float(i) / 12.0
-		var p := a.lerp(mid, t).lerp(mid.lerp(b, t), t)
-		draw_line(prev, p, col, 3.0)
-		prev = p
-	draw_line(prev, b, col, 3.0)
+	var lifted := clampf(a.length() / TETHER, 0.0, 1.0)
+	if lifted < 0.25:
+		return
+	var b := a.normalized() * RADIUS * 0.82
+	var col := Color(0.74, 0.68, 0.52, 0.55 * lifted)
+	# The parchment tongue: pale, flat, and straight, because a slit tongue does
+	# not bow the way a silk cord does.
+	draw_line(a, b, col, 5.0)
+	draw_line(a, b, Color(0.40, 0.34, 0.24, 0.42 * lifted), 1.6)
 
 
 # ------------------------------------------------------------------- the lens
