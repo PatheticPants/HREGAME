@@ -3,7 +3,8 @@
   "book": {
     "title": "The Kalendar of the Dead",
     "subtitle": "obits returned to this Chancery, and by whom",
-    "cover_color": "#2a2f2a",
+    "_cover_note": "THE MEMORANDUM SAYS 'the green book in the rack is the Kalendar', and until now that sentence was false. #2a2f2a is (42,47,42) — green by five parts in 255, which is neutral. The room's only light is a candle, so every surface is multiplied by roughly (1.0, 0.6, 0.3) and the cover rendered RED-dominant at a measured mean of (18.3, 12.6, 11.3). There was no green book in the rack; it was distinguishable from the Register only as the less maroon one. Green now leads by enough to survive the warm multiply, at the same value as the Almanac's olive and the Matrices' brown so it does not read as a different class of object.",
+    "cover_color": "#1a6430",
     "page_color": "#e4dcc2",
     "front_matter": "This Chancery keeps no roll of its own dead and never has. What it keeps is this book, which is not a necrology but a binding of extracts: what the houses that do keep such rolls have returned to us, copied in the order their own books were written, with the hand named at the head of each.\n\nRead the head before you read the names. Every hand counts an emperor's years as its own chancery counts them, and says so on its own page, and one of these four does not count as we do.",
     "front_matter_two": "Read the covering line also. It says whose dead that house undertook to keep, and no more than that. A man who is not in a roll is not thereby living; he may only be a man that roll was never keeping.",

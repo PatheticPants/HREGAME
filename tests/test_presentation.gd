@@ -60,6 +60,8 @@ func _run() -> void:
 	_test_the_office_notices_what_you_read(desk)
 	_test_every_leaf_fits(desk)
 	_test_every_sheet_can_be_sealed(desk)
+	_test_delivered_slips_are_visible(desk)
+	await _test_a_delivered_slip_arrives(desk)
 	_test_dockets_fit(desk)
 	_test_reachability(desk)
 	await _test_view_transition(main, desk)
@@ -245,6 +247,129 @@ func _test_every_sheet_can_be_sealed(desk: Desk) -> void:
 				checks += 1
 			v.queue_free()
 	_is_true(seen >= 8, "every sealable document was checked (%d)" % seen)
+
+
+## NOTHING THE OFFICE DELIVERS MAY LAND UNDER A TOOL THAT DRAWS OVER IT.
+##
+## The two fit checks either side of this one measure INK AGAINST PARCHMENT.
+## Neither measures PARCHMENT AGAINST DESK, and that gap let all four staged
+## memorandum leaves ship in positions where they could not be read:
+##
+##   the rings leaf under the candle, where the fourth line read
+##     "confuse procedure with truth."
+##   — a complete, coherent, INVERTED instruction, because "Do not" was hidden
+##     and the sentence still ended in a full stop;
+##   the tablet leaf under the magnifying glass, hiding "the nib on the wax",
+##     which is the game's only statement of the erase verb.
+##
+## `deliver_day_document` calls `bring_to_front`, and that CANNOT help: the
+## candle carries z_index 1 and the lens z_index 2, and a higher z draws above
+## every lower-z sibling whatever child order says. This is the desk's oldest
+## documented trap, arriving from the one direction where child order is not the
+## answer — the fix is to land somewhere else, and this is what checks that.
+func _test_delivered_slips_are_visible(desk: Desk) -> void:
+	print("-- nothing delivered lands under a tool that draws over it")
+	# THE SHAPES, NOT THE GRAB BOXES. `hit_size` on the lens is a rectangle drawn
+	# around a circle and a handle — `Lens.contains_point` says so itself — and
+	# using it here condemned eight shipped letters for corners the glass does
+	# not actually cover. The candle is a brass dish and is opaque throughout;
+	# the lens's opaque part is the brass annulus and its handle, and the
+	# aperture inside it is glass.
+	# THE TOOLS' RESTING PLACES, NOT WHEREVER THIS SUITE LEFT THEM. Reading
+	# `global_position` here would make the check depend on which test ran
+	# before it — silently passing on a day somebody poses the candle elsewhere.
+	# These are the two authored constants: desk.gd:242 and Lens.HOME_POSITION.
+	const CANDLE_HOME := Vector2(752, -115)
+	var over: Array = []
+	if desk.candle != null:
+		var cs: Vector2 = desk.candle.hit_size
+		over.append(["candle", Rect2(CANDLE_HOME - cs * 0.5, cs),
+			desk.candle.z_index])
+	if desk.lens != null:
+		# The chassis ring, squared to its own diameter rather than to the grab
+		# rectangle. `Lens.contains_point` says outright that hit_size is a box
+		# around a circle plus a handle; using it condemned eight shipped letters
+		# for corners the glass does not cover.
+		var r := Lens.RADIUS
+		over.append(["glass", Rect2(Lens.HOME_POSITION - Vector2(r, r),
+			Vector2(r, r) * 2.0), desk.lens.z_index])
+	_is_true(over.size() == 2, "the two elevated tools were found")
+	var seen := 0
+	for day in _lore_data.days:
+		for opening in day.opening_documents:
+			var doc := opening.document
+			if doc == null:
+				continue
+			var here := Rect2(doc.start_offset - doc.size * 0.5, doc.size)
+			seen += 1
+			for entry: Array in over:
+				var tool_rect: Rect2 = entry[1]
+				if not here.intersects(tool_rect):
+					checks += 1
+					continue
+				var bite := here.intersection(tool_rect)
+				# A tool clipping the outer margin costs a character or two; a
+				# tool sitting IN the text is what produced "confuse procedure
+				# with truth." as a complete inverted sentence. The narrow
+				# dimension of the bite is what separates them, and the column
+				# is inset 20 either side (DocketView / LetterView).
+				var into := minf(bite.size.x, bite.size.y) - 20.0
+				if into <= 40.0:
+					checks += 1
+					continue
+				_fail(("%s (%s) lands under the %s, which draws above it at "
+					+ "z=%d: the bite reaches %.0f units into its text column "
+					+ "over %.0f units of it")
+					% [doc.id, day.id, entry[0], int(entry[2]), into,
+						maxf(bite.size.x, bite.size.y)])
+	_is_true(seen >= 7, "every delivered document was placed (%d)" % seen)
+
+
+## SOMETHING ARRIVING ON THE DESK HAS TO MOVE.
+##
+## `deliver_day_document` is the one event in the game that is not a person
+## coming through the door, and it used to call `settle_immediately()` — which
+## cancels the 0.62 s slide-in that `Sheet.bind` has just set up, authored as
+## "handed in over the far edge of the desk". So a slip materialised in a single
+## frame, and its only cues were a knock at -7 dB, a paper_drop at -3 dB, and a
+## rattle from a door that is off the top of the frame in the working view.
+##
+## Sound alone as the sole carrier of "there is something new on your desk" is
+## the one thing this project's own rules say may never happen: motion at rest,
+## and the event is the arrival.
+func _test_a_delivered_slip_arrives(desk: Desk) -> void:
+	print("-- a slip the office sends up is seen to arrive")
+	var doc: DocumentData = null
+	for day in _lore_data.days:
+		for opening in day.opening_documents:
+			if opening.document != null and opening.after_case != &"":
+				doc = opening.document
+				break
+		if doc != null:
+			break
+	if doc == null:
+		_fail("no after_case document to deliver")
+		return
+	var before := desk.day_papers.size()
+	desk.deliver_day_document(doc)
+	_is_true(desk.day_papers.size() == before + 1, "the slip reaches the desk")
+	var node := desk.day_papers[-1] as Sheet
+	if node == null:
+		_fail("the delivered document is not a Sheet")
+		return
+	_is_true(node._arrival_t < 1.0,
+		"and is still in the air on the frame it is handed over")
+	var travelled: float = node.position.distance_to(node.solver.position)
+	_is_true(travelled > 20.0,
+		"visibly away from where it will settle (%.0f units)" % travelled)
+	var frames := 0
+	while node._arrival_t < 1.0 and frames < 240:
+		frames += 1
+		await get_tree().process_frame
+	_is_true(node._arrival_t >= 1.0 and frames > 1,
+		"and settles under its own weight, over %d frames" % frames)
+	desk.day_papers.erase(node)
+	node.queue_free()
 
 
 ## AND EVERY DOCKET FITS ITS SLIP.

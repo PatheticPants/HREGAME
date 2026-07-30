@@ -828,8 +828,21 @@ func _print_report() -> void:
 				% [row["ordinal"], row["of"], String(row["title"]).left(32),
 					row["left_at_start"] * 100.0, row["spent_seconds"]])
 		var last: Dictionary = rows[-1]
-		print("   ---- total deliberation %.1f s of %.0f s"
-			% [spent_total, last["day_seconds"]])
+		var burn: float = spent_total / maxf(1.0, float(last["day_seconds"]))
+		print("   ---- total deliberation %.1f s of %.0f s   (burn %.2f)"
+			% [spent_total, last["day_seconds"], burn])
+		# DID THE DAY EVER LOOK LIKE IT WAS ENDING?
+		#
+		# `Candle.GUTTERING_FROM` is 0.86, and everything the object does to say
+		# the light is going — the smoke plume, the 3.2x flicker unrest, the
+		# candle_gutter warning — lives above it. `_output()` is
+		# lerp(1.0, 0.30, ease(burn, 2.2)), so at burn 0.28 the flame is still at
+		# 95% and the desk is as readable as it was at dawn. A day that ends
+		# below the threshold spends its whole length looking like morning.
+		var out := lerpf(1.0, 0.30, ease(clampf(burn, 0.0, 1.0), 2.2))
+		print("   ---- flame at day's end %.0f%% of full; guttering (%.2f) %s"
+			% [out * 100.0, Candle.GUTTERING_FROM,
+				"REACHED" if burn >= Candle.GUTTERING_FROM else "never reached"])
 		if int(last["ordinal"]) == int(last["of"]):
 			print("   >>> CANDLE AT THE START OF THE LAST MATTER: %.1f%%"
 				% (float(last["left_at_start"]) * 100.0))

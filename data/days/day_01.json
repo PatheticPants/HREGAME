@@ -88,8 +88,8 @@
         ],
         "tint": "#d5c6a1",
         "start_offset": [
-          -350,
-          -186
+          330,
+          -182
         ],
         "start_angle_deg": 3.5,
         "takes_seal": false,
@@ -97,7 +97,7 @@
         "petitioner_style": "",
         "claim_summary": "A live die can leave a bad mark; a dead die cannot leave any mark at all.",
         "received_note": "",
-        "doorkeeper_note": "- R.V."
+        "doorkeeper_note": "— R.V."
       }
     },
     {
@@ -113,8 +113,8 @@
         ],
         "tint": "#d5c6a1",
         "start_offset": [
-          -350,
-          -186
+          330,
+          -182
         ],
         "start_angle_deg": 3.5,
         "takes_seal": false,
@@ -122,7 +122,7 @@
         "petitioner_style": "",
         "claim_summary": "A live die can leave a bad mark; a dead die cannot leave any mark at all.",
         "received_note": "",
-        "doorkeeper_note": "- R.V."
+        "doorkeeper_note": "— R.V."
       }
     },
     {
@@ -138,8 +138,8 @@
         ],
         "tint": "#d5c6a1",
         "start_offset": [
-          656,
-          232
+          352,
+          -116
         ],
         "start_angle_deg": -4.0,
         "takes_seal": false,
@@ -147,7 +147,7 @@
         "petitioner_style": "",
         "claim_summary": "Scratch down what you cannot hold in your head, and rest the nib on the wax to take it out again. Nobody will ever read it but you.",
         "received_note": "",
-        "doorkeeper_note": "- R.V."
+        "doorkeeper_note": "— R.V."
       }
     },
     {
@@ -158,13 +158,13 @@
         "id": "memo_leaf_the_flame",
         "title": "Memorandum",
         "size": [
-          340,
-          250
+          330,
+          240
         ],
         "tint": "#d5c6a1",
         "start_offset": [
-          -352,
-          300
+          366,
+          -34
         ],
         "start_angle_deg": 2.5,
         "takes_seal": false,
@@ -172,7 +172,7 @@
         "petitioner_style": "",
         "claim_summary": "When a parchment is wrong and you cannot say where, pick it up and put it in front of the flame. Skin that has been scraped is thin, and thin skin lets the light through.",
         "received_note": "",
-        "doorkeeper_note": "- R.V."
+        "doorkeeper_note": "— R.V."
       }
     },
     {
@@ -183,13 +183,13 @@
         "id": "memo_leaf_the_rings",
         "title": "Memorandum",
         "size": [
-          340,
-          250
+          330,
+          240
         ],
         "tint": "#d5c6a1",
         "start_offset": [
-          656,
-          -96
+          372,
+          52
         ],
         "start_angle_deg": -3.0,
         "takes_seal": false,
@@ -197,8 +197,9 @@
         "petitioner_style": "",
         "claim_summary": "When two laws disagree, CONFIRM or DENY names the law you chose. REFER follows this office's procedure without choosing. Do not confuse procedure with truth.",
         "received_note": "",
-        "doorkeeper_note": "- R.V."
+        "doorkeeper_note": "— R.V."
       }
     }
-  ]
+  ],
+  "_leaf_placement_note": "THE FOUR MEMORANDUM LEAVES LIE ON THE MEMORANDUM, and the positions are measured rather than chosen. They were first placed by eye and every one of them landed under something: the rings leaf under the candle, where line four read 'confuse procedure with truth.' as a complete inverted sentence; the tablet leaf under the magnifying glass, hiding 'the nib on the wax', which is the game's only statement of the erase verb; the die leaf across the top half of the docket, covering the petitioner's name at the moment you judge his wax; and the flame leaf across the pendant seal on the one case that is about that seal.\n\nbring_to_front CANNOT save a leaf from the candle (z_index 1) or the glass (z_index 2). Higher z draws above all lower-z siblings whatever child order says, so the only fix is to land somewhere else. Measured obstacles: candle x 704..800 y -189..-41, lens home x 545..785 y -125..355, docket x -500..-190 y -254..64, seal x -245..-141 y 171..334, charter x -254..164 y -356..466.\n\nOn the memorandum is also where they BELONG: they are further leaves of the same document, in the same hand, and the doorkeeper is working through a pile that was left beneath the Register. They cover only the sentences already read and fixtures the player can move, never evidence."
 }

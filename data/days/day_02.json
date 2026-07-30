@@ -19,7 +19,7 @@
         ],
         "tint": "#d8c79f",
         "start_offset": [
-          430,
+          360.0,
           90
         ],
         "start_angle_deg": 3.0,
@@ -46,7 +46,7 @@
         ],
         "tint": "#d7c8ad",
         "start_offset": [
-          430,
+          360.0,
           90
         ],
         "start_angle_deg": -2.5,
@@ -73,7 +73,7 @@
         ],
         "tint": "#d3c39f",
         "start_offset": [
-          430,
+          350.0,
           90
         ],
         "start_angle_deg": 1.5,
@@ -102,7 +102,7 @@
         ],
         "tint": "#d6c8a4",
         "start_offset": [
-          402,
+          361.0,
           -96
         ],
         "start_angle_deg": -3.0,
@@ -129,7 +129,7 @@
         ],
         "tint": "#ded1b0",
         "start_offset": [
-          398,
+          325.0,
           120
         ],
         "start_angle_deg": 2.5,
@@ -202,7 +202,7 @@
         ],
         "tint": "#d6c8a4",
         "start_offset": [
-          402,
+          361.0,
           -96
         ],
         "start_angle_deg": 2.0,
@@ -229,7 +229,7 @@
         ],
         "tint": "#d6c8a4",
         "start_offset": [
-          402,
+          361.0,
           -96
         ],
         "start_angle_deg": -1.5,
@@ -263,5 +263,6 @@
       "requires_ruled": "case_01_kufergasse",
       "fallback_case_id": "case_01_kufergasse"
     }
-  ]
+  ],
+  "_placement_note": "THESE CLEAR THE MAGNIFYING GLASS'S RESTING PLACE. Lens.HOME_POSITION is (665,115) with RADIUS 116, so the disc occupies x 549..781 and it carries z_index 2 — it draws above every sheet whatever child order says, and bring_to_front cannot help. Read off shot_20 before the move: the joint covering sheet rendered 'The Chapter of Sain', 'move the matter w'. Every dawn document now ends by x 540."
 }

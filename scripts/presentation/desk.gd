@@ -496,7 +496,18 @@ func deliver_day_document(doc: DocumentData) -> void:
 		return
 	surface.add_child(node)
 	node.bind(doc, DESK_RECT)
-	node.settle_immediately()
+	# NO settle_immediately() HERE, and that call was the whole reason a
+	# delivered slip appeared out of nothing.
+	#
+	# `Sheet.bind` sets up a 0.62 s slide in from 105 units beyond the far edge —
+	# authored as "handed in over the far edge of the desk" — and
+	# settle_immediately() cancelled it on the same frame. So the one event in
+	# the game that is not a person coming through the door had NO motion at all,
+	# and its only cues were a knock at -7 dB, a paper_drop at -3 dB, and a rattle
+	# from a door that is off the top of the frame in the working view.
+	#
+	# lay_out_day_documents keeps its own settle_immediately(), and should: those
+	# papers are already lying there when the shutter opens.
 	day_papers.append(node)
 	bring_to_front(node)
 	if _door != null:
