@@ -27,7 +27,7 @@ extends Object
 ## from the tray. Anything that moves both is time the player is being charged
 ## for. No other instrument in this project can tell those two apart.
 ##
-## NOT A TELEMETRY SERVICE. No network, no session id beyond a counter, no UI, and
+## NOT A TELEMETRY SERVICE. No network, no session id of any kind, no UI, and
 ## it does nothing whatsoever unless the flag is on — `enabled()` is false and
 ## every `act()` call returns on its first line. It is safe to leave the call
 ## sites in permanently, which is the point: an instrument you have to re-add is
@@ -40,7 +40,6 @@ static var _file: FileAccess = null
 static var _checked := false
 static var _on := false
 static var _origin_ms := 0
-static var _run := 0
 
 ## Context carried on every line so a log is readable without reconstructing
 ## state. Written by the session, read by nobody else.
@@ -84,9 +83,15 @@ static func enabled() -> bool:
 	_file.seek_end()
 	_on = true
 	_origin_ms = Time.get_ticks_msec()
-	_run += 1
+	# WHERE THIS RUN STARTS IN THE FILE, which is a fact, unlike a counter.
+	#
+	# This carried a `run` number incremented here. A static resets every process
+	# start and this line executes once per process, so it said 1 forever —
+	# measured, by launching twice and reading both `run_begins` lines. The byte
+	# offset is the honest version and it is strictly more useful: it says where
+	# to cut the file to get just this run.
 	act(&"run_begins", {
-		"run": _run,
+		"from_byte": _file.get_position(),
 		"at": Time.get_datetime_string_from_system(false, true),
 		"path": path,
 	})

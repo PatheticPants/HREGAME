@@ -258,7 +258,12 @@ func _build_fixtures() -> void:
 	tablet = WaxTablet.new()
 	surface.add_child(tablet)
 	tablet.setup(ledge.slot_position(1), 0.0, DESK_RECT)
-	_try_rack(tablet)
+	# `false` for the same reason _park_in_rack passes it: this is the build
+	# placing furniture, not the notary shelving anything. Missed the first time
+	# because the tablet is racked directly and does not go through
+	# _park_in_rack, so the log still opened with a WaxTablet being put away at
+	# t=0 before the room existed.
+	_try_rack(tablet, false)
 
 	stylus = Stylus.new()
 	surface.add_child(stylus)

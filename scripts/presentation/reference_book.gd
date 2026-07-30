@@ -589,9 +589,14 @@ func page_bottom(index: int) -> float:
 		y += Ink.line_height(11)
 	y += 5.0
 	# On a roll the prose leads the names; see _draw_page's `body_leads`.
+	#
+	# `Ink.block` returns `measure.y + size * 0.25`, NOT `measure.y` — the
+	# non-body_leads branch below has always had that term and this one was
+	# written without it. Two functions that must stay in step have drifted
+	# three times in this project and every time it was a few pixels.
 	var body_leads := page.kind == &"obits" or page.kind == &"silence"
 	if body_leads and not page.body.is_empty():
-		y += Ink.measure(page.body, 11, w).y + 4.0
+		y += Ink.measure(page.body, 11, w).y + 11 * 0.25 + 4.0
 	if page.kind == &"obits":
 		y += _obit_roll_height(w, page)
 	if not body_leads and not page.body.is_empty():
@@ -618,7 +623,10 @@ func _obit_roll_height(w: float, page: BookPage) -> float:
 		var o: Obit = roll.entries[i]
 		y += Ink.line_height(11) + Ink.line_height(10)
 		if not o.note.is_empty():
-			y += Ink.measure("  " + o.note, 9, w).y
+			# Ink.block, not Ink.measure. The 9 * 0.25 is 2.25 px off a leaf that
+			# clears its folio number by under 5, which is most of the margin this
+			# whole function exists to guard.
+			y += Ink.measure("  " + o.note, 9, w).y + 9 * 0.25
 		y += 3.0
 	return y
 
