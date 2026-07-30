@@ -338,6 +338,8 @@ func _glass_over_unauthored() -> void:
 	_desk.lens.solver.place(over, deg_to_rad(-4.0))
 	_desk.lens.position = over
 	await _settle(50)
+	assert(_desk.lens._focus == null,
+		"the glass over a book must not snap to authored charter detail beside it")
 	camera.position = _desk.lens.global_position
 	camera.zoom = Vector2(2.45, 2.45)
 	await _settle(12)
@@ -350,6 +352,14 @@ func _glass_over_unauthored() -> void:
 	camera.position = Vector2(960, 590)
 	await _settle(14)
 	await _shot("61_glass_over_a_book_leaf_play_zoom")
+	var play_image := get_viewport().get_texture().get_image()
+	var lens_uv := _desk.lens.get_global_transform_with_canvas().origin \
+		/ _desk.lens.get_viewport_rect().size
+	var lens_px := Vector2i(lens_uv * Vector2(play_image.get_size()))
+	var aperture_luminance := play_image.get_pixelv(lens_px).get_luminance()
+	assert(aperture_luminance > 0.12,
+		"the play-zoom aperture sampled black instead of the lit book")
+	print("   lens play-zoom centre luminance  %.3f" % aperture_luminance)
 	camera.zoom = Vector2.ONE
 	camera.position = Vector2(960, 590)
 	_desk.lens.solver.place(Lens.HOME_POSITION, deg_to_rad(Lens.HOME_ANGLE))

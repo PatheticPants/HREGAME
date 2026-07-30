@@ -15,6 +15,7 @@ extends Draggable
 
 const RADIUS := 116.0
 const APERTURE_RADIUS := 86.0
+const FOCUS_FIELD_ALPHA := 1.0
 const HOME_POSITION := Vector2(665.0, 115.0)
 const HOME_ANGLE := -14.0
 const CHASSIS := preload("res://art/props/magnifying_glass_chassis.png")
@@ -226,6 +227,8 @@ func _find_subject() -> Node2D:
 			else s.global_position
 		if centre.distance_to(global_position) >= reach:
 			continue
+		if not _subject_contains_lens(s):
+			continue
 		if _is_buried(s):
 			continue
 		# Draw order, the same key the renderer sorts by: z first, then position
@@ -236,6 +239,20 @@ func _find_subject() -> Node2D:
 			best_order = order
 			best = s
 	return best
+
+
+## Authored detail may resolve only from the thing physically beneath the glass.
+## The centre-distance test alone let a charter formula beside an open book
+## replace the book leaf the aperture was actually covering.
+func _subject_contains_lens(subject: Node2D) -> bool:
+	var draggable := subject as Draggable
+	if draggable != null:
+		return draggable.contains_point(global_position)
+	var pool := subject as WaxPool
+	if pool != null:
+		return pool.detail_centre().distance_to(global_position) \
+			<= pool.radius + APERTURE_RADIUS * 0.20
+	return false
 
 
 ## Where this node falls in the order things are painted in. Siblings of the
@@ -303,10 +320,11 @@ func _draw_hover() -> void:
 func _build_optics() -> void:
 	_optics_copy = BackBufferCopy.new()
 	_optics_copy.name = "lens_backbuffer"
-	# A regional copy makes every refracted read outside its transformed rect
-	# undefined. It appeared sound under the capture harness's 2.45x camera and
-	# sampled black at the game's real zoom. The viewport copy keeps every tap
-	# valid while the shader itself remains confined to this aperture.
+	# Compatibility's regional BackBufferCopy returns undefined black at the
+	# game's zoom even when the contracted taps lie inside a generously enlarged
+	# rect. COPY_MODE_VIEWPORT is the only mode that remained valid at both the
+	# 1x play camera and the 2.45x inspection pose. The shader itself still draws
+	# only this aperture, and the measured full capture remains below budget.
 	_optics_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
 	_optics_copy.rect = Rect2(-Vector2.ONE * (APERTURE_RADIUS + 5.0),
 		Vector2.ONE * (APERTURE_RADIUS + 5.0) * 2.0)
@@ -477,7 +495,7 @@ func _draw() -> void:
 	if _focus_amount > 0.01:
 		var settle := ease(clampf(_focus_amount, 0.0, 1.0), 0.55)
 		draw_circle(Vector2.ZERO, APERTURE_RADIUS * 0.965,
-			Color(0.88, 0.83, 0.70, 0.60 * settle))
+			Color(0.88, 0.83, 0.70, FOCUS_FIELD_ALPHA * settle))
 		# Warmed by the FLAME, and only by the flame. Left ungated this painted a
 		# salmon disc into the cold-morning frame, where the rest of the room has
 		# gone flat and neutral and the candle is a dead stub — the one surface

@@ -841,7 +841,7 @@ func _test_visual_invariants(desk: Desk) -> void:
 		var copy := lens.get_node_or_null("lens_backbuffer") as BackBufferCopy
 		_is_true(copy != null
 			and copy.copy_mode == BackBufferCopy.COPY_MODE_VIEWPORT,
-			"refracted taps have a complete backbuffer at every camera zoom")
+			"the aperture has valid screen samples at the play and inspection zooms")
 		var old_settle := lens._settle
 		var old_focus := lens._focus_amount
 		lens._settle = 1.0
@@ -851,6 +851,8 @@ func _test_visual_invariants(desk: Desk) -> void:
 		lens._focus_amount = 1.0
 		_is_true(lens.optical_magnification() <= 0.01,
 			"authored evidence replaces the screen image instead of double-printing")
+		_is_true(Lens.FOCUS_FIELD_ALPHA >= 0.99,
+			"the resolved field hides the original small print behind authored detail")
 		lens._settle = old_settle
 		lens._focus_amount = old_focus
 
