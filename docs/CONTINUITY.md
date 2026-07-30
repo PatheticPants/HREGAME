@@ -28,10 +28,26 @@ python tools/verify_content.py
 
 | suite | checks |
 |---|---|
-| rules | 90 |
-| presentation | 305 |
-| the day (full loop) | 76 |
+| rules | 96 |
+| presentation | 340 |
+| the day (full loop) | 90 |
 | content + encoding | PASS |
+
+**There is a fifth thing to run now, and it is the only one that plays the
+game.** `tests/play_day.tscn` drives both days end to end through the real input
+path — `Input.warp_mouse` plus a synthesised button event, so
+`Desk._input -> _begin_press -> _pick -> Draggable.grab` runs exactly as it does
+under a hand. It melts, pours, presses and peels through `PressController`'s own
+state machine. It is **not** headless, for the same reason the capture harness is
+not.
+
+```bash
+.tools/godot-4.6.3/Godot_v4.6.3-stable_win64_console.exe --path . --resolution 1600x900 --fixed-fps 60 --scene res://tests/play_day.tscn --session-log=.tools/play.jsonl --dwell=8
+```
+
+`--dwell` is seconds of reading given to each document and each consulted leaf;
+it is the one quantity a machine cannot supply. `--dwell=0` prices the mechanical
+floor alone. It prints candle remaining at the start of the last matter.
 
 The capture harness writes **59** frames. The latest additions are 57 for the
 glass on the charter's physical closing formula, 58 for parchment and ink at
@@ -83,7 +99,80 @@ and the harness could not.
 
 ---
 
+## What a working day actually costs — MEASURED, at last
+
+The first playthrough this project has ever had. Both days, end to end, real
+input, real clock. Numbers are candle-seconds, which is the only clock that
+matters: `_burn_the_day` runs **only** while `_work_engaged` is true and the
+stage is ENTERING, SPEAKING or WORKING, so arrivals, departures, dialogue before
+the first touch, the ledger and choosing from the tray are all free.
+
+| | mechanical floor (`--dwell=0`) | competent (`--dwell=8`) |
+|---|---|---|
+| cost of one matter | **~22 s** | **~85 s** |
+| Tuesday, of 1200 s | 89 s (7%) | 341 s (28%) |
+| **Tuesday: candle at the last matter** | **94.6%** | **78.8%** |
+| Thursday, of 720 x carried | 95 s of 666 s | 345 s of 515 s (67%) |
+| **Thursday: candle at the last matter** | **89.5%** | **50.0%** |
+
+**The clock is not decoration, but it is not felt on Tuesday either. It is
+BACK-LOADED, and that is a different claim from the one the design makes.**
+Tuesday costs 28% of its candle at a competent pace; the pressure arrives on
+Thursday, which is short both because it is authored at 720 and because it is
+scaled by what Tuesday left. The same work costs 28% of Tuesday and 67% of
+Thursday. Tuesday buys Thursday, which is exactly what "the office issues a
+candle, not a candle a day" says — so the mechanism is working and only the
+*timing* of the pressure is not what the brief assumed.
+
+Consequences worth keeping in mind before tuning anything:
+
+- **The reference books are not a trap.** Opening all four, every matter,
+  including fetching two out of the rack, is inside the mechanical floor.
+- **The seal ritual is cheap.** Melt, pour, press and peel together are about
+  5 s of the 22 s floor. Half the floor is carrying things around the desk.
+- **Nobody goes unheard at a competent pace**, which is also why `day_03`
+  resolves to nothing for such a player and is correctly never offered.
+
+Where the floor goes, from the log: pick up 52.8 s, click 19.9 s, put down
+19.4 s, melting 18.9 s, hold-to-flame 13.3 s, pressing 12.5 s, book consults
+11.2 s, pouring 8.6 s, shelving 7.7 s, the glass 7.5 s — 184 s over eight
+matters.
+
+---
+
 ## Traps that have already cost time
+
+**DRIVING THE REAL INPUT PATH TAKES BOTH HALVES.** A pushed
+`InputEventMouseMotion` reaches `_input` but does **not** move the viewport's
+mouse — and `Desk._begin_press` reads `surface.get_local_mouse_position()`, so
+it kept picking whatever was under the real desktop cursor. `Input.warp_mouse`
+alone does not deliver a button press. You need the warp *and* the pushed event.
+Note the three coordinate spaces: `get_viewport_transform()` maps canvas to
+**window** (1600x900), `warp_mouse` takes window, and the viewport reports the
+result back in its own stretched space (1920x1080).
+
+**A HELD OBJECT MUST BE PLACED AND LEFT ALONE, NOT CHASED.** Correcting toward a
+target every frame feeds `DragSolver`'s lag back in as velocity: the wax spoon
+ended 234 units from a flame it had already reached. Move once, wait ~16 frames
+for the spring, re-measure. And do not creep — a sub-pixel `warp_mouse` moves
+nothing while the synthesised event claims it did, so the two disagree about
+where the mouse is and the object walks. Holding still means not touching the
+mouse.
+
+**THE DESK IS INERT WHILE THE HEAD IS UP, AND ONLY THE WHEEL BRINGS IT DOWN.**
+Every knock calls `view.look_up()`, and while `_view_amount > 0.06`
+`Desk._input` returns early — every click goes to the petitioner. Normally
+`_on_case_work_engaged` puts the head back down, but **that signal comes FROM
+the desk**, so it cannot fire while the desk is not answering. Mouse wheel down,
+or S, or Down. Nothing in the codebase exercised that path until a playthrough
+did.
+
+**THERE ARE PLACES ON THIS DESK WHERE A DOCUMENT CANNOT BE SEALED.** Rings,
+spoon and sheets are all clamped to `DESK_RECT`, whose y stops at 410. A tall
+charter (585 units) parked at y=330 puts its own wax slot at y=586, and the die
+stalls ~70 units short of wax it is sitting next to, with no feedback whatever.
+When something must be worked on, aim at the **wax slot's** position, not the
+sheet's.
 
 **Never rewrite a source file with PowerShell `Set-Content` / `-replace`.** It
 round-trips through cp1252 and silently mangles every non-ASCII character — seven
@@ -232,18 +321,51 @@ that is wrong in both places.
   necrology. So the Book of Matrices, the Almanac and the Kalendar are all
   load-bearing on day one, and withholding any of them breaks
   findable-must-be-renderable. Do not build a curriculum file to sequence them;
-  there is nothing to sequence. What IS front-loaded is `world.json`'s `desk_note`,
-  which names ten instructions before the first knock — stage that paragraph
-  through `opening_documents`/`after_case` instead.
+  there is nothing to sequence.
 
-- **Tuesday teaches a false rule about witnesses, twice, with no exception.** Both
-  deaths a player meets on Tuesday — Reinmar Vogt and Eckhard von Melle — carry
-  `died_*` fields that render on the parchment as a margin note. Nothing on Tuesday
-  ever shows a death that lives only in the roll, so case 04 is the first time the
-  parchment is silent and the Kalendar knows — a reversal of a pattern reinforced
-  twice, and precisely the misconception *absence is never evidence* exists to
-  forbid. Case 03 has three witnesses with no death records and a verdict with
-  slack; one Kalendar-only death there fixes it and changes no verdict.
+  **The memorandum was the front-loaded thing, and it is staged now
+  (2026-07-29).** Twenty-two sentences became nine. Four moved onto leaves
+  delivered by `day_01`'s `after_case` / `after_investigation` channels; four
+  were RETIRED to books that already carry them.
+
+  **Retiring and deferring are not interchangeable, and the difference is
+  mechanical.** `lay_out_day_documents` frees every `day_papers` entry at the
+  next dawn, so a delivered slip does **not** survive the day. Where a book
+  already holds the sentence permanently, deferring it makes it *less* available
+  than leaving it alone. Check the books before staging anything.
+
+  Two more facts that shaped the split: delivered slips are **not** exempt from
+  `case_work_engaged` the way `desk_note` is (`desk.gd`'s `_begin_press` names
+  only the note), so a slip picked up mid-hearing costs candle while the
+  memorandum never does — prefer `after_case`, which lands in the gap where the
+  clock is stopped. And the candle rule itself cannot be deferred by any channel
+  that exists: `after_investigation` requires stage WORKING, by which time the
+  clock is already running.
+
+- ~~**Tuesday teaches a false rule about witnesses, twice, with no exception.**~~
+  **Fixed 2026-07-29.** Gozwin, third witness on case 03, is now in the Saint Wend
+  roll at Aldric I 14 with nothing on the parchment, so Tuesday shows one death
+  that lives only in the book before Thursday makes one decisive. It reduces to
+  1214 under the roll's own election reckoning, which is the charter's year
+  exactly, so `WitnessCheck` emits `witness_died_that_year` — a NOTE — and case
+  03 stays REFER with all three verdicts defensible.
+
+  **The lever is narrow and worth knowing.** A roll hit that lands EARLIER than
+  the charter is `defect:witness_dead`, and a DEFECT here would leave the verdict
+  at REFER while silently collapsing `defensible_verdicts()` to `{REFER}` through
+  `is_pure_authority_contest()`'s `has_factual_objection()`. The verdict would
+  look untouched and every player who chose a law would be marked unsound.
+  `died == year` is the only shape that is a NOTE.
+
+  **And the obit's `note` must stay empty.** `KalendarBook` paginates on a flat
+  six NAMES per leaf regardless of their height, so a leaf is as tall as however
+  many of its six carry a note, and the first Saint Wend leaf clears its folio
+  number by under 5 px. `_test_every_leaf_fits` now covers obit leaves and fails
+  on printing through the folio number as well as on running off the board; it
+  was proved to bite at 16 px before being trusted.
+
+  Still open, deliberately: case 03 has no `consult_kalendar` beat, so nothing
+  rewards opening the book there. That is a petitioner line, and prose waits.
 
 - **The campaign is short on purpose. Scaffold now, prose last.** Eight matters
   across two days is a decision, not a gap: content authored against systems that
@@ -285,10 +407,24 @@ that is wrong in both places.
 
 ## What is actually built
 
-A third day is not built. Two are: Tuesday (fixed order, four matters) and
-Thursday (a tray you choose from, four of five slots used). Eight cases, and the
-campaign seams in `data/days/*.json` mean a third day is data rather than a
-session change.
+**Three days.** Tuesday (fixed order, four matters), Thursday (a tray you choose
+from), and **Saturday, which exists only if the week left somebody in the
+passage.** Every slot on `day_03` is gated `requires_unruled` on itself, so it
+holds exactly the arrears and nothing else; `SessionController._tick_closing`
+offers the next-day corner only when that day resolves to somebody, so a notary
+who cleared his week is never called in. Eight cases across three days.
+
+That is why the existing assertion "the campaign ends without inventing a
+third-day corner" still passes unedited — for a completed campaign it is still
+true. **Do not "fix" it by deleting it.**
+
+A docket records when a matter was RECEIVED, not when it was heard, which is what
+makes arrears free: an unheard Thursday matter arriving on Saturday still says
+"Called from the Thursday tray" and is telling the truth. **Re-sequencing matters
+BETWEEN Tuesday and Thursday is not free** and was designed and rejected — every
+docket's `received_note` names its day in player-visible prose, and three of
+case_06's arrival lines open "On Tuesday you admitted". Six cases' shipped prose,
+to move one matter.
 
 A portrait constrains scheduling: Reimbold Zant reuses Gero Kalt's bust because
 no new art exists, so the two of them cannot be heard on the same day. That is
@@ -385,8 +521,16 @@ These are recorded so the next person does not think they are undiscovered.
   has no downstream consequence whatever, and `Register.favor_totals()` itself is
   still called by nothing. The plan for making it a supply line rather than a
   score is in `docs/NEXT_SESSION.md`, along with the reason IMPERIAL favour must
-  not be the one banded. It is the least systemic of the three columns and the most obvious
-  place to spend the next campaign-scale effort.
+  not be the one banded.
+
+  **It was deferred deliberately on 2026-07-29, against the measurement.** The
+  supply line was gated on the working day being genuinely tight. Measured, it
+  is tight on Thursday (67% of the candle at a competent pace) and loose on
+  Tuesday (28%) — so the lever the plan names, a shorter issued candle, would
+  compound on the day that already bites and do nothing to the day that is
+  decoration. Retune Tuesday first, re-measure with `play_day`, and only then
+  decide whether standing should also move the candle. The Kalendar-gathering
+  and worse-resin levers do not have this problem and could go first.
 - ~~**Thursday is three consecutive "nothing is wrong, confirm it" matters.**~~
   **Half fixed 2026-07-28.** case_04 now produces the build's first and only
   `defect:` tier finding, so `verdict_policy`'s DEFECT -> REFER row executes in

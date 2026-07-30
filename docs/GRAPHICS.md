@@ -83,6 +83,15 @@ review and obvious in a frame:
 | Terminal candle wax painted a pale disc over the authored stub | since the late melt was added | the 4× guttering capture |
 | The wax spoon's light blocker sat under its handle instead of its offset bowl | since light occlusion was added | a geometry invariant plus a grazing-light frame |
 | The transparent glass aperture blocked the candle like a solid brass disc, then threw bar shadows when segmented | during the optical chassis integration | repeated 2.5× lens captures |
+| **The Almanac lay across the doorkeeper's memorandum and hid 255 units of it** — the seal instruction, "there is no second impression", the candle rule and the whole ring doctrine, unreadable at the moment the player is first asked to act on them | since the memorandum was written | opening shot_19, the untouched first-load frame, and comparing the JSON rects |
+
+That last one is the cheapest lesson in this table and the one most likely to
+recur: **two fixtures both built in `_build_fixtures` are stacked by the order
+they were added, and nothing anywhere warns you.** The memorandum was built
+before the books. Draw order is child order, so the book won. The fix was to
+move one call, not to touch a coordinate — and emphatically not `z_index`.
+Whenever you add a permanent object to the desk, ask what it lands on and what
+lands on it, then look.
 
 ```bash
 .tools/godot-4.6.3/Godot_v4.6.3-stable_win64_console.exe --path . --resolution 1600x900 --scene res://tests/qa_capture.tscn

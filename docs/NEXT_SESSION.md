@@ -37,9 +37,21 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 90, presentation 316, session 76, content PASS**. Run the rules
+Green is **rules 96, presentation 340, session 90, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
+
+And there is a fifth now, which is the only one that plays the game. Not
+headless, for the same reason the capture harness is not:
+
+```bash
+.tools/godot-4.6.3/Godot_v4.6.3-stable_win64_console.exe --path . --resolution 1600x900 --fixed-fps 60 --scene res://tests/play_day.tscn --session-log=.tools/play.jsonl --dwell=8
+```
+
+**Re-run it after anything that touches pacing, the desk layout, or the press.**
+It reports candle remaining at the start of the last matter; `--dwell` is the
+seconds of reading a machine cannot supply, and `--dwell=0` prices the
+mechanical floor alone.
 
 Then capture, and **open the frames**:
 
@@ -50,6 +62,84 @@ Then capture, and **open the frames**:
 Adding a `class_name` breaks every file that references it until the class cache
 is rebuilt (`--headless --path . --editor --quit`), and the error you get is a
 parse error in an *unrelated* file. You will hit this. It is in CONTINUITY.
+
+---
+
+## THE 2026-07-29 PLAYTHROUGH SESSION — READ THIS BEFORE ANYTHING BELOW IT
+
+Everything under "THE 2026-07-29 PLAN" further down was the plan. This is what
+happened to it. Green is now **rules 96, presentation 340, session 90, content
+PASS**.
+
+### The number, and it changes the argument
+
+**Somebody finally played it.** `tests/play_day.tscn` drives both days end to end
+through the real input path — `Input.warp_mouse` plus a synthesised button event,
+so `Desk._input -> _begin_press -> _pick -> Draggable.grab` runs as it does under
+a hand. It melts, pours, presses and peels through `PressController`'s own state
+machine, opens the books, puts the glass on the seal and the closing formula,
+holds the parchment to the flame, and carries a docket into the hearing notch.
+
+`--session-log` writes one JSONL line per action carrying **two** clocks: wall
+time, which always advances, and candle-seconds, which advance only while the
+player is deliberating. The gap between them is the answer to every pacing
+question, and nothing here could tell them apart before.
+
+| | mechanical floor | competent (`--dwell=8`) |
+|---|---|---|
+| one matter | ~22 s | ~85 s |
+| **Tuesday: candle at the last matter** | **94.6%** | **78.8%** |
+| **Thursday: candle at the last matter** | **89.5%** | **50.0%** |
+
+**THE CLOCK IS NOT DECORATION, AND IT IS NOT FELT ON TUESDAY EITHER. It is
+back-loaded.** Tuesday costs 28% of its candle at a competent pace. The same
+work costs 67% of Thursday, which is short both because it is authored at 720
+and because it is scaled by what Tuesday left. Tuesday buys Thursday — which is
+exactly what "the office issues a candle, not a candle a day" claims, so the
+mechanism works and only the *timing* of the pressure is not what the brief
+assumed.
+
+The reference books are **not** a trap: opening all four every matter, including
+fetching two out of the rack, fits inside the 22 s floor. The seal ritual is
+about 5 s of it; half the floor is carrying things around the desk.
+
+### What that means for phase B, which was conditional on this number
+
+**Phase B (favour as a supply line) is NOT built, and the condition is why.** It
+was gated on the day being genuinely tight. It is tight on Thursday and loose on
+Tuesday, so the lever the brief names — a shorter issued candle — would compound
+on the day that already bites and do nothing to the day that is decoration.
+Building it now means building against a premise the measurement half-refuted.
+
+**The honest next move is Tuesday's `day_seconds`, not a new system.** 1200 s
+against 341 s of competent work is 3.5x headroom. But note before touching it:
+that headroom is what produces a carry of ~0.72, sitting nicely inside
+`[0.45, 1.0]`, so Tuesday is well tuned *for the carry mechanic* and badly tuned
+*for tension on the day*. Those pull opposite ways and the choice between them
+is a design decision, not a bug fix. **Re-measure with `play_day` after any
+change to it** — that is what the harness is for.
+
+### Also done
+
+- **Half the memorandum was under the Almanac.** `_build_desk_note()` ran before
+  the books and draw order is child order, so 255 units of it were hidden at
+  dawn — including the seal instruction, "there is no second impression", the
+  candle rule, and the whole CONFIRM/DENY/REFER footer. Found by opening
+  shot_19. Fixed by child order. The note is now nine sentences; four moved onto
+  delivered leaves, four were retired to books that already carry them.
+- **Tuesday's false witness rule is fixed** — one obit, no verdict change.
+- **Saturday exists**, gated so it is offered only when the week left somebody
+  in the passage. `requires_unruled` landed with its loader line, both validator
+  rows and its `verify_content.py` entry in one commit, and `verify_content.py`
+  now rejects **any** slot key the loader does not parse.
+
+### Do not redo these
+
+- The full week re-sequencing (case_04 to Tuesday, Thursday down to two matters)
+  was designed and **rejected**: every docket names its day in player-visible
+  `received_note` prose and three of case_06's arrival lines open "On Tuesday
+  you admitted". Six cases' shipped prose to move one matter.
+- `data/world/curriculum.json`, still rejected, still for the same reason.
 
 ---
 
