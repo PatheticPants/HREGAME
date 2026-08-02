@@ -1075,8 +1075,65 @@ func _test_sweep_with_paper_in_hand(desk: Desk) -> void:
 	desk.set_process(false)
 
 
+## CLICKING THE BOOK THE MEMORANDUM NAMES OPENED IT INSIDE THE RACK.
+##
+## "The green book in the rack is the Kalendar" is one of nine sentences a cold
+## player gets before the first knock, and the obvious reply to it is to click
+## the green book. Draggable.grab() unstows on the press; _end_press returns
+## after on_click for a click, so _try_rack — the only caller of
+## DeskLedge.release — never ran; ReferenceBook.on_click opens wherever it is.
+## DeskLedge.SLOTS are at y = -310 and DESK_RECT starts at -250, so the player
+## got a full-size open book drawn entirely above the working surface, over its
+## neighbours, with the ledge still holding the slot against everything else
+## carried to it.
+##
+## Driven through Desk._begin_press / _end_press rather than by calling the fix,
+## because the bug lives in the seam between those two and a test that calls
+## _take_from_rack directly would have passed before the fix as well.
+func _test_a_racked_book_opens_on_the_desk(desk: Desk) -> void:
+	print("-- a racked book clicked open comes down onto the desk")
+	var book := desk.kalendar_book
+	_is_true(book != null and book.stowed,
+		"the Kalendar starts in a pigeonhole, as the memorandum says")
+	if book == null or not book.stowed:
+		return
+	var slot := desk.ledge.slot_of(book)
+	_is_true(slot >= 0, "and the ledge knows which hole it is in")
+
+	# Exactly what _begin_press does, in its order — the flag is read before
+	# grab() because grab() unstows, and that ordering IS the bug. A test that
+	# skipped the grab would pass against the broken code as well.
+	desk._held = book
+	desk._held_was_stowed = book.stowed
+	desk._dragged = false
+	book.grab(book.position)
+	_is_true(not book.stowed,
+		"the press alone already takes it out of the hole, which is the trap")
+	desk._end_press()
+
+	_is_true(book.is_open, "clicking it opens it")
+	_is_true(not book.stowed, "and takes it out of the rack")
+	_is_true(desk.ledge.slot_of(book) < 0,
+		"which frees the hole for something else")
+	# The whole open board, not just its centre.
+	var half := Vector2(book.data.size.x, book.data.size.y * 0.5)
+	_is_true(book.position.y - half.y >= Desk.DESK_RECT.position.y,
+		"the top board is on the desk rather than above it (top %.0f, desk %.0f)"
+		% [book.position.y - half.y, Desk.DESK_RECT.position.y])
+	_is_true(book.position.x - half.x >= Desk.DESK_RECT.position.x
+			and book.position.x + half.x <= Desk.DESK_RECT.end.x,
+		"and the opened width is inside the desk, not off its edge")
+
+	book.close_for_storage()
+	desk.ledge.take(slot, book)
+	book.stowed = true
+	book.solver.place(desk.ledge.slot_position(slot), 0.0)
+	book.position = desk.ledge.slot_position(slot)
+
+
 func _test_reachability(desk: Desk) -> void:
 	print("-- reachability")
+	_test_a_racked_book_opens_on_the_desk(desk)
 	for ring in desk.rings:
 		_is_true(Desk.DESK_RECT.has_point(ring.position),
 			"%s ring begins on the desk" % Lex.verdict_name(ring.verdict))

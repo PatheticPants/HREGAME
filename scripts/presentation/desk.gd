@@ -99,6 +99,9 @@ var day_papers: Array[Draggable] = []
 var current_charter: CharterView = null
 
 var _held: Draggable = null
+## Was the thing under the hand in a pigeonhole when the press began? Read after
+## the fact, because Draggable.grab() unstows before anyone can ask.
+var _held_was_stowed := false
 var _press_origin := Vector2.ZERO
 var _dragged := false
 var _cursor := Vector2.ZERO
@@ -813,6 +816,8 @@ func _begin_press() -> void:
 	if not target is DocketSlip and target != desk_note:
 		case_work_engaged.emit(target)
 	_held = target
+	# Recorded BEFORE grab(), which unstows unconditionally. See _take_from_rack.
+	_held_was_stowed = target.stowed
 	bring_to_front(target)
 	target.grab(p)
 
@@ -835,9 +840,58 @@ func _end_press() -> void:
 	# A press and release in nearly the same place is a click, not a drag. Books
 	# open on it; everything else ignores it and is simply put back down.
 	if not _dragged:
+		# CLICKING A RACKED BOOK OPENED IT INSIDE THE RACK. See _take_from_rack.
+		if _held_was_stowed:
+			_take_from_rack(was)
 		was.on_click(local)
 		return
 	_try_rack(was)
+
+
+## Take something out of its pigeonhole because the player clicked it there.
+##
+## THIS WAS A LIVE BUG AND THE MEMORANDUM POINTED STRAIGHT AT IT. "The green book
+## in the rack is the Kalendar" is one of nine sentences a cold player is given
+## before the first knock, and the obvious response to it is to click the green
+## book. Three facts then met:
+##
+##   Draggable.grab() calls unstow() unconditionally, so `stowed` went false on
+##   the press;
+##   _end_press returns after on_click for a click, so _try_rack — the ONLY
+##   caller of DeskLedge.release — never ran;
+##   ReferenceBook.on_click opens regardless of where the book is.
+##
+## DeskLedge.SLOTS sit at y = -310 and DESK_RECT starts at y = -250, so the
+## result was a full-size open book drawn entirely above the working surface,
+## overlapping its neighbours, while the ledge still recorded the slot as
+## occupied and refused everything else that was carried to it. Recoverable only
+## by dragging the book away, which a player has no reason to think of.
+##
+## It comes down out of its hole instead. Same x, so it arrives where it lived
+## and the trip is still legible; y far enough down that an open book — twice
+## its closed width — is on the desk and inside DESK_RECT.
+const RACK_READING_Y := 120.0
+
+
+func _take_from_rack(who: Draggable) -> void:
+	if who == null or not is_instance_valid(who):
+		return
+	var from_x := who.position.x
+	if ledge != null:
+		var slot := ledge.slot_of(who)
+		if slot >= 0:
+			from_x = ledge.slot_position(slot).x
+		ledge.release(who)
+	# A book about to be opened is twice as wide as the one being measured.
+	var half := who.hit_size * 0.5
+	if who is ReferenceBook:
+		half.x = who.hit_size.x
+	var room := DESK_RECT.grow(-8.0)
+	var at := Vector2(
+		clampf(from_x, room.position.x + half.x, room.end.x - half.x),
+		clampf(RACK_READING_Y, room.position.y + half.y, room.end.y - half.y))
+	who.solver.place(at, who.solver.rest_angle)
+	who.position = at
 
 
 func _try_hear_docket(slip: DocketSlip) -> void:
