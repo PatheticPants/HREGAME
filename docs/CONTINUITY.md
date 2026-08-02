@@ -605,6 +605,83 @@ path, the dead air between cases and the unreadable ring stand were all found.
 
 ---
 
+## ASKED FOR ON 2026-08-02 AND NOT DONE. Read this before planning.
+
+Three of the owner's requests are not in the build. None was refused; all three
+are real work and saying so is more use than a half-built version.
+
+1. **Stage the reference books across the days.** "We should not have every book
+   available at the start." Wanted, and it collides with a contract that has been
+   broken three times and treated as critical every time: *everything the ledger
+   says was findable must have been renderable on the desk.* Every shipped matter
+   emits a SealCheck, a DateCheck AND a WitnessCheck finding, so all four books
+   are load-bearing on day one as the content stands.
+   **The way through is arrival, not withholding.** `DayOpeningDocument` already
+   delivers objects mid-day through `after_case` and `after_investigation`, and
+   `Desk.reveal_register_review` already puts a book on the desk as a physical
+   event. A book that ARRIVES before the matter that needs it satisfies both —
+   Tuesday could open with the charter, the glass and the Matrices, and the
+   Almanac could come up the stair when the first regnal date appears. That needs
+   a per-day furniture manifest, which `Desk._build_fixtures` cannot read today
+   because it runs before `session.begin()`. Start there.
+
+2. **Heating the wax should be over the flame.** "Right now you just hover over
+   the wax area, which does not make much sense." The code already requires the
+   spoon's bowl to be inside a 108x60 box above the wick
+   (`PressController._update_spoon`, `heat_radius` 54) — so what is wrong is not
+   the rule but that NOTHING SAYS THE RULE IS BEING MET. There is a `wax_melt`
+   loop and no visual whatever: no glow on the brass, no change in the cake, no
+   cue when you enter or leave the zone. Give the bowl a heat response before
+   moving any geometry; the complaint is legibility wearing a mechanics costume.
+
+3. **Events that use the burning.** The mechanic shipped; nothing in the content
+   asks for it yet. The obvious ones, in order of cheapness: a letter that orders
+   its own destruction (the R.V. thread already has the tone for it), a matter
+   where the petitioner asks you to lose their document, and Thursday's
+   `letter_aue_recall`, which already says "No ruling is required of you. The
+   file is closed either way" — a player who confirmed the forgery is handed the
+   evidence of it back with nothing to do about it, and a candle.
+
+## THE MAGNIFIER IS GLITCHY. DIAGNOSED 2026-08-02, NOT FIXED.
+
+Reported, with permission to write it down rather than fix it. Three specific
+causes, all in `lens.gd`, all confirmed by reading it. None is the shader.
+
+1. **Two range tests with two different anchors, and they disagree.**
+   `_find_subject` requires the subject's `detail_centre()` to be within
+   `RADIUS * 0.85` (98.6) of the lens centre, AND `_subject_contains_lens` to be
+   true, which requires the lens's own CENTRE to be inside the subject's hit
+   rectangle. For a charter those two anchors are hundreds of units apart — the
+   closing formula is at the foot, the rectangle is the whole sheet — so there
+   is a band where the glass is visibly over the writing and focuses, another
+   where it is visibly over the writing and does not, and the player cannot see
+   which is which. That is most of the "fiddly" feel.
+
+2. **Changing subject resets the focus to zero.** `_process` does
+   `if found != _focus: _focus_amount = 0.0`. Sweeping the glass across a desk
+   with several inspectable things restarts the fade every time the winner
+   changes, so the image pumps instead of resolving. There is no hysteresis and
+   no preference for the subject it already had.
+
+3. **And the pump is amplified, not damped, by the magnification curve.**
+   `optical_magnification()` is `lerp(generic, 0.0, _focus_amount)` — the
+   generic screen-magnification is driven to ZERO as authored detail resolves.
+   So an oscillating `_focus_amount` does not merely fade a detail plate in and
+   out, it swings the whole aperture between 0.16–1.0 generic magnification and
+   none. Two systems that should be independent are wired in opposition.
+
+   `_settle` has the same shape of problem one level down: it keys off
+   `solver.speed() < 60.0` with no hysteresis, and the solver does not settle to
+   exactly zero, so a glass the player thinks is stationary can cross that line
+   repeatedly.
+
+**If you fix this, fix 2 and 3 first and measure before touching 1.** They are
+cheap — a small preference for the incumbent subject, and a floor under the
+generic magnification so authored detail never drives it to zero — and they may
+account for the whole complaint on their own. 1 is a real design question (what
+should "the glass is over this" mean for an object whose interesting part is not
+its middle) and changing it will move which lookups are possible.
+
 ## What the owner found by PLAYING it, 2026-08-02 — six reports, six real defects
 
 That is the third session running in which the highest-value findings came from a
