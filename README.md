@@ -4,8 +4,9 @@ A document-inspection game set in a fictionalised Holy Roman Empire. You are a
 low-born notary of the Imperial Chancery. People bring you claims to land and
 title, and you rule on them, and the ruling is executed in wax.
 
-Two working days, eight matters, five verification types, and a Register that
-carries what you did on the first day into the second.
+Three working days, nine matters, six verification types, and a Register that
+carries what you did on the first day into the rest of the week. The third day
+exists only if the week left somebody in the passage.
 
 ---
 
@@ -173,8 +174,30 @@ stays readable, and the warm-to-cold turn is the visual full stop on the day.
 Finish all three yourself and the notary snuffs it himself, which is a different
 ending from having it snuffed for him.
 
-`day_seconds` in `data/world/world.json` is the pacing dial: 1200 by default.
-**Drop it to 90 to watch the whole arc in one sitting.**
+### What the stub buys, and what it costs
+
+The office issues a candle, not a candle a day. Whatever is left of one when you
+finish is **added** to the next morning's, up to about a third of it — so
+finishing early is worth real working time later in the week rather than a line
+of prose. A day is never shorter than it is authored to be, and a day you lose
+does not make the next one shorter as well.
+
+But the stub is only as good as the day's rulings were. Rule three of four
+soundly and three quarters of it comes back with you; the rest is burnt in the
+reviewing room while somebody goes over what this desk did. That is the price of
+a guess, and it exists because a clock that is genuinely short rewards skipping
+the books that cannot answer — which is a skill — exactly as much as it rewards
+guessing, which is not.
+
+Nothing about this is a number on a screen. The ledger writes "Rulings sound: 3
+of 4" and then says where the rest of the candle went.
+
+`day_seconds` in `data/days/*.json` is the pacing dial: Tuesday is 520, Thursday
+400, Saturday 360. **Drop one to 90 to watch the whole arc in one sitting.**
+Before changing any of them, run `tools/sweep_pacing.ps1` — the honest answer to
+"is the day tight" is a curve against reading speed, and a retune judged at one
+point on that curve is how you get a change that is exactly wrong for everybody
+except the imaginary player you measured.
 
 The pressure is never a stopwatch on screen. It is that everything you need takes
 up room, the room runs out, and so does the light.

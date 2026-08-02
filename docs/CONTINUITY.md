@@ -28,10 +28,20 @@ python tools/verify_content.py
 
 | suite | checks |
 |---|---|
-| rules | 96 |
-| presentation | 340 |
-| the day (full loop) | 90 |
+| rules | 107 |
+| presentation | 403 |
+| the day (full loop) | 121 |
 | content + encoding | PASS |
+
+And a fifth, which is the only one that answers a pacing question:
+
+```bash
+powershell -File tools/sweep_pacing.ps1 -Dwells "0,8,12,16" -Tag now
+```
+
+**`-Dwells` is a COMMA STRING, not an array.** `powershell -File script -Dwells
+0,8,16,24` binds all four to one `[int[]]` parameter as the single integer
+**81624**, runs one nonsense sweep, and reports nothing wrong.
 
 **There is a fifth thing to run now, and it is the only one that plays the
 game.** `tests/play_day.tscn` drives both days end to end through the real input
@@ -99,7 +109,59 @@ and the harness could not.
 
 ---
 
-## What a working day actually costs — MEASURED, and it is a CURVE
+## THE CLOCK WAS RETUNED 2026-08-01. THIS SECTION IS THE CURRENT ONE.
+
+The table further down is the *old* build and is kept only so the change can be
+argued with. Run `powershell -File tools/sweep_pacing.ps1 -Dwells "0,8,12,16" -Tag now`
+to reproduce any of this.
+
+| dwell | TUESDAY (520 s) | THURSDAY (400 s + stub) | SATURDAY (360 s) |
+|---|---|---|---|
+| 0 | burn 0.16, last at 88.1% | burn 0.22, last at 82.2% | not offered |
+| 8 | burn **0.65**, last at 51.8%, **gutters** | burn **0.82**, last at 33.6%, **gutters** | not offered |
+| 12 | burn 0.88, last at 34.0%, gutters | **burnt out, 3 of 5** | burn 0.64, 2 matters |
+| 16 | **burnt out, 3 of 4** | burnt out, 2 of 5 | burnt out, 2 of 4 |
+
+**What changed and why.** Tuesday was 1200 s and cost 337 s at dwell 8 — burn
+0.28, oversupplied three and a half times over at every reading speed. Three
+authored systems had therefore never been rendered in ordinary play: the stub
+never slumped, `_output()` is `lerp(1.0, 0.30, ease(burn, 2.2))` so the light
+contracted by four per cent, and `GUTTERING_FROM` at 0.86 was crossed only on
+days the player LOST. The gutter, the smoke and the audible warning were a death
+rattle rather than a warning. `GUTTERING_FROM` is **0.62** now and every day a
+competent player completes reaches it.
+
+**The carry ADDS and used to MULTIPLY, and that had to change first.**
+`day_seconds = authored * unburnt_fraction` welded the days together: shortening
+Tuesday lowered the carry and therefore shortened Thursday, for exactly the
+player already drowning on Thursday. It also punished falling behind by making
+you fall further behind — the only notary who ever reached Saturday was the one
+two candles had already beaten, and the multiplication then took a third off
+Saturday too. What carries now is **wax, in seconds, added**, capped at
+`SessionController.CARRY_CAP` (0.34) of the receiving day. A day is never
+shorter than it is authored to be, which is why `NEXT_DAY_FLOOR` is gone.
+
+**Soundness scales the stub, and that is the counterweight.** A tight day rewards
+skipping the books that cannot answer this packet — which is the actual skill,
+and the books teach it themselves — but it rewards GUESSING exactly as much
+unless being wrong costs something, and being wrong cost one ledger line and a
+favour tally nothing reads. `Register.sound_fraction_for_day` scales what you
+carry. **Cap first, then scale**: the reverse looks equivalent and is not, because
+three quarters of Tuesday's 183 s remainder is 137 s which still clips to the
+same 136 s cap, so one wrong ruling in four would have cost nothing at all.
+
+**The degradation is graceful now, which it was not.** At dwell 12 a player hears
+4 + 3 + 2 = all nine matters across three days. At dwell 16 they hear 7 of 9 and
+the last ledger names the two who never got in. Before the change a slow player
+simply lost matters to a compounding candle.
+
+**Do not tune any of this from one point on the curve.** That is how you get a
+retune that is exactly wrong for everybody except the imaginary player you
+measured, and it is why `tools/sweep_pacing.ps1` exists.
+
+---
+
+## What a working day actually costs — the OLD build, kept to argue with
 
 The first playthroughs this project has ever had. `tests/play_day.tscn` plays
 every authored day through the real input path; `--dwell` is the seconds of
@@ -542,6 +604,45 @@ path, the dead air between cases and the unreadable ring stand were all found.
 
 ---
 
+## Four things the 2026-08-01 pass found, all of which were invisible to every suite
+
+Recorded because each is a *shape* of defect this project keeps producing, not
+just four bugs.
+
+1. **The tutorial was a softlock.** `PRACTICE_REVIEW` had no branch in
+   `_process`, so the only exit was the glass on your own impression followed by
+   releasing it — and the only sentence in the game that said so lived in the
+   practice docket's `doorkeeper_note`. This project had already measured that
+   hand at 0.211 Michelson contrast against 0.557 for the upright one, already
+   written down that it "is never authoritative", and already moved the candle
+   rule out of it for exactly that reason. **The shape: a register the game
+   trains you to discount was carrying load-bearing text, again.**
+
+2. **The content loader forbade the content two authored FATALs exist to catch.**
+   It rejected any seal whose `claims_owner` is not in the Book of Matrices — and
+   a house that keeps no dies has no owner in that book *by definition*, so
+   `seal_where_none_used` was unauthorable and so is `matrix_unknown`.
+   `tools/verify_content.py` had it right and printed a note. **The shape: the
+   two rule implementations disagreed and only the stricter one blocked, so the
+   disagreement read as content being wrong.**
+
+3. **Pagination was deciding content.** `ReferenceBook` pairs `(spread*2,
+   spread*2+1)`, so `thurn_dietrich_i` at page 5 and `thurn_dietrich_ii` at page 6
+   fell on different spreads and could never be seen together — the one
+   comparison two shipped cases turn on. Fixing it with ONE leaf silently
+   un-paired the abbey from the chapter, which is the comparison case_03 turns
+   on, and every test still passed. `_test_facing_pages` is the guard. **The
+   shape: an invariant that lives in the parity of a list and is asserted
+   nowhere.**
+
+4. **Clicking a racked book opened it 292 units above the desk.** `grab()`
+   unstows on the press, `_end_press` returns after `on_click` for a click, so
+   `_try_rack` — the only caller of `DeskLedge.release` — never ran, and the
+   ledge went on refusing that hole to everything else. The memorandum names the
+   Kalendar as "the green book in the rack", so this is a very likely first
+   interaction. **The shape: a bug in the seam between two handlers, on a path
+   no capture frame and no harness ever took.**
+
 ## Known and deliberately not fixed
 
 These are recorded so the next person does not think they are undiscovered.
@@ -558,10 +659,16 @@ These are recorded so the next person does not think they are undiscovered.
   `ReferenceBook`'s half of this — a seeded wax outline rebuilt per frame per open
   plate — WAS real and is fixed: `WaxShape.outline` is memoised and the
   presentation suite asserts the memo holds.
-- **Favour is REPORTED and inert.** The day ledger names who is pleased (see
-  `session_controller.gd`'s `_compose_ledger`), so it is not invisible — but it
-  has no downstream consequence whatever, and `Register.favor_totals()` itself is
-  still called by nothing. The plan for making it a supply line rather than a
+- **Favour is REPORTED and still has no downstream consequence.**
+  `Register.favor_totals()` is finally CALLED (2026-08-01) — the campaign's last
+  page prints the week's cumulative standing, which the day-local tally never
+  could. But standing still changes nothing about the desk. The supply-line plan
+  is in `docs/NEXT_SESSION.md`; the gating half of it (`requires_favor_below` on
+  `DayOpeningDocument`, re-gating Thursday's letters on accumulated favour rather
+  than on one verdict) is the obvious next slice and is deliberately not built.
+  **`Register.impression_grades()` is still called by nothing at all** — Craft
+  reaches the ledger as one sentence and the blotter as crumbs, and that is the
+  whole of it. The plan for making it a supply line rather than a
   score is in `docs/NEXT_SESSION.md`, along with the reason IMPERIAL favour must
   not be the one banded.
 

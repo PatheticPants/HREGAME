@@ -7,7 +7,89 @@ claims to land and title; you verify charters, wax seals, witness lists and
 regnal dates against a body of law, then rule in wax with a signet ring. One
 carried candle is the only light in the room and the day's clock.
 
-**Newest first: `docs/CODEX_IMPLEMENTATION_AND_REVIEW_HANDOFF.md` opens with the
+---
+
+## NEWEST: 2026-08-01 — THE CLOCK IS A CLOCK NOW. READ THIS FIRST.
+
+Everything below this section predates it. Where they disagree, this wins.
+
+**Green is now rules 107, presentation 403, session 121, content PASS.**
+
+### What was wrong, measured rather than argued
+
+Tuesday was 1200 s and cost **337 s** at a competent pace — burn 0.28,
+oversupplied three and a half times over at *every* reading speed. So:
+
+- `GUTTERING_FROM` was 0.86 and was crossed **only on days the player lost**. The
+  gutter, the smoke and the audible warning were a death rattle, not a warning.
+- `_output()` is `lerp(1.0, 0.30, ease(burn, 2.2))`, so at burn 0.28 the light
+  had contracted by **four per cent**. The README's central claim — that the pool
+  of usable light pulls in until carrying the candle becomes the only way to work
+  — had never once happened in play.
+- The stub never slumped. Compare shot_36 with shot_38: two different objects,
+  and only the first was ever reachable.
+- **62% of a matter was book consultation** (12 consults, 58 of 84 candle-seconds
+  on case_01), and across nine matters only **four findings dispose of an
+  instrument**. Roughly 10% of what the investigation produces is signal.
+
+And the skill the books already teach — the Kalendar's covering line says it
+keeps Thurn's dead and nobody else's, the Matrices plate says a Marchfeld die is
+almost never dead, so you can tell from the charter alone which books can
+possibly speak — was worth **nothing**, because there was no reason not to open
+all four every time. **The game was not missing a mechanic. It was missing a
+price.**
+
+### What was done
+
+1. **The carry ADDS instead of multiplying**, in seconds of wax, capped at
+   `CARRY_CAP` (0.34). The multiplication welded the days together, so the retune
+   the measurement demanded was impossible until the shape changed.
+2. **Tuesday 520, Thursday 400, Saturday 360.** `GUTTERING_FROM` 0.62.
+3. **Soundness scales the stub** (`Register.sound_fraction_for_day`) — the
+   counterweight, without which a tight day rewards guessing exactly as much as
+   it rewards triage. **Cap first, then scale**, or the cap eats the penalty.
+4. **The tutorial softlock, the loader that forbade its own FATALs, the split
+   Thurn spread, and the racked book that opened above the desk.** All four are
+   written up in `docs/CONTINUITY.md` by the *shape* of defect they represent.
+5. **case_09 stopped being six identical lookups** and now fires
+   `seal_where_none_used`, authored with the check and never once reached.
+6. **The campaign has a last page**, and `favor_totals()` is finally called.
+
+The curve, and `tools/sweep_pacing.ps1` regenerates it:
+
+| dwell | TUESDAY | THURSDAY | SATURDAY |
+|---|---|---|---|
+| 8 | burn 0.65, gutters | burn 0.82, gutters | not offered |
+| 12 | burn 0.88, gutters | burnt out, 3 of 5 | 2 matters, burn 0.64 |
+| 16 | burnt out, 3 of 4 | burnt out, 2 of 5 | burnt out, 2 of 4 |
+
+### What to do next, in order
+
+1. **FAVOUR AS A SUPPLY LINE — the gating half.** `favor_totals()` is called now
+   but standing still changes nothing about the desk. Add `requires_favor_below`
+   to `DayOpeningDocument` (parse it in `content_loader` in the SAME commit — an
+   unparsed slot key is silently ignored) and re-gate Thursday's letters on
+   accumulated standing rather than on one verdict. This is the largest inert
+   system left and the plan for it is section B below.
+2. **The Kalendar answers about one house out of seven.** Of 16 distinct witness
+   `person_id`s across nine charters, exactly two are in the one surviving roll.
+   A second returning house would make the book worth opening more than once a
+   week. **Any new obit flips a case's `correct_verdict`** — both verifiers catch
+   it, but the outcomes and precedent chain must move with it.
+3. **`Sheet.on_click` does nothing.** `draggable.gd` returns false and
+   `desk.gd` discards the result, so a click on the charter, the docket, the
+   tablet, the spoon, a ring or the stylus produces a pickup sound, a drop sound
+   and no state change. `play_day.gd` has to fake squaring a sheet up before
+   every seal because the player has no verb for it.
+
+**Do NOT** make `was_sound` follow the office instead of `is_defensible`. It was
+recommended and it is wrong: it makes taking a side in a genuine conflict of laws
+"unsound", which contradicts the Almanac's own doctrine page and collapses the
+best idea in the game into a single safe button.
+
+---
+
+**Older: `docs/CODEX_IMPLEMENTATION_AND_REVIEW_HANDOFF.md` opens with the
 2026-07-29 review of the Codex optics pass.** Six defects were fixed there and
 three things were investigated and rejected; the rejections are worth as much as
 the fixes, because two of them are time sinks that look like real bugs.
@@ -37,9 +119,18 @@ repository.
 python tools/verify_content.py
 ```
 
-Green is **rules 96, presentation 383, session 90, content PASS**. Run the rules
+Green is **rules 107, presentation 403, session 121, content PASS**. Run the rules
 suite before the Python one: it writes `.tools/derived_findings.json`, and the
 Python compares every finding against it rather than only the final verdict.
+
+And the pacing sweep, which is the only thing that can answer "is the day tight":
+
+```bash
+powershell -File tools/sweep_pacing.ps1 -Dwells "0,8,12,16" -Tag now
+```
+
+`-Dwells` is a **comma string, not an array** — `-Dwells 0,8,16,24` through
+`powershell -File` binds to the single integer 81624 and reports nothing wrong.
 
 And there is a fifth now, which is the only one that plays the game. Not
 headless, for the same reason the capture harness is not:
