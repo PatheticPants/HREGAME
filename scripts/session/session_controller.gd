@@ -222,6 +222,19 @@ func _begin_day(which: int) -> void:
 		"selection": String(current_day.selection_mode),
 	})
 	desk.lay_out_day_documents(current_day.resolve_opening_documents(register))
+	# AND THE CORRECTION FOR YESTERDAY'S LAST MATTER IS WAITING ON THE DESK.
+	#
+	# The senior hand reviews a mistake only after another matter has passed
+	# through the office, so the final ruling of a day was corrected by nothing
+	# and the player was never told. On Tuesday the final matter is the mill on
+	# the Aue — the day's authored sting, and the one most likely to be got
+	# wrong. Now the book is out of its hole with the vermilion slip standing
+	# proud of it before the first knock, which is what a chancery actually does
+	# overnight, and it costs no candle because the day has not started.
+	desk.refresh_register_book()
+	var closed := register.own_entries()
+	if day_index > 0 and not closed.is_empty() and not closed.back().was_sound:
+		desk.reveal_register_review()
 	# AN EMPTY TRAY IS A HANG, and it was reachable the moment a day's slots
 	# could all resolve to nothing. CHOOSING has no tick and no timeout: it waits
 	# for a docket_selected that no slip exists to emit, forever. The gate on the
@@ -1120,7 +1133,13 @@ func _ledger_summary() -> Array[Dictionary]:
 		# It must name a QUANTITY OF WAX and never a quantity of time, because
 		# the ledger has no numbers in it and a clerk writing this up at dusk
 		# would be looking at a stub in a dish.
-		if day_index + 1 < days.size() and desk != null:
+		# _next_day_has_anybody(), NOT day_index + 1 < days.size(). Saturday is a
+		# consequence rather than a fixture, so a notary who cleared his week has
+		# no next day at all — and the two conditions disagreed, which meant a
+		# clean Thursday closed by promising the player a stub for a morning that
+		# was never going to come. The ledger corner has always used the right
+		# test; this paragraph did not.
+		if _next_day_has_anybody() and desk != null:
 			# The same arithmetic _begin_day will perform in the morning, said
 			# tonight. A player must never learn a rule by having already been
 			# charged under it.
@@ -1167,6 +1186,65 @@ func _ledger_summary() -> Array[Dictionary]:
 			parts.append("%d %s" % [int(tally[g]), Lex.grade_name(int(g))])
 		out.append(Ledger.text("Seals struck: %s." % ", ".join(parts), 11, Ink.FADED))
 
+	out.append(Ledger.gap(10))
+	out.append_array(_ledger_week())
+	return out
+
+
+## THE CAMPAIGN HAD NO LAST PAGE. IT SIMPLY STOPPED.
+##
+## The final ledger printed one day's tally and then the session sat in
+## Stage.LEDGER with no corner to turn, so a week of consequence ended on a
+## sentence about Thursday. Three functions existed to say what the week came to
+## — Register.sound_count(), ruled_count() and favor_totals() — and a repo-wide
+## grep found ZERO callers for any of them. favor_totals in particular sums
+## across every day, while the day block above re-sums locally from
+## entries_for_day, so Tuesday's favour had never once reached Thursday's page
+## despite twenty-seven authored favour dictionaries in the case files.
+##
+## This is that page. It is still three columns and still no score: how many
+## matters this desk ruled, how many the law agreed with, and who ended the week
+## pleased. Nothing is combined and nothing is graded.
+func _ledger_week() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if _next_day_has_anybody():
+		return out
+	var ruled := register.ruled_count()
+	if ruled <= 0:
+		return out
+
+	out.append(Ledger.rule_line())
+	out.append(Ledger.gap(8))
+	out.append(Ledger.heading("THE WEEK", 13))
+	out.append(Ledger.gap(4))
+	out.append(Ledger.text("Matters ruled at this desk: %d.  The law agreed with %d."
+		% [ruled, register.sound_count()], 12))
+
+	# Cumulative, across every day. This is the whole difference between a tally
+	# and a position: six separate reasonable decisions turn out to be one.
+	var totals := register.favor_totals()
+	var said := false
+	out.append(Ledger.gap(4))
+	for a in totals:
+		var n := int(totals[a])
+		if n == 0:
+			continue
+		said = true
+		var who := Lex.sentence(Lex.authority_name(int(a)))
+		var verb := "has had the better of this desk all week" if n > 0 \
+			else "has not had the better of this desk once"
+		out.append(Ledger.text("%s %s." % [who, verb], 11,
+			Ink.CHANCERY if n > 0 else Ink.RUBRIC))
+	if not said:
+		out.append(Ledger.text(
+			"Nobody found anything in the week worth writing down about you.", 11,
+			Ink.FADED))
+
+	out.append(Ledger.gap(6))
+	out.append(Ledger.note(
+		"The book stays on the desk. The next man to sit here will read it, and "
+		+ "the parties have already read it, and neither of them was in the "
+		+ "room.", 11))
 	out.append(Ledger.gap(10))
 	return out
 

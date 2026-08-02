@@ -1800,6 +1800,38 @@ func _test_evidence_is_on_the_desk(desk: Desk) -> void:
 	_is_true(not desk.register_book.review_attention
 			and desk.register_book.is_open,
 		"opening the corrected folio clears its review slip")
+
+	# THE LAST RULING OF A DAY IS STILL A RULING.
+	#
+	# `reviewed` was `i + 1 < own.size()` — an entry got its correction only if a
+	# LATER entry existed. So the final matter of every day carried none, and the
+	# final matter of the campaign carried none ever. On day_01 that is case_08,
+	# the mill on the Aue: the day's authored sting, the only case whose
+	# decisive fact needs a verb rather than a lookup, and the likeliest in the
+	# build to be got wrong. The player confirmed a forgery and the day ended.
+	var last_matter := Register.new()
+	var closing := RulingRecord.new()
+	var knife := _lore_data.case_by_id(&"case_08_mill_on_the_aue")
+	closing.case_id = knife.id
+	closing.case_title = knife.title
+	closing.day_id = &"day_01"
+	closing.verdict = Lex.Verdict.CONFIRM
+	closing.lawful_verdict = Lex.Verdict.DENY
+	closing.was_sound = false
+	closing.review_headline = "The year has been scraped and rewritten"
+	closing.review_detail = "Held to the flame it comes back."
+	last_matter.add(closing)
+	var still_today := ""
+	for page in RegisterBook.build(last_matter, _lore_data, &"day_01").pages:
+		still_today += page.marginalia + "\n"
+	_is_true(not still_today.contains("scraped and rewritten"),
+		"the office has not yet answered for a matter ruled this morning")
+	var day_closed := ""
+	for page in RegisterBook.build(last_matter, _lore_data, &"day_02").pages:
+		day_closed += page.marginalia + "\n"
+	_is_true(day_closed.contains("scraped and rewritten"),
+		"but the day's last ruling is corrected once that day is over")
+
 	# Restore the live Register after the synthetic review proof.
 	desk.refresh_register_book()
 

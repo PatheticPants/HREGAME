@@ -593,6 +593,28 @@ func _full_thursday() -> void:
 			and divider_text.contains("THURSDAY"),
 		"the physical Register preserves both day boundaries")
 
+	# THE CAMPAIGN HAD NO LAST PAGE. It printed a Thursday tally and stopped, and
+	# the three functions written to say what a WEEK came to — sound_count,
+	# ruled_count, favor_totals — had zero callers anywhere in the repository.
+	var final_ledger := ""
+	for line: Dictionary in session._compose_ledger():
+		final_ledger += String(line.get("text", "")) + "\n"
+	_is_true(final_ledger.contains("THE WEEK"),
+		"a finished week closes on a page about the week")
+	var week_total := session.register.ruled_count()
+	_is_true(week_total > Lore.data.day_by_id(&"day_02").resolve_cases(
+			Lore.data, Register.new()).size(),
+		"whose count spans both days rather than only the last (%d)" % week_total)
+	_is_true(final_ledger.contains("Matters ruled at this desk: %d" % week_total),
+		"and reports every matter this desk ruled, not this day's")
+
+	# AND THE STUB PARAGRAPH DOES NOT PROMISE A MORNING THAT IS NOT COMING.
+	# It tested day_index + 1 < days.size() while the ledger corner tested
+	# _next_day_has_anybody(); Saturday exists as a file but not as a day for a
+	# notary who cleared his week, so the two disagreed on exactly this run.
+	_is_true(not final_ledger.contains("lit on top of tomorrow's"),
+		"and does not offer a stub for a day nobody is waiting for")
+
 	_close(main)
 
 

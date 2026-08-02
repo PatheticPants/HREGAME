@@ -341,7 +341,8 @@ func _build_kalendar_book() -> void:
 func _build_register_book() -> void:
 	register_book = ReferenceBook.new()
 	surface.add_child(register_book)
-	register_book.bind(RegisterBook.build(session_register(), Lore.data), DESK_RECT)
+	register_book.bind(RegisterBook.build(session_register(), Lore.data,
+		current_day_id()), DESK_RECT)
 	register_book.consulted.connect(_on_book_consulted)
 	books.append(register_book)
 	# IT HAS TO BE STANDING AT THE HOLE BEFORE IT CAN GO IN.
@@ -363,6 +364,14 @@ func session_register() -> Register:
 	return session.register if session != null else Register.new()
 
 
+## Which day is still open, for the Register's review rule. Empty before the
+## session exists, which correctly means "nothing is under way, review it all".
+func current_day_id() -> StringName:
+	if session == null or session.current_day == null:
+		return &""
+	return session.current_day.id
+
+
 ## Rebuild the Register's pages after a ruling, preserving whether it was open
 ## and roughly where the reader had got to.
 func refresh_register_book() -> void:
@@ -372,7 +381,8 @@ func refresh_register_book() -> void:
 	var was_spread := register_book.spread
 	var here := register_book.position
 	var stowed := register_book.stowed
-	register_book.bind(RegisterBook.build(session_register(), Lore.data), DESK_RECT)
+	register_book.bind(RegisterBook.build(session_register(), Lore.data,
+		current_day_id()), DESK_RECT)
 	register_book.solver.place(here, register_book.rotation)
 	register_book.position = here
 	register_book.stowed = stowed

@@ -24,7 +24,27 @@ const COVER := Color(0.30, 0.20, 0.26)
 const PAGE := Color(0.88, 0.85, 0.76)
 
 
-static func build(register: Register, lore: LoreData) -> BookData:
+## THE LAST RULING OF EVERY DAY WAS NEVER REVIEWED, AND ON TUESDAY THAT IS THE
+## KNIFE.
+##
+## The senior hand corrects a mistake only after another matter has passed
+## through the office, which is right — a chancery does not answer you in four
+## seconds. It was implemented as `i + 1 < own.size()`: an entry is reviewable
+## only if a LATER entry exists. So the final ruling of a day carried no
+## correction until the next day's first ruling landed, and the final ruling of
+## the campaign carried none ever.
+##
+## On day_01 the last matter is case_08, the mill on the Aue — the day's
+## authored sting, the only case in the build whose decisive fact needs a verb
+## rather than a lookup, and by a distance the most likely to be got wrong. A
+## player who confirmed that forgery got the reaction line "You are the first man
+## in a year who did not hold it up to anything" and then the day simply ended.
+##
+## `current_day` closes the hole without touching the fiction: a day that is over
+## is a day the office has had time to go over. Pass &"" to review everything,
+## which is what the end-of-campaign ledger wants.
+static func build(register: Register, lore: LoreData,
+		current_day: StringName = &"") -> BookData:
 	var book := BookData.new()
 	book.id = &"register"
 	book.title = "The Register"
@@ -54,7 +74,10 @@ static func build(register: Register, lore: LoreData) -> BookData:
 			if own[i].day_id != last_day:
 				pages.append(_day_divider(own[i].day_id, lore))
 				last_day = own[i].day_id
-			pages.append(_entry_page(own[i], lore, i + 1 < own.size()))
+			# Reviewable once another matter has followed it, OR once its whole
+			# day has closed — because the office has certainly had time by then.
+			pages.append(_entry_page(own[i], lore,
+				i + 1 < own.size() or own[i].day_id != current_day))
 	else:
 		pages.append(_blank_page())
 
