@@ -104,6 +104,26 @@ var presentation_lift := 0.0
 
 
 func _ready() -> void:
+	# TYPE IS NOT PIXEL ART AND MUST NOT BE POINT-SAMPLED.
+	#
+	# Desk._ready sets TEXTURE_FILTER_NEAREST and every child inherits it. That is
+	# right for the authored plates and wrong for everything with words on it: the
+	# viewport is authored at 1920x1080, the window opens at 1600x900 with
+	# stretch/mode "canvas_items", so the canvas is scaled by 0.8333 and a glyph
+	# atlas point-sampled at that ratio drops or doubles rows at random. Stems came
+	# out one pixel here and two there and baselines wobbled along a line. Reported
+	# from play as the type looking deformed and hard to read.
+	#
+	# Set here rather than on eight classes because EVERY object that draws an
+	# authored texture already pins NEAREST back on itself in its own _ready, all
+	# of which run after this one: SignetRing, Candle, Lens (and its three child
+	# quads), WaxPool, PetitionerView, AudienceDoor, DeskPlaneView. So the plates
+	# are untouched and only the procedural-and-text objects change — sheets,
+	# books, the ledger, docket slips, seal tags.
+	#
+	# Solid draws are unaffected either way; draw_rect and draw_circle carry no
+	# texture. This changes glyphs and nothing else.
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_feel = Lore.paper_feel()
 	solver.place(position, rotation)
 	_light_occluder = LightOccluder2D.new()

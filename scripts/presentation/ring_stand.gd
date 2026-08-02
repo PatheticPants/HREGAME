@@ -23,7 +23,28 @@ extends Node2D
 ## contrast a dark room cannot swallow, and it catches the flame when the flame
 ## comes near, which is the reward for carrying it.
 
-const SLOT_GAP := 92.0
+## THE WORDS DID NOT FIT BETWEEN THE HOLLOWS AND THE HOLLOWS WERE DRAWN OVER
+## THEM.
+##
+## At 92 the recesses (radius 40) left a clear band of twelve units between one
+## hollow's bottom and the next hollow's top, and the word was set at 13pt in it.
+## Worse, the whole thing was drawn in ONE loop — recess i, then word i, then
+## recess i+1 — so each word was painted and then partly buried by the next
+## socket. Measured on a capture: the E of NEGO and the E of REFERO were both
+## bitten through, and CONFIRMO lost its I and R.
+##
+## 104 gives the word a 24-unit band, and everything is drawn in two passes now:
+## every hollow, then every word. The stand is 338 tall at this gap and sits at
+## y=60, so it spans -109..229 inside a DESK_RECT that runs -250..410.
+const SLOT_GAP := 104.0
+
+## How near its own hollow a ring has to be let go for the block to take it.
+##
+## Strictly less than half the gap, or a ring dropped over one hollow could be
+## pulled back to the one above it — the catch is to the ring's OWN slot, so a
+## generous radius does not seat it in the wrong word, but it would still make
+## the ring travel somewhere the hand did not put it.
+const SEAT_CATCH := 46.0
 
 var slot_words: Array[String] = ["CONFIRMO", "NEGO", "REFERO"]
 var light_position := Vector2(0, -400)
@@ -33,6 +54,13 @@ var light_level := 0.5
 ## A ring in the hand is a ring whose word you can no longer read off the block,
 ## which is exactly when you most want to know what you picked up.
 var lifted_slot := -1
+
+
+func _ready() -> void:
+	# A fixture rather than a Draggable, so it does not get the linear filter
+	# from Draggable._ready — and this block is nothing BUT three words cut into
+	# wood. See the note there.
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 
 func slot_position(index: int) -> Vector2:
@@ -61,6 +89,9 @@ func _draw() -> void:
 		draw_line(Vector2(r.position.x + 6, y), Vector2(r.end.x - 6, y),
 			Color(0.26, 0.18, 0.11, 0.35), 1.0)
 
+	# EVERY HOLLOW FIRST, THEN EVERY WORD. One loop drawing recess-then-word meant
+	# the next iteration's socket was painted straight over the last word, and the
+	# words are the entire reason this object exists.
 	for i in 3:
 		var c := Vector2(0.0, (float(i) - 1.0) * SLOT_GAP)
 		# Recess: a dished hollow the ring sits in. Its far wall catches the light
@@ -76,9 +107,11 @@ func _draw() -> void:
 			draw_arc(c + Vector2(0, -2), 33.0, 0.0, TAU, 26,
 				Color(1.0, 0.78, 0.44, 0.20 + 0.30 * lit), 2.0)
 
+	for i in 3:
+		var c := Vector2(0.0, (float(i) - 1.0) * SLOT_GAP)
 		# INLAY. A groove cut in the oak, and bone sitting in the groove: the
 		# dark cut offset toward the flame, the pale fill on top of it.
-		var at := c + Vector2(-w * 0.5 + 8.0, 40.0)
+		var at := c + Vector2(-w * 0.5 + 8.0, 44.0)
 		var bone := Color(0.72, 0.66, 0.52).lerp(Color(0.98, 0.92, 0.76), lit)
 		Ink.line_centre(self, at + toward * 1.2, slot_words[i], 13,
 			Color(0.10, 0.06, 0.04, 0.85), w - 16.0)

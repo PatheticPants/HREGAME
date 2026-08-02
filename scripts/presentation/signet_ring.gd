@@ -40,6 +40,26 @@ var seat_impact := 0.0
 ## Where this ring lives when not in the player's hand.
 var home_position := Vector2.ZERO
 
+## THE BLOCK TAKES THE RING BACK.
+##
+## Reported from play: "the stamps should lock into place when putting them back
+## — right now they can just float off if you are trying to put them back
+## quickly." Exactly right, and it is DragSolver._step_free: a released body
+## keeps its velocity and bleeds it by pow(release_damping, h), so a ring let go
+## on the move coasts past its hollow and settles wherever it ran out. Nothing
+## anywhere seated a ring; home_position was written once at bind() and then only
+## ever read by the tests.
+##
+## A turned oak block with a dished recess in it does not let a ring roll back
+## out. So within SEAT_CATCH of its OWN hollow — its own, because the words are
+## cut into the wood and a ring seated under the wrong word would make the block
+## lie — it is drawn down into the dish and stops there.
+##
+## Its own hollow only, and a catch smaller than half the slot gap, so this can
+## never carry a ring somewhere the hand did not put it. Outside that radius a
+## ring lies on the desk like anything else and can be buried by paper.
+var _seated := false
+
 
 func _ready() -> void:
 	super._ready()
@@ -97,12 +117,51 @@ func ring_texture() -> Texture2D:
 func _process(delta: float) -> void:
 	super._process(delta)
 	seat_impact = move_toward(seat_impact, 0.0, delta * 5.8)
+	_settle_into_its_hollow(delta)
 	# Child order governs the resting desk. A ring in the hand or in the wax has
 	# to be above the sheet it is pressing into — you are holding it over the
 	# document — so it rises for exactly as long as that is true and then returns
 	# to ordinary stack order, where a discarded ring can be buried by paper like
 	# anything else.
 	z_index = 3 if is_held or press_depth > 0.001 or peel_amount > 0.001 else 0
+
+
+## Draw the ring down into its recess once the hand has let go near it.
+##
+## A direct approach rather than a spring: a spring near a rest point overshoots
+## and a ring that bounces in its socket looks like a bug rather than like metal
+## in a dished hollow. Speed scales with distance so it eases in, with a floor so
+## the last two units do not crawl.
+func _settle_into_its_hollow(delta: float) -> void:
+	if is_held or press_depth > 0.001 or peel_amount > 0.001 or stowed:
+		_seated = false
+		return
+	var gap := home_position - solver.position
+	var distance := gap.length()
+	if distance > RingStand.SEAT_CATCH:
+		_seated = false
+		return
+	if distance < 0.6:
+		if not _seated:
+			_seated = true
+			solver.position = home_position
+			solver.velocity = Vector2.ZERO
+			solver.angular_velocity = 0.0
+			solver.angle = solver.rest_angle
+			solver.sleeping = true
+			position = home_position
+			# The END of the action, the same third phase the rack got: metal
+			# arriving in wood. Quiet, because the drop already sounded when the
+			# hand opened and this is the settle after it.
+			Audio.play(&"stamp_set", global_position, -9.0)
+		return
+	solver.sleeping = false
+	solver.position = solver.position.move_toward(home_position,
+		delta * maxf(70.0, distance * 7.0))
+	# Bleed what the hand threw at it, or the seat fights the release velocity
+	# and the ring skates around the socket before it goes in.
+	solver.velocity = solver.velocity.lerp(Vector2.ZERO, minf(1.0, delta * 9.0))
+	position = solver.position
 
 
 func _draw() -> void:

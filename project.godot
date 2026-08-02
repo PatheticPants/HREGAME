@@ -1,19 +1,23 @@
-; Hand and Seal — Godot 4 project configuration.
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
 ;
-; Targeting 4.3 in config/features on purpose: a project that declares an OLDER
-; version opens with a mild notice in newer editors, whereas one declaring a NEWER
-; version can genuinely break in an older one. Only 4.2-era APIs are used, so this
-; opens clean in 4.3, 4.4 and 4.5. If you want to pin to your exact version, this
-; is the one line to change.
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
+
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
 config/name="Hand and Seal"
 config/description="A notary of the Imperial Chancery rules on claims to land and title."
 run/main_scene="res://scenes/main.tscn"
-config/features=PackedStringArray("4.3", "GL Compatibility")
+config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
@@ -29,6 +33,12 @@ window/size/window_width_override=1600
 window/size/window_height_override=900
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+; NOTE, so nobody spends the afternoon on it again: setting
+; gui/theme/default_font_multichannel_signed_distance_field here does NOTHING.
+; It applies to a default theme font, and this project draws every glyph through
+; ThemeDB.fallback_font, which ignores it — measured, pixel for pixel, on a
+; re-capture. The type fix is a per-node texture filter; see Draggable._ready.
 
 [rendering]
 

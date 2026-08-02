@@ -64,6 +64,7 @@ func _run() -> void:
 	await _test_a_delivered_slip_arrives(desk)
 	_test_dockets_fit(desk)
 	_test_reachability(desk)
+	await _test_a_ring_put_back_stays_put(desk)
 	await _test_seals_in_a_row(desk)
 	await _test_view_transition(main, desk)
 	await _test_candle_light(desk)
@@ -478,6 +479,84 @@ func _test_every_leaf_fits(desk: Desk) -> void:
 	_is_true(rolls == 3,
 		"and all three leaves of the one retained roll are among them (%d)" % rolls)
 	_test_facing_pages(desk)
+	_test_nothing_runs_across_the_gutter(desk)
+
+
+## NOTHING CHECKED THAT A LINE FITS ACROSS ITS PAGE, ONLY DOWN IT.
+##
+## `Ink.heading()` takes a `width` and uses it for the rule underneath and for
+## NOTHING ELSE — the heading itself goes through `Ink.line()`, whose `width`
+## defaults to -1.0, and `draw_string` with width -1 neither wraps nor clips nor
+## ellipsises. So a heading longer than its column is simply drawn at full length
+## off the edge of the leaf, straight across the gutter and onto the facing page.
+##
+## The owner reported exactly this: "a lot of the book pages have words that are
+## typed across the two pages". Every existing fit assertion in this suite
+## measures HEIGHT — page_bottom, folio_baseline, content_bottom — so a whole
+## axis was unguarded, and the leaf-fit test that found four vertical overflows
+## walked straight past this one.
+func _test_nothing_runs_across_the_gutter(desk: Desk) -> void:
+	print("-- and nothing runs off the side of its leaf")
+	var measured := 0
+	for book in desk.books:
+		if book.data == null:
+			continue
+		var w := book.leaf_rect().size.x - ReferenceBook.MARGIN * 2.0
+		for i in book.data.pages.size():
+			var page: BookPage = book.data.pages[i]
+			# Ink.heading and Ink.line_fit SET TO FIT, so the question is no longer
+			# "does it overrun" — it cannot — but "how far did it have to shrink
+			# to stop overrunning". A heading forced below 11pt is a heading whose
+			# prose is genuinely too long for the page it was written for, and
+			# that is a content problem the fitter should not paper over.
+			if not page.heading.is_empty():
+				measured += 1
+				var fit := Ink.fitted_size(page.heading.to_upper(), 13, w)
+				if fit < 11:
+					_fail("%s leaf %d: heading only fits at %dpt (\"%s\")"
+						% [book.data.id, i, fit, page.heading])
+				else:
+					checks += 1
+			if not page.subheading.is_empty():
+				measured += 1
+				var fit_sub := Ink.fitted_size(page.subheading, 11, w)
+				if fit_sub < 10:
+					_fail("%s leaf %d: subheading only fits at %dpt (\"%s\")"
+						% [book.data.id, i, fit_sub, page.subheading])
+				else:
+					checks += 1
+	_is_true(measured >= 12,
+		"there are authored headings to measure (%d)" % measured)
+
+	# The generated single-line content on a leaf, measured from the data rather
+	# than by re-implementing _draw_matrix_plate and friends — a test that mirrors
+	# a draw function drifts away from it, and this suite already carries two such
+	# mirrors that have to be kept in step by hand.
+	var leaf_w := 0.0
+	for book in desk.books:
+		if book.data != null:
+			leaf_w = book.leaf_rect().size.x - ReferenceBook.MARGIN * 2.0
+			break
+	var longest := ""
+	var worst := 999.0
+	for m in Lore.data.matrices:
+		for pair in [[m.owner_name, 12], [m.legend, 11], [m.life_text(), 11]]:
+			var s := Ink.measure(String(pair[0]), int(pair[1])).x
+			if s > leaf_w and s - leaf_w > worst:
+				worst = s - leaf_w
+				longest = String(pair[0])
+	for p in Lore.data.polities.values():
+		var s2 := Ink.measure(p.name, 12).x
+		if s2 > leaf_w:
+			longest = p.name
+	for roll in Lore.data.necrology.rolls:
+		for o in roll.entries:
+			var s3 := Ink.measure(o.display(), 11).x
+			if s3 > leaf_w:
+				longest = o.display()
+	_is_true(longest.is_empty(),
+		"and no generated line on a leaf is wider than the leaf%s"
+		% ("" if longest.is_empty() else ": \"%s\"" % longest))
 
 
 ## WHAT FACES WHAT IS CONTENT, AND IT BREAKS SILENTLY.
@@ -1131,9 +1210,79 @@ func _test_a_racked_book_opens_on_the_desk(desk: Desk) -> void:
 	book.position = desk.ledge.slot_position(slot)
 
 
+## THE BLOCK NAMES THE THREE IRREVERSIBLE CHOICES AND IT WAS EATING ITS OWN
+## WORDS.
+##
+## RingStand._draw ran ONE loop — recess i, word i, recess i+1 — so every word was
+## painted and then partly buried by the socket beneath it. At SLOT_GAP 92 with
+## radius-40 hollows there were only twelve units of clear wood for a 13pt word
+## anyway, so correcting the draw order alone would not have been enough.
+## Reported from play as overlapping text; confirmed on a capture, where NEGO and
+## REFERO had both lost their E and CONFIRMO its I and R.
+func _test_the_stand_can_be_read(desk: Desk) -> void:
+	print("-- the ring stand's words have wood to sit on")
+	var band := RingStand.SLOT_GAP - 80.0
+	_is_true(band >= Ink.line_height(13),
+		"a word's band clears both hollows (%.0f units for %.0f of type)"
+		% [band, Ink.line_height(13)])
+	# Its own catch may not reach a neighbouring hollow, or a ring let go over one
+	# word travels to another.
+	_is_true(RingStand.SEAT_CATCH < RingStand.SLOT_GAP * 0.5,
+		"and a hollow's catch cannot reach the hollow above it")
+	for i in 3:
+		var word: String = desk.ring_stand.slot_words[i]
+		_is_true(Ink.measure(word, 13).x <= 138.0 - 16.0,
+			"\"%s\" fits across the block" % word)
+
+
+## AND THE BLOCK TAKES A RING BACK.
+##
+## "The stamps should lock into place when putting them back. Right now they can
+## just float off if you are trying to put them back quickly." DragSolver's free
+## step keeps a released body's velocity and only bleeds it, so a ring let go on
+## the move coasted past its hollow. home_position existed, was written once at
+## bind(), and was read by nothing but this suite.
+func _test_a_ring_put_back_stays_put(desk: Desk) -> void:
+	print("-- a ring let go over its hollow is taken by the hollow")
+	var ring: SignetRing = desk.rings[0]
+	var home := ring.home_position
+	# Let go short of the socket and still travelling, which is the case that
+	# failed: a tidy, unhurried drop always looked fine.
+	var from := home + Vector2(26.0, -18.0)
+	ring.solver.place(from, ring.solver.rest_angle)
+	ring.position = from
+	ring.solver.velocity = Vector2(190.0, -120.0)
+	ring.solver.sleeping = false
+	var drifted := 0.0
+	for i in 90:
+		await get_tree().process_frame
+		drifted = maxf(drifted, ring.position.distance_to(home))
+	_is_true(ring.position.distance_to(home) < 1.0,
+		"it ends in its own hollow (%.1f units off)"
+		% ring.position.distance_to(home))
+	_is_true(drifted < RingStand.SEAT_CATCH + 12.0,
+		"without first being carried out of the block by its own momentum "
+		+ "(%.0f units at furthest)" % drifted)
+	_is_true(ring.solver.sleeping and ring.solver.velocity == Vector2.ZERO,
+		"and stops dead rather than creeping")
+
+	# A ring genuinely put down elsewhere is NOT dragged home. The desk is a
+	# place you leave things.
+	var away := home + Vector2(RingStand.SEAT_CATCH + 90.0, 40.0)
+	ring.solver.place(away, ring.solver.rest_angle)
+	ring.position = away
+	for i in 30:
+		await get_tree().process_frame
+	_is_true(ring.position.distance_to(away) < 1.0,
+		"a ring left out on the desk stays where it was left")
+	ring.solver.place(home, ring.solver.rest_angle)
+	ring.position = home
+
+
 func _test_reachability(desk: Desk) -> void:
 	print("-- reachability")
 	_test_a_racked_book_opens_on_the_desk(desk)
+	_test_the_stand_can_be_read(desk)
 	for ring in desk.rings:
 		_is_true(Desk.DESK_RECT.has_point(ring.position),
 			"%s ring begins on the desk" % Lex.verdict_name(ring.verdict))

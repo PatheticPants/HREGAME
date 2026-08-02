@@ -33,6 +33,23 @@ static func line(c: CanvasItem, at: Vector2, text: String, size: int, col: Color
 	return line_height(size)
 
 
+## One line, set smaller if that is what it takes to stay inside `width`.
+##
+## For generated single-line content on a page — a house's name, a man's style, a
+## regnal row. These are authored in data files by somebody who cannot see the
+## column, and `line()` with the default width of -1 does not clip, so a long one
+## runs off the leaf and across the gutter. Wrapping them instead would be worse:
+## the book's vertical fit checks are hand-mirrored against these draws line for
+## line, and a line that silently becomes two invalidates all of them.
+##
+## Returns the height of the size it was ASKED for, so the mirrors stay true.
+static func line_fit(c: CanvasItem, at: Vector2, text: String, size: int,
+		col: Color, width: float) -> float:
+	line(c, at, text, fitted_size(text, size, width), col,
+		HORIZONTAL_ALIGNMENT_LEFT, width)
+	return line_height(size)
+
+
 ## A wrapped block. Returns the height used, so the next block can start below it.
 static func block(c: CanvasItem, at: Vector2, text: String, size: int, col: Color,
 		width: float, max_lines := -1) -> float:
@@ -52,10 +69,42 @@ static func measure(text: String, size: int, width := -1.0) -> Vector2:
 	return font().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size)
 
 
+## THE LARGEST TEXT ON EVERY PAGE WAS THE ONE PIECE NOBODY MEASURED.
+##
+## `heading()` took a `width` and used it for the rule underneath and for nothing
+## else. The heading itself went through `line()`, whose `width` defaults to
+## -1.0, and `draw_string` with width -1 neither wraps nor clips nor ellipsises —
+## it simply draws the whole string. So a heading longer than its column ran off
+## the edge of the leaf, across the gutter, and onto the facing page. Four
+## shipped headings did it, and every fit assertion in the suite measured only
+## HEIGHT, so a whole axis was unguarded.
+##
+## Set to fit rather than truncated, because a heading is authored prose and a
+## column is geometry and neither should have to know about the other — the same
+## lesson as "a fixed reservation is the bug, not the text", one axis over. A
+## clerk with a long house name writes it smaller; he does not write it onto the
+## next page.
+static func fitted_size(text: String, want: int, width: float,
+		smallest := 10) -> int:
+	if width <= 0.0 or text.is_empty():
+		return want
+	var size := want
+	while size > smallest and measure(text, size).x > width:
+		size -= 1
+	return size
+
+
 ## A heading with a rule under it, the way a chancery clerk would set it out.
 static func heading(c: CanvasItem, at: Vector2, text: String, size: int,
 		col: Color, width: float) -> float:
-	var h := line(c, at, text.to_upper(), size, col)
+	var upper := text.to_upper()
+	# Drawn at whatever size fits; the BAND IT RESERVES stays the size it was
+	# asked for. page_bottom() and content_bottom() are hand-mirrored against
+	# these draws, so a heading that shrinks must not also move everything under
+	# it — that would silently invalidate every vertical fit assertion there is.
+	var fit := fitted_size(upper, size, width)
+	line(c, at, upper, fit, col, HORIZONTAL_ALIGNMENT_LEFT, width)
+	var h := line_height(size)
 	c.draw_line(at + Vector2(0, h + 1.0), at + Vector2(width, h + 1.0),
 		col * Color(1, 1, 1, 0.45), 1.0)
 	return h + size * 0.55

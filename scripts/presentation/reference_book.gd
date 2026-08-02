@@ -645,7 +645,7 @@ func _draw_page(r: Rect2, index: int) -> void:
 	if not page.heading.is_empty():
 		at.y += Ink.heading(self, at, page.heading, 13, Ink.CHANCERY, w)
 	if not page.subheading.is_empty():
-		at.y += Ink.line(self, at, page.subheading, 11, Ink.FADED)
+		at.y += Ink.line_fit(self, at, page.subheading, 11, Ink.FADED, w)
 	at.y += 5.0
 
 	# On a plate the prose comments on the thing above it, so the body follows the
