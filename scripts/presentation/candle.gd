@@ -68,7 +68,19 @@ const FILL_REACH := 1500.0
 var burn := 0.0
 
 ## Below this much candle left, it starts to gutter in earnest.
-const GUTTERING_FROM := 0.86
+##
+## IT WAS 0.86, AND AT 0.86 NOBODY EVER SAW IT. Measured across the whole dwell
+## range, every day a player COMPLETES ends at burn 0.28 (Tuesday) or 0.85
+## (Thursday); the threshold was only ever crossed on days that burnt out. So the
+## gutter, the smoke, the audible warning and the `unrest * 3.2` flame were the
+## death rattle rather than a warning, and between "the desk looks like morning"
+## and "the day is over" there was no legible middle at any reading speed.
+##
+## 0.62 is chosen against the retuned day: a competent player now finishes
+## Tuesday at about burn 0.73, so the last matter of the day is worked by a
+## candle that is visibly and audibly going. That is the whole point of a clock
+## you are not allowed to print a number for.
+const GUTTERING_FROM := 0.62
 
 ## THE STUB, IN THE AUTHORED PLATE'S OWN COORDINATES.
 ##
@@ -233,10 +245,28 @@ func _build_lights() -> void:
 
 # --------------------------------------------------------------------- burning
 
+## How many seconds of deliberation this candle was issued for.
+##
+## `burn` is a fraction, and a fraction cannot be carried into a day of a
+## different length without silently changing its meaning. It is written by
+## issue() at dawn so that carry_forward_seconds() can report a physical
+## quantity — inches of wax — rather than a proportion of a day that has ended.
+var issued_seconds := 0.0
+
+
+## The office hands you a candle and tells you what it is expected to cover.
+func issue(seconds: float) -> void:
+	issued_seconds = maxf(0.0, seconds)
+
+
 ## Advance the day. Returns true on the single frame the candle dies.
 func burn_for(delta: float, day_seconds: float) -> bool:
 	if _spent or day_seconds <= 0.0:
 		return false
+	# Belt and braces: a harness that drives burn_for directly without going
+	# through a session still gets a sane carry out the other end.
+	if issued_seconds <= 0.0:
+		issued_seconds = day_seconds
 	burn = minf(1.0, burn + delta / day_seconds)
 	if burn >= GUTTERING_FROM and not _warned:
 		_warned = true
@@ -262,12 +292,11 @@ func burn_remaining() -> float:
 ##
 ## This used to set `burn = 1.0`, which is the state of a candle that has
 ## drowned in its own wax — and it therefore threw away the entire reward for
-## finishing a day on your own terms. carry_forward() is clampf(1 - burn,
-## NEXT_DAY_FLOOR, 1.0), so a notary who got through all three matters with two
-## thirds of his candle left carried forward exactly the same 45% floor as one
-## who ran out mid-sentence. The candle is the only scarce thing in the game, it
-## exists to purchase something, and this was the line that made it purchase
-## nothing.
+## finishing a day on your own terms. The carry was clamped to a floor, so a
+## notary who got through all three matters with two thirds of his candle left
+## carried forward exactly the same floor as one who ran out mid-sentence. The
+## candle is the only scarce thing in the game, it exists to purchase something,
+## and this was the line that made it purchase nothing.
 ##
 ## The README's claim that finishing yourself "is a different ending from having
 ## it snuffed for him" was false in the only way that could be measured.
@@ -293,13 +322,30 @@ func snuff() -> void:
 ##
 ## Carrying the remainder forward is the smallest possible version of making it
 ## real, and it needs no new system: the office issues a candle, not a candle a
-## day. There is a floor, because a day nobody can finish is a punishment rather
-## than a consequence — the doorkeeper is not going to let you sit in the dark.
-const NEXT_DAY_FLOOR := 0.45
-
-
+## day.
+##
+## THE CARRY USED TO MULTIPLY, AND MULTIPLICATION IS THE WRONG SHAPE.
+##
+## `day_seconds = authored * carry_forward()` compounds: a player 1.9x slower
+## needs 1.7x more time AND is issued 1.4x less of it, so one doubling of
+## reading speed swung the day by 2.4x. Worse, it welded the days together — a
+## shorter Tuesday was a lower carry was a shorter Thursday, for exactly the
+## player already drowning there — which made the one retune the measurements
+## demanded impossible to perform without wrecking the day after it.
+##
+## What carries now is WAX, in seconds, ADDED to the next day's own candle. The
+## stub goes back in the press and comes out on top of tomorrow's. That is both
+## the more physical reading and the one that lets each day be priced on its own
+## matters. A day is therefore never shorter than it is authored to be, which
+## also retires the old percentage floor: the doorkeeper does not have to find
+## you a stub, because the day was never taken away from you in the first place.
 func carry_forward() -> float:
-	return clampf(burn_remaining(), NEXT_DAY_FLOOR, 1.0)
+	return clampf(burn_remaining(), 0.0, 1.0)
+
+
+## What is physically left of it, in seconds of deliberation.
+func carry_forward_seconds() -> float:
+	return maxf(0.0, burn_remaining() * issued_seconds)
 
 
 func reset_day() -> void:

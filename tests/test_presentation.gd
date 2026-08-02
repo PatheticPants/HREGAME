@@ -1310,26 +1310,41 @@ func _test_candle_light(desk: Desk) -> void:
 	# SNUFFING A HALF-USED CANDLE LEAVES HALF A CANDLE.
 	#
 	# snuff() used to set burn = 1.0, which is the state of a candle that has
-	# drowned — so carry_forward(), being clampf(1 - burn, NEXT_DAY_FLOOR, 1.0),
-	# handed a notary who finished all three matters with two thirds in hand the
-	# exact same 45% floor as one who ran out mid-sentence. The candle is the
-	# only scarce thing in the game and this line made it purchase nothing.
+	# drowned — so the carry handed a notary who finished all three matters with
+	# two thirds in hand the exact same floor as one who ran out mid-sentence.
+	# The candle is the only scarce thing in the game and this line made it
+	# purchase nothing.
 	var saved_burn := desk.candle.burn
 	var saved_spent := desk.candle._spent
+	var saved_issued := desk.candle.issued_seconds
 	desk.candle.reset_day()
+	desk.candle.issue(600.0)
 	desk.candle.burn = 0.30
 	desk.candle.snuff()
 	_is_true(desk.candle.is_spent(), "snuffing puts the candle out")
 	_is_true(absf(desk.candle.burn - 0.30) < 0.001,
 		"and does not burn the rest of it away")
-	_is_true(desk.candle.carry_forward() > 0.65,
-		"so finishing early actually carries a longer candle into the next day")
+	# WHAT CARRIES IS WAX, IN SECONDS, NOT A FRACTION OF A DAY THAT HAS ENDED.
+	# A fraction cannot be moved between days of different lengths without
+	# silently changing its meaning, and it was that multiplication which made
+	# the day lengths impossible to tune independently of one another.
+	_is_true(absf(desk.candle.carry_forward_seconds() - 420.0) < 0.5,
+		"and 70%% of a 600 s candle carries as 420 s of wax (%.1f)"
+		% desk.candle.carry_forward_seconds())
 	desk.candle.reset_day()
+	desk.candle.issue(600.0)
 	desk.candle.burn = 1.0
 	desk.candle.snuff()
-	_is_true(absf(desk.candle.carry_forward() - Candle.NEXT_DAY_FLOOR) < 0.001,
-		"while running out still carries only the floor")
+	_is_true(desk.candle.carry_forward_seconds() <= 0.001,
+		"while a candle that drowned carries no wax at all")
+	# A candle nobody issued must not invent a stub out of a bare fraction.
 	desk.candle.reset_day()
+	desk.candle.issued_seconds = 0.0
+	desk.candle.burn = 0.5
+	_is_true(desk.candle.carry_forward_seconds() <= 0.001,
+		"and an unissued candle carries nothing rather than half of nowhere")
+	desk.candle.reset_day()
+	desk.candle.issued_seconds = saved_issued
 	desk.candle.burn = saved_burn
 	desk.candle._spent = saved_spent
 

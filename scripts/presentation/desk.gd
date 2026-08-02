@@ -78,9 +78,14 @@ var register_book: ReferenceBook
 var kalendar_book: ReferenceBook
 var dust: Dust
 var foreground: ForegroundDepth
-## What was left of yesterday's candle, 0..1. Written by reset_for_next_day and
-## read by the session to scale the new day. 1.0 on the first morning.
+## What was left of yesterday's candle, 0..1. Written by reset_for_next_day.
+## Reported to the log and the ledger; it is no longer what the day is scaled by.
+## 1.0 on the first morning.
 var last_candle_remaining := 1.0
+## And the same remainder as a physical quantity: seconds of wax. THIS is what
+## the next day is lengthened by. See Candle.carry_forward_seconds for why a
+## fraction cannot be carried between days of different lengths.
+var last_candle_seconds := 0.0
 ## The main scene's view controller, if there is one. Null in the test harnesses.
 var view: ViewController
 var docket_tray: DocketTray
@@ -1066,10 +1071,11 @@ func reset_for_next_day() -> void:
 	ledger.unstow()
 	ledger.visible = false
 	press.enabled = false
-	# What is left of last night's candle is what you have this morning. The
-	# session reads this BEFORE the reset and scales the new day's length by it,
-	# so Tuesday's deliberation is finally spent on something.
+	# What is left of last night's candle goes on top of this morning's. The
+	# session reads this BEFORE the reset and lengthens the new day by it, so
+	# Tuesday's deliberation is finally spent on something.
 	last_candle_remaining = candle.carry_forward()
+	last_candle_seconds = candle.carry_forward_seconds()
 	candle.reset_day()
 	_ambient_target = NIGHT_AMBIENT
 	_morning_amount = 0.0

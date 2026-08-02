@@ -2,7 +2,8 @@
   "id": "day_02",
   "entry_label": "THURSDAY",
   "heading": "The fourteenth day of October, in the seventh year of Kunrad IV. Third desk, second floor. Five dockets in the passage.",
-  "day_seconds": 720,
+  "_day_seconds_note": "Five matters, one of which -- the Weir at Breitenau, with six pendant tags -- measures 102 s against the usual 84. Measured cost at dwell 8 is 439 s. 400 authored, plus whatever stub Tuesday left (capped at SessionController.CARRY_CAP of this figure), puts a competent player at about burn 0.82: tighter than Tuesday, which is the right way round for the second day.\n\nTHE CARRY ADDS NOW AND USED TO MULTIPLY. This was 720 x the unburnt fraction of Tuesday, which welded the two days together -- a shorter Tuesday was a lower carry was a shorter Thursday, for exactly the player already drowning here. That is why the retune Tuesday's measurement demanded could not be made until the shape of the carry changed. See SessionController.day_seconds.\n\nThe tray is the point of the tightness. Five dockets and a candle that no longer covers all five comfortably makes choosing who to hear an actual choice, and it makes the trip to the back rail with the light worth taking.",
+  "day_seconds": 400,
   "burnt_out_text": "The second candle drowned with dockets still in the tray. The doorkeeper copied their names into tomorrow's passage list.",
   "selection_mode": "tray",
   "opening_documents": [

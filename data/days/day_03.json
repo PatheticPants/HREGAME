@@ -6,8 +6,8 @@
 
   "heading": "The sixteenth day of October, in the seventh year of Kunrad IV. Third desk, second floor. What the week did not reach.",
 
-  "_day_seconds_note": "Short, and then shortened again by whatever was left of Thursday. A player only ever sees this day because a candle ran out on them, so their carry is at or near Candle.NEXT_DAY_FLOOR and this is 600 x 0.45 = 270 real seconds at worst. Measured cost of a matter at a competent pace is about 85 seconds, so the floor buys three. That is the point of the third day: it is the first one ENTERED on a candle somebody else's Tuesday already spent, which is the only condition under which carry-forward is a curve instead of a single penalty.",
-  "day_seconds": 600,
+  "_day_seconds_note": "Short, and lengthened only by whatever stub Thursday left -- which is nothing, because a player only ever sees this day because a candle ran out on them. So this is 360 seconds and no more, and at the measured 85 seconds a matter it buys four of the arrears and not the rest.\n\nTHE OLD NOTE HERE DESCRIBED A MULTIPLICATION AND THE MULTIPLICATION IS GONE. It said 600 x 0.45 = 270 'at worst', which was the compounding punishment: the player who reached Saturday was by definition the one who had lost days, and the carry then took a third of Saturday away from them as well. A carry that adds cannot do that. A day is now never shorter than it is authored to be, and the third day's difficulty is its own number rather than a debt collected from the two before it.",
+  "day_seconds": 360,
 
   "_burnt_out_note": "Deliberately empty. There is no fourth day, so whatever is written here is the last thing the office ever says about the people still in the passage, and that is an ending rather than scaffold. SessionController._ledger_unheard skips the block entirely when this is empty, so nothing renders wrong in the meantime.",
   "burnt_out_text": "",

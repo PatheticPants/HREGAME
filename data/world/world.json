@@ -6,7 +6,7 @@
   "notary_name": "the notary",
   "day_heading": "The eleventh day of October, in the seventh year of Kunrad IV. Third desk, second floor. Four matters heard.",
   "_day_note": "One candle is one working day. Listening is free until the notary first handles a matter. From that physical engagement onward it burns through thought and speech until judgment. It does not burn between callers or while the ledger is open.",
-  "day_seconds": 1200,
+  "day_seconds": 520,
   "day_burnt_out": "The candle went before the queue did. The doorkeeper turned the rest of them out into the passage and told them to come back on Thursday.",
   "desk_note": {
     "kind": "docket",
@@ -46,11 +46,12 @@
       ],
       "start_angle_deg": 4.5,
       "takes_seal": false,
+      "_exit_note": "THE ONLY EXIT FROM THE TUTORIAL WAS IN THE DOORKEEPER'S HAND, AND THAT IS THE ONE REGISTER THIS GAME TRAINS YOU TO DISCOUNT.\n\nSessionController.PRACTICE_REVIEW ends on inspect_impression followed by the lens being released, and nothing else ends it. The sentence that said so lived in doorkeeper_note — the slanted brown hand, measured at 0.211 Michelson contrast against 0.557 for the upright one, whose own header in docket_view.gd says it 'is never authoritative', and out of which the candle rule was deliberately moved for exactly that reason. Five case dockets teach the player to skim it before they ever meet a case. A player who missed one faint sentence sat at a desk with no petitioners and no way forward, permanently, with no menu to quit to.\n\nThe instruction is now in claim_summary, in the upright authoritative hand, in the order the hands perform it. The doorkeeper keeps only what he is for: how many are waiting and what he thinks of them. SessionController._tick_practice_review is the second half of the fix — the door opens itself eventually, so no single sentence is load-bearing for whether the game continues at all.",
       "petitioner_name": "PRACTICE",
       "petitioner_style": "discarded office leaf; no party is bound",
-      "claim_summary": "Read the memorandum. Hold the leaf up to the flame and see what the knife took out. Then melt, pour, choose a ring, and hold until the wax gives. The first knock waits.",
+      "claim_summary": "Read the memorandum. Hold the leaf up to the flame and see what the knife took out. Then melt, pour, choose a ring, and hold until the wax gives.\n\nLast, put the glass over the mark you have made and read it. The door opens when you have.",
       "received_note": "",
-      "doorkeeper_note": "Afterward, hold the glass over your impression until the door opens. Four in the passage, and two have brought their own chairs."
+      "doorkeeper_note": "Four in the passage already, and two have brought their own chairs."
     },
     {
       "kind": "charter",

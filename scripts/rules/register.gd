@@ -92,6 +92,23 @@ func sound_count_for_day(day_id: StringName) -> int:
 	return n
 
 
+## What fraction of a day's rulings the law agreed with. 1.0 for a day with
+## nothing in it, because a notary who was never called cannot have been wrong.
+##
+## SOUNDNESS BUYS CANDLE, AND THIS IS THE ONLY THING IT HAS EVER BOUGHT. It is
+## not a score and it is not combined with anything: it scales the stub the
+## player carries into tomorrow, and it does that because the clock is the only
+## thing in this game the player actually wants. Without it a tightened day
+## rewards guessing — bank the time you would have spent in the Kalendar, take
+## the odds, and nothing whatever happens to you. See
+## SessionController._begin_day.
+func sound_fraction_for_day(day_id: StringName) -> float:
+	var day_entries := entries_for_day(day_id)
+	if day_entries.is_empty():
+		return 1.0
+	return float(sound_count_for_day(day_id)) / float(day_entries.size())
+
+
 ## authority enum -> accumulated favour across every ruling made today.
 func favor_totals() -> Dictionary:
 	var totals := {}

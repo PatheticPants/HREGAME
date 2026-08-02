@@ -85,6 +85,9 @@ var _work_time := 0.0
 ## while the desk is used, and reactive speech can happen during WORKING.
 var _work_engaged := false
 var _practice_inspected := false
+## True when the door was opened by the fallback below rather than by the player
+## reading their own impression. Only then does the practice leaf clear itself.
+var _practice_gave_up := false
 ## Per-caller multiplier on every arrival and departure beat.
 var _beat := 1.0
 ## The head is lifted once per caller, on their knock, and never again — a game
@@ -150,6 +153,9 @@ func _begin_day(which: int) -> void:
 	if which < 0 or which >= days.size():
 		_enter(Stage.OVER)
 		return
+	# Read before current_day is overwritten: the stub is scaled by how the day
+	# that produced it went. See the block below reset_for_next_day.
+	var closed_day: StringName = current_day.id if current_day != null else &""
 	day_index = which
 	current_day = days[day_index]
 	burnt_out = false
@@ -164,8 +170,45 @@ func _begin_day(which: int) -> void:
 
 	if day_index > 0:
 		desk.reset_for_next_day()
-	# After reset_for_next_day, so last_candle_remaining is the value this day is
-	# actually scaled by rather than the previous day's.
+		# CAP FIRST, THEN SCALE. The order is the whole difference between a
+		# penalty and a decoration.
+		#
+		# Scaling the raw stub and capping afterwards looks equivalent and is
+		# not: at a competent pace Tuesday leaves about 183 s and the cap is
+		# 136 s, so three-quarters of the raw remainder is still 137 s and STILL
+		# clips to 136. One wrong ruling in four would have cost exactly nothing.
+		# Capping what you are allowed to carry and then scaling what you get to
+		# keep of it means the wager always pays out.
+		desk.last_candle_seconds = minf(desk.last_candle_seconds,
+			current_day.day_seconds * CARRY_CAP)
+		# THE STUB IS ONLY AS GOOD AS THE RULINGS WERE.
+		#
+		# This is the counterweight to a candle that finally bites, and without
+		# it the retune would have made the game WORSE. A tight day rewards
+		# skipping the books that cannot answer — which is the skill the Kalendar
+		# and the Book of Matrices spend their front matter teaching — but it
+		# rewards guessing exactly as much, because being wrong cost a line of
+		# ledger prose and nothing else. Bank the time, take the odds, and the
+		# office simply notes it.
+		#
+		# So the wager is priced. Rule three of four soundly and three quarters
+		# of the stub comes back with you; rule none of them soundly and you
+		# start tomorrow on tomorrow's candle alone. It is not a score, nothing
+		# is combined, and no number appears anywhere: the ledger already prints
+		# "Rulings sound: 3 of 4" immediately above the sentence about the stub,
+		# so the causal link is legible without adding a readout to a game whose
+		# first rule is that it does not have one.
+		desk.last_candle_seconds *= register.sound_fraction_for_day(closed_day)
+	# After reset_for_next_day, so last_candle_seconds is what this day is
+	# actually lengthened by rather than the previous day's remainder.
+	#
+	# TELL THE CANDLE WHAT IT WAS ISSUED FOR. carry_forward_seconds() multiplies
+	# the unburnt fraction by this, and a candle that was never issued carries
+	# nothing — so a day that skipped this line would silently hand the next one
+	# no stub at all, and the whole reward for finishing early would vanish with
+	# no test failing.
+	if desk != null and desk.candle != null:
+		desk.candle.issue(day_seconds())
 	SessionLog.day_id = current_day.id
 	SessionLog.day_seconds = day_seconds()
 	SessionLog.case_id = &""
@@ -173,6 +216,7 @@ func _begin_day(which: int) -> void:
 		"index": day_index,
 		"authored_seconds": current_day.day_seconds,
 		"carried": snappedf(desk.last_candle_remaining, 0.0001),
+		"carried_seconds": snappedf(desk.last_candle_seconds, 0.01),
 		"day_seconds": snappedf(day_seconds(), 0.01),
 		"matters": cases.size(),
 		"selection": String(current_day.selection_mode),
@@ -198,6 +242,7 @@ func _process(delta: float) -> void:
 	_timer += delta
 	_burn_the_day(delta)
 	match stage:
+		Stage.PRACTICE_REVIEW: _tick_practice_review()
 		Stage.KNOCK: _tick_knock()
 		Stage.ENTERING: _tick_entering()
 		Stage.SPEAKING: _tick_speaking()
@@ -232,6 +277,46 @@ func _tick_working(delta: float) -> void:
 		_speak_beat(&"waiting_long")
 	elif _work_time > WAIT_FIRST:
 		_speak_beat(&"waiting")
+
+
+## NOBODY MAY BE STUCK AT THIS DESK, AND UNTIL NOW SOMEBODY COULD BE.
+##
+## PRACTICE_REVIEW had no tick at all. The only way out of it was to put the
+## glass on your own impression and then let go of the glass — and the only place
+## in the entire game that says so was the practice docket's `doorkeeper_note`.
+##
+## That slot is the doorkeeper's slanted brown hand. The project had already
+## measured it at 0.211 Michelson contrast against 0.557 for the upright hand,
+## already written down that it "is never authoritative", and already moved the
+## candle rule out of it for exactly that reason — and then left the only exit
+## from the tutorial in it. Five case dockets train the player to discount that
+## register before they ever reach a case.
+##
+## A player who missed one faint sentence sat at a desk with no petitioners, no
+## clock and no prompt, forever. There is no menu to quit to.
+##
+## So: the doorkeeper eventually opens the door himself. This is not the timer
+## that was tried and rejected — that one SWEPT THE LEAF AWAY on a deadline and
+## turned a written instruction into a race a cold player could lose. This one
+## only ever adds a way forward, never removes one, and it does not begin until
+## the impression has already been struck.
+const PRACTICE_PATIENCE := 90.0
+## And having opened it, he waits again before giving up on the lesson entirely.
+const PRACTICE_GRACE := 30.0
+
+
+func _tick_practice_review() -> void:
+	if not _practice_inspected:
+		if _timer < PRACTICE_PATIENCE:
+			return
+		_practice_inspected = true
+		_practice_gave_up = true
+		desk.open_door()
+		Audio.play(&"door_open")
+		_log(&"practice_door_forced", {"after_seconds": snappedf(_timer, 0.1)})
+		return
+	if _practice_gave_up and _timer > PRACTICE_PATIENCE + PRACTICE_GRACE:
+		_finish_practice()
 
 
 ## Say an authored line for a beat, at most once per petitioner. Shared by the
@@ -271,7 +356,16 @@ func _burn_the_day(delta: float) -> void:
 		_end_day_by_candle()
 
 
-## How long this day's candle lasts, after what was left of the last one.
+## THE MOST YOU MAY CARRY INTO A DAY, as a fraction of that day's own candle.
+##
+## Without a cap an efficient player accumulates, and by the third day the clock
+## is decoration again for exactly the player who has already learnt to beat it.
+## A third of a day is enough that finishing early is plainly worth something and
+## not so much that it buys a whole extra matter.
+const CARRY_CAP := 0.34
+
+
+## How long this day's candle lasts: its own, plus the stub off the last one.
 ##
 ## Candle-seconds were the only scarce thing in the game and they bought
 ## nothing: the candle reset to full every morning, so finishing Tuesday with two
@@ -279,13 +373,22 @@ func _burn_the_day(delta: float) -> void:
 ## prose. An hour spent re-reading the Almanac cost nothing, which is the same as
 ## saying the clock was decoration.
 ##
-## The office issues a candle, not a candle a day.
+## THIS ADDS, AND IT USED TO MULTIPLY. `authored * remaining_fraction` welded the
+## days together: shortening Tuesday lowered the carry and therefore shortened
+## Thursday, for exactly the player who was already drowning on Thursday. That
+## made the retune the measurements demanded impossible to perform. Adding a
+## physical remainder lets each day be priced against its own matters, and it is
+## also the more honest reading of the fiction — the office issues a candle, not
+## a candle a day, and the stub goes back in the press.
+## `last_candle_seconds` has already been capped and scaled by _begin_day, which
+## is the only place either of those may happen — doing it here would re-apply
+## them on every frame of _burn_the_day.
 func day_seconds() -> float:
 	var seconds := current_day.day_seconds if current_day != null \
 		else Lore.data.day_seconds
 	if desk == null:
 		return seconds
-	return seconds * desk.last_candle_remaining
+	return seconds + maxf(0.0, desk.last_candle_seconds)
 
 
 ## The wick went out with people still in the passage. Whatever has been ruled is
@@ -593,6 +696,12 @@ func _deliver_investigation_arrivals(beat: StringName) -> void:
 
 func _on_practice_lens_dropped(_lens: Draggable) -> void:
 	if stage != Stage.PRACTICE_REVIEW or not _practice_inspected:
+		return
+	_finish_practice()
+
+
+func _finish_practice() -> void:
+	if stage != Stage.PRACTICE_REVIEW:
 		return
 	desk.close_door()
 	Audio.play(&"door_close")
@@ -1001,28 +1110,48 @@ func _ledger_summary() -> Array[Dictionary]:
 			out.append(Ledger.text(
 				"The candle was all but gone. Another matter and it would not "
 				+ "have been heard.", 11, Ink.RUBRIC))
-		# AND WHAT THAT COSTS TOMORROW, said plainly and before it happens.
+		# AND WHAT THAT BUYS TOMORROW, said plainly and before it happens.
 		#
-		# The remainder is now carried into the next day, so this line is the
-		# whole warning a player gets. A scarcity the player only discovers by
-		# having lost it is a trap; one they are told about at the end of the day
-		# they spent it is a decision they made.
-		if day_index + 1 < days.size():
+		# The remainder is now added to the next day, so this line is the whole
+		# statement of the bargain a player is being offered. A scarcity the
+		# player only discovers by having lost it is a trap; one they are told
+		# about at the end of the day they spent it is a decision they made.
+		#
+		# It must name a QUANTITY OF WAX and never a quantity of time, because
+		# the ledger has no numbers in it and a clerk writing this up at dusk
+		# would be looking at a stub in a dish.
+		if day_index + 1 < days.size() and desk != null:
+			# The same arithmetic _begin_day will perform in the morning, said
+			# tonight. A player must never learn a rule by having already been
+			# charged under it.
+			var kept := register.sound_fraction_for_day(day_id)
+			var stub := minf(desk.candle.carry_forward_seconds(),
+				days[day_index + 1].day_seconds * CARRY_CAP) * kept
 			out.append(Ledger.gap(3))
-			if left >= 0.98:
+			if stub >= days[day_index + 1].day_seconds * CARRY_CAP - 1.0:
 				out.append(Ledger.text(
-					"The stub goes back in the press. It will do again.", 10,
-					Ink.FADED))
-			elif left > Candle.NEXT_DAY_FLOOR:
+					"A good length of it goes back in the press, and it is lit "
+					+ "on top of tomorrow's. The office issues a candle, not a "
+					+ "candle a day.", 10, Ink.FADED))
+			elif stub > 12.0:
 				out.append(Ledger.text(
-					"What is left of it goes back in the press, and it is what "
-					+ "you will be given next time. The office issues a candle, "
-					+ "not a candle a day.", 10, Ink.FADED))
+					"What is left of it goes back in the press and is lit on "
+					+ "top of tomorrow's. It is not much.", 10, Ink.FADED))
 			else:
 				out.append(Ledger.text(
-					"There is not enough of it left to be worth keeping. The "
-					+ "doorkeeper will find you a stub from somewhere, and it "
-					+ "will be a short morning.", 10, Ink.RUBRIC))
+					"There is not enough of it left to be worth keeping. "
+					+ "Tomorrow is tomorrow's candle and no more than that.", 10,
+					Ink.RUBRIC))
+			# AND WHY IT IS SHORT, WHEN IT IS SHORT FOR THAT REASON. Stated only
+			# when the day was actually unsound, so it reads as the office
+			# answering for something rather than as a rule being recited.
+			if kept < 1.0:
+				out.append(Ledger.gap(3))
+				out.append(Ledger.text(
+					"The rest of it is burnt in the reviewing room while what "
+					+ "this desk did today is gone over. That is where a wrong "
+					+ "ruling is paid for: not in the wax, and not by the man "
+					+ "who brought it.", 10, Ink.RUBRIC))
 
 	var grades: Array[int] = []
 	for entry in day_entries:

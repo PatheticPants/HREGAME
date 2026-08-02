@@ -815,9 +815,9 @@ func _play_day(label: String) -> void:
 	var day := session.current_day
 	if day == null:
 		return
-	print("\n-- %s: %d matters, %.0f s of candle (%.0f authored x %.2f carried)"
+	print("\n-- %s: %d matters, %.0f s of candle (%.0f authored + %.0f s of stub)"
 		% [label, session.cases.size(), session.day_seconds(),
-			day.day_seconds, desk.last_candle_remaining])
+			day.day_seconds, session.day_seconds() - day.day_seconds])
 
 	var ordinal := 0
 	var total := session.cases.size()
@@ -991,12 +991,17 @@ func _print_report() -> void:
 			% [spent_total, last["day_seconds"], burn, ended])
 		# DID THE DAY EVER LOOK LIKE IT WAS ENDING?
 		#
-		# `Candle.GUTTERING_FROM` is 0.86, and everything the object does to say
-		# the light is going — the smoke plume, the 3.2x flicker unrest, the
-		# candle_gutter warning — lives above it. `_output()` is
-		# lerp(1.0, 0.30, ease(burn, 2.2)), so at burn 0.28 the flame is still at
-		# 95% and the desk is as readable as it was at dawn. A day that ends
-		# below the threshold spends its whole length looking like morning.
+		# Everything the candle does to say the light is going — the smoke plume,
+		# the 3.2x flicker unrest, the candle_gutter warning — lives above
+		# `Candle.GUTTERING_FROM`. It was 0.86 against a Tuesday that ended at
+		# burn 0.28, so the threshold was crossed only on days the player LOST
+		# and the whole apparatus was a death rattle rather than a warning.
+		# `_output()` is lerp(1.0, 0.30, ease(burn, 2.2)): at burn 0.28 the flame
+		# is still at 95% and the desk is as readable as it was at dawn.
+		#
+		# This line is the guard on that. If a day a competent player COMPLETES
+		# stops reaching the threshold again, the clock has gone back to being
+		# decoration and this is where it shows.
 		var out := lerpf(1.0, 0.30, ease(clampf(burn, 0.0, 1.0), 2.2))
 		print("   ---- flame at day's end %.0f%% of full; guttering (%.2f) %s"
 			% [out * 100.0, Candle.GUTTERING_FROM,

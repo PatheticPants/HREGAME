@@ -72,6 +72,48 @@ func _practice_contract() -> void:
 		"putting the glass down after reading begins the first working day")
 	_close(main)
 
+	await _practice_cannot_trap_anybody()
+
+
+## THE TUTORIAL WAS A SOFTLOCK AND NOTHING TESTED THAT IT WAS NOT.
+##
+## PRACTICE_REVIEW had no branch in _process, so the ONLY exit was
+## inspect_impression followed by releasing the lens — and the only sentence in
+## the game that said so lived in the practice docket's `doorkeeper_note`, the
+## faint slanted hand this project had already measured, already documented as
+## "never authoritative", and already moved the candle rule out of. A player who
+## skimmed it, as five case dockets train them to, sat at a desk with no
+## petitioner, no clock and no menu, permanently.
+##
+## This plays the one thing the old suite never did: a player who strikes the
+## practice seal and then does NOTHING AT ALL.
+func _practice_cannot_trap_anybody() -> void:
+	print("-- and a player who does nothing is not trapped at the desk")
+	var main := _open(false)
+	var desk := main.get_node("desk") as Desk
+	var session := desk.session
+	var record := ImpressionRecord.new()
+	record.grade = Lex.Grade.GOOD
+	session._on_impression_finished(Lex.Verdict.CONFIRM, record)
+	_is_true(session.stage == SessionController.Stage.PRACTICE_REVIEW,
+		"the practice judgment leaves time to inspect the device")
+
+	# Hands off the mouse from here. Nothing below touches the desk.
+	session._timer = SessionController.PRACTICE_PATIENCE - 0.2
+	await _step(0.5)
+	_is_true(session._practice_inspected and session._practice_gave_up,
+		"the doorkeeper eventually opens the door himself")
+	_is_true(session.stage == SessionController.Stage.PRACTICE_REVIEW,
+		"and the leaf is still there to be read, because opening a door is not "
+		+ "a deadline")
+	session._timer = SessionController.PRACTICE_PATIENCE \
+		+ SessionController.PRACTICE_GRACE - 0.2
+	await _step(0.5)
+	_is_true(session.current_day != null and session.current_day.id == &"day_01",
+		"and the first working day begins without the player ever finding the "
+		+ "one faint sentence that used to be the only way out")
+	_close(main)
+
 
 # ------------------------------------------------------- working-time contract
 
@@ -236,19 +278,28 @@ func _day_two_tray() -> void:
 	_is_true(thursday_ids.has(&"letter_aue_receipt"),
 		"and the office receipts the knife the player refused")
 
-	# THE CANDLE FINALLY BUYS SOMETHING.
+	# THE CANDLE FINALLY BUYS SOMETHING, AND IT BUYS IT BY ADDING.
 	#
 	# It used to reset to full every morning, so the only scarce thing in the
 	# game purchased nothing and an hour spent re-reading the Almanac was free.
-	# Thursday is now as long as what Tuesday left in the dish, floored so that a
-	# day nobody can finish is never handed out as a punishment.
-	_is_true(desk.last_candle_remaining >= Candle.NEXT_DAY_FLOOR
-			and desk.last_candle_remaining <= 1.0,
-		"what was left of Tuesday's candle is carried into Thursday")
+	# Then it multiplied, which welded the days together: a shorter Tuesday was a
+	# lower carry was a shorter Thursday, for exactly the player already drowning
+	# on Thursday. What carries now is the stub, in seconds, lit on top of
+	# Thursday's own candle and capped at CARRY_CAP of it.
+	_is_true(desk.last_candle_seconds > 0.0,
+		"a stub of Tuesday's candle is carried into Thursday (%.1f s)"
+		% desk.last_candle_seconds)
 	var thursday := Lore.data.day_by_id(&"day_02")
 	_is_true(is_equal_approx(session.day_seconds(),
-			thursday.day_seconds * desk.last_candle_remaining),
-		"and Thursday is exactly that much shorter than it is authored to be")
+			thursday.day_seconds + desk.last_candle_seconds),
+		"and Thursday is exactly that much LONGER than it is authored to be")
+	_is_true(session.day_seconds() >= thursday.day_seconds,
+		"a day is never shorter than the office authored it")
+	# The cap is what stops an efficient player accumulating until the clock is
+	# decoration again on the day they have finally learnt to beat it.
+	_is_true(session.day_seconds()
+			<= thursday.day_seconds * (1.0 + SessionController.CARRY_CAP) + 0.001,
+		"and never longer than its own candle and a third")
 
 	var candle_before := desk.candle.burn
 	var chosen := desk.docket_slips[-1].case_id()
@@ -269,7 +320,7 @@ func _day_two_tray() -> void:
 		"choosing from the tray spends no candle")
 
 	# Drown this candle with Elsbeth heard and the other matters still in the tray.
-	session.current_day.day_seconds = 0.6
+	_force_short_day(desk, 0.6)
 	await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0)
 	await _hear_them_out(desk)
 	await _await_stage(desk, SessionController.Stage.WORKING, 8.0)
@@ -288,6 +339,86 @@ func _day_two_tray() -> void:
 	_is_true(session.register.entries_for_day(&"day_01").size() == day_one.size(),
 		"the earlier Register survives the new day unchanged")
 
+	_close(main)
+
+	await _a_wrong_ruling_costs_candle()
+
+
+## THE COUNTERWEIGHT TO A CLOCK THAT FINALLY BITES.
+##
+## A tight day rewards skipping the books that cannot answer this packet — which
+## is the skill the Kalendar's covering line and the Matrices' plates spend their
+## front matter teaching, and the whole reason the day was shortened. But it
+## rewards GUESSING exactly as much unless being wrong costs something, and
+## before this it cost one line of ledger prose, a favour tally nothing reads,
+## and a review slip. Bank the time you would have spent looking, take the odds.
+##
+## So the stub is scaled by the day's soundness. This plays Tuesday with one
+## matter deliberately ruled against the law and asserts the wager actually pays
+## out — including that the CAP does not swallow it, which it did in the first
+## draft: capping after scaling left three quarters of 183 s still clipping to
+## the same 136 s, so one wrong ruling in four cost precisely nothing.
+func _a_wrong_ruling_costs_candle() -> void:
+	print("-- and what you carry into tomorrow is only as good as today's rulings")
+	var main := _open()
+	var desk := main.get_node("desk") as Desk
+	var session := desk.session
+	session.current_day.day_seconds = 100000.0
+
+	var day_one := Lore.data.day_by_id(&"day_01").resolve_cases(
+		Lore.data, session.register)
+	var wronged := ""
+	for expected in day_one:
+		await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0)
+		await _hear_them_out(desk)
+		await _await_stage(desk, SessionController.Stage.WORKING, 8.0)
+		var record := ImpressionRecord.new()
+		record.grade = Lex.Grade.GOOD
+		# Küfergasse is the one matter in the day that is a plain finding of
+		# fact: no authority contest, so DENY is simply unsound. Everything else
+		# is ruled correctly, which is what makes the fraction assertable.
+		var ring := expected.correct_verdict
+		if expected.id == &"case_01_kufergasse":
+			ring = Lex.Verdict.DENY
+			wronged = String(expected.id)
+		session._on_impression_finished(ring, record)
+		await _step(0.25)
+		await _hear_them_out(desk)
+		await _await_not_stage(desk,
+			[SessionController.Stage.REACTING, SessionController.Stage.DEPARTING],
+			14.0)
+
+	await _await_stage(desk, SessionController.Stage.LEDGER, 20.0)
+	_is_true(not wronged.is_empty(), "a matter was ruled against the law")
+	var kept := session.register.sound_fraction_for_day(&"day_01")
+	_is_true(kept > 0.0 and kept < 1.0,
+		"the day is recorded as partly unsound (%.2f)" % kept)
+	# Captured before the corner is turned, because reset_for_next_day zeroes it.
+	var raw := desk.candle.carry_forward_seconds()
+	var thursday := Lore.data.day_by_id(&"day_02")
+	var allowed := thursday.day_seconds * SessionController.CARRY_CAP
+
+	# THE LEDGER SAYS SO TONIGHT, BEFORE THE MORNING CHARGES FOR IT. A rule the
+	# player only meets by having already been billed under it is a trap.
+	var closing := ""
+	for line: Dictionary in session._compose_ledger():
+		closing += String(line.get("text", "")) + "\n"
+	_is_true(closing.contains("reviewing room"),
+		"and the ledger says where the rest of the candle went")
+
+	desk.ledger.skip_to_end()
+	desk.ledger.spread = maxi(0, desk.ledger.spread_count() - 1)
+	desk.ledger.on_click(Vector2(Ledger.SIZE.x * 0.5 - 20,
+		Ledger.SIZE.y * 0.5 - 20))
+	await get_tree().process_frame
+	_is_true(session.current_day != null and session.current_day.id == &"day_02",
+		"Thursday opens")
+	_is_true(is_equal_approx(desk.last_candle_seconds, minf(raw, allowed) * kept),
+		"the stub is capped and then scaled by soundness (%.1f s)"
+		% desk.last_candle_seconds)
+	_is_true(desk.last_candle_seconds < allowed - 1.0,
+		"so being wrong costs real candle rather than being clipped away by the "
+		+ "cap (%.1f s of an allowed %.1f)" % [desk.last_candle_seconds, allowed])
 	_close(main)
 
 
@@ -474,7 +605,7 @@ func _day_cut_short() -> void:
 	var session := desk.session
 	# Six seconds of working time: enough to reach the first petitioner and not
 	# enough to finish them.
-	session.current_day.day_seconds = 6.0
+	_force_short_day(desk, 6.0)
 
 	var arrived := await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0)
 	_is_true(arrived, "the first petitioner still gets through the door")
@@ -544,7 +675,7 @@ func _the_week_chases_you() -> void:
 	await _await_stage(desk, SessionController.Stage.SPEAKING, 20.0)
 	await _hear_them_out(desk)
 	await _await_stage(desk, SessionController.Stage.WORKING, 8.0)
-	session.current_day.day_seconds = 6.0
+	_force_short_day(desk, 6.0)
 	desk.case_work_engaged.emit(desk.current_charter)
 	_is_true(await _await_stage(desk, SessionController.Stage.LEDGER, 30.0),
 		"Tuesday drowns with matters still in the passage")
@@ -561,12 +692,19 @@ func _the_week_chases_you() -> void:
 	await get_tree().process_frame
 	_is_true(session.current_day != null and session.current_day.id == &"day_02",
 		"and turning the corner opens it")
-	_is_true(desk.last_candle_remaining <= Candle.NEXT_DAY_FLOOR + 0.001,
-		"on a candle Tuesday already spent down to the floor (%.2f)"
-		% desk.last_candle_remaining)
+	_is_true(desk.last_candle_seconds <= 0.001,
+		"with no stub at all, because Tuesday drowned (%.2f s)"
+		% desk.last_candle_seconds)
+	# AND THE DAY IS STILL ITS OWN FULL LENGTH. Under the old multiplication a
+	# player who lost Tuesday was handed a Thursday a third shorter as well, so
+	# the punishment for falling behind was to fall further behind. Losing a day
+	# now costs the stub and nothing more.
+	_is_true(is_equal_approx(session.day_seconds(),
+			Lore.data.day_by_id(&"day_02").day_seconds),
+		"and Thursday is not also shortened for having lost Tuesday")
 
 	# Thursday: drown it too, immediately, so the week ends owing people.
-	session.current_day.day_seconds = 0.6
+	_force_short_day(desk, 0.6)
 	if session.stage == SessionController.Stage.CHOOSING \
 			and not desk.docket_slips.is_empty():
 		desk.docket_selected.emit(desk.docket_slips[0].case_id())
@@ -605,12 +743,16 @@ func _the_week_chases_you() -> void:
 		"the third day opens")
 	_is_true(session.cases.size() == owed.size(),
 		"holding exactly the arrears (%d)" % session.cases.size())
-	# THE CHAIN. Saturday is short because Thursday was short because Tuesday
-	# was. This is the assertion two days could not carry.
+	# THE CHAIN, AND IT NO LONGER COMPOUNDS DOWNWARD.
+	#
+	# Saturday used to be short because Thursday was short because Tuesday was —
+	# so the only player who ever reached the third day, the one the candle had
+	# already beaten twice, was handed a third day a third shorter as well. A
+	# carry that adds cannot do that. Saturday is exactly its own authored length
+	# here, because Thursday drowned and left no stub.
 	_is_true(is_equal_approx(session.day_seconds(),
-			Lore.data.day_by_id(&"day_03").day_seconds
-			* desk.last_candle_remaining),
-		"and it is shortened again by what Thursday left")
+			Lore.data.day_by_id(&"day_03").day_seconds),
+		"and Saturday is its own full length, not a debt collected from the week")
 	_is_true(session.stage == SessionController.Stage.CHOOSING
 			and not desk.docket_slips.is_empty(),
 		"with the people who have waited longest protruding from the tray")
@@ -620,7 +762,27 @@ func _the_week_chases_you() -> void:
 
 # -------------------------------------------------------------------- harness
 
+## THE DAY LENGTHS ARE SHARED MUTABLE STATE AND THIS SUITE REWRITES THEM.
+##
+## `Lore.data.days` holds one DayData per day for the whole process, and half the
+## tests below shorten `current_day.day_seconds` to drown a candle on purpose.
+## Those writes persisted, so by the sixth test day_02 was authored at 0.6
+## seconds and any later assertion that reasoned about a day's real length was
+## quietly reasoning about 0.6. Restoring the authored figures on every _open()
+## costs nothing and removes a whole class of order-dependent lie.
+var _authored_day_seconds := {}
+
+
+func _restore_authored_days() -> void:
+	for d in Lore.data.days:
+		if _authored_day_seconds.has(d.id):
+			d.day_seconds = _authored_day_seconds[d.id]
+		else:
+			_authored_day_seconds[d.id] = d.day_seconds
+
+
 func _open(skip_practice := true) -> Node:
+	_restore_authored_days()
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate()
 	add_child(main)
 	if skip_practice:
@@ -629,6 +791,20 @@ func _open(skip_practice := true) -> Node:
 			desk.sweep_packet_away()
 			desk.session._begin_day(0)
 	return main
+
+
+## Force the current day to a length the harness can actually drown.
+##
+## A day's length is its authored candle PLUS the stub the last day left, so
+## writing day_seconds alone no longer shortens anything — it left a 0.6 second
+## Thursday running for 136 seconds and two "the candle drowned" assertions
+## failing with no hint as to why. Anything arranging a burnout has to put out
+## the stub as well.
+func _force_short_day(desk: Desk, seconds: float) -> void:
+	desk.session.current_day.day_seconds = seconds
+	desk.last_candle_seconds = 0.0
+	if desk.candle != null:
+		desk.candle.issue(desk.session.day_seconds())
 
 
 func _close(main: Node) -> void:

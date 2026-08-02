@@ -2,7 +2,8 @@
   "id": "day_01",
   "entry_label": "TUESDAY",
   "heading": "The eleventh day of October, in the seventh year of Kunrad IV. Third desk, second floor. Four matters heard.",
-  "day_seconds": 1200,
+  "_day_seconds_note": "MEASURED, NOT GUESSED. tests/play_day.tscn at dwell 8 -- a competent reading pace -- spends 337 s across these four matters. At the authored 1200 s that is burn 0.28: Tuesday was oversupplied three and a half times over, the candle never left its fresh state, the light contracted by four per cent, and GUTTERING_FROM was unreachable on any day the player finished. Three separate authored systems -- the melting stub, the contracting reach, the gutter -- had never once been rendered in ordinary play.\n\n520 puts that same player at burn 0.65, so the last matter of the day is worked by a candle past the guttering line, and it makes the skill the books already teach worth something: the Kalendar's own head says it keeps Thurn's dead and nobody else's, the Matrices plate says a Marchfeld die is almost never dead, so a notary who has read them can tell from the charter alone which books can possibly speak about this packet. Skipping the three that cannot is a 45 s matter against an 85 s one. At 1200 s that skill bought nothing whatever.\n\nA slow player (dwell 16, 592 s) loses the fourth matter, which is a lesson and not a wall: Thursday's slots carry it forward through requires_ruled/fallback, and Saturday holds it after that.\n\nDo not raise this without re-running tools/sweep_pacing.ps1 across the whole dwell range. One point on that curve is how you get a retune that is exactly wrong for everybody except the imaginary player you measured.",
+  "day_seconds": 520,
   "burnt_out_text": "The candle went before the queue did. The doorkeeper turned the rest of them out into the passage and told them to come back on Thursday.",
   "selection_mode": "fixed",
   "case_slots": [
