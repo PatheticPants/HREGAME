@@ -98,8 +98,35 @@ sixteen findings in one session did not survive an adversarial check.
 python tools/make_placeholder_audio.py
 ```
 
-regenerates the 36 placeholder sounds. Deterministic, so it will not churn the
-repo. Standard library only.
+regenerates the 36 placeholder sound effects.
+
+```bash
+python tools/make_music.py
+```
+
+writes the four music stems. Both are standard library only and deterministic, so
+regenerating does not churn the repo.
+
+### The score
+
+Four layers, mixed continuously rather than played and stopped, so there is never
+a seam. **The melody plays while the candle is being spent and at no other
+time** — not while a petitioner speaks, not between callers, not over the ledger.
+That is the same rule the flame follows, so the music says the one thing the game
+most needs said: this is your time being spent.
+
+| | |
+|---|---|
+| `music_bed` | the room. A drone on the open fifth, under everything. |
+| `music_work` | the melody. Only while the clock runs. |
+| `music_close` | the same mode gone dark, fading in across the guttering line, so the light going and the music going are one event. |
+| `music_cold` | the ledger, after the flame. Bare fifths and no room underneath — the warmth is what has been taken away. |
+
+**It is a placeholder, and a composer should replace it.** The file names are the
+whole contract: drop four seamlessly looping files with those names into `audio/`
+and the game picks them up with no code change. What the generated version is for
+is that the music *system* is exercised and tuned from the first day, because
+retrofitting adaptive music into a finished game is the miserable job.
 
 ---
 

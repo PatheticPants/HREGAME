@@ -807,8 +807,22 @@ def check_encodings():
     milliseconds to check and it has already happened once.
     """
     moji = [b"\xc3\xa2\xe2\x82\xac", b"\xc3\xa2\xc2\x80", b"\xc3\x82\xc2"]
-    roots = ("scripts", "tests", "tools", "data", "scenes")
+    # docs/ AND THE REPOSITORY ROOT, which were both missing. ".md" was in the
+    # extension list all along, but the only roots walked were code and data --
+    # so README.md and every file in docs/ were never opened by this check.
+    #
+    # That was not theoretical. On 2026-08-02 a PowerShell -replace round-tripped
+    # README.md and docs/CONTINUITY.md through cp1252, turned 124 em dashes into
+    # mojibake, produced a 300-line diff out of a 30-line edit -- and this script
+    # said "All content checks passed" immediately afterwards. The trap is
+    # written down three paragraphs into CONTINUITY and the guard against it did
+    # not cover CONTINUITY.
+    roots = ("scripts", "tests", "tools", "data", "scenes", "docs")
     checked = 0
+    paths = []
+    for name in sorted(os.listdir(ROOT)):
+        if name.endswith(".md") and os.path.isfile(os.path.join(ROOT, name)):
+            paths.append(os.path.join(ROOT, name))
     for root in roots:
         base = os.path.join(ROOT, root)
         if not os.path.isdir(base):
@@ -818,20 +832,21 @@ def check_encodings():
                 if not name.endswith((".gd", ".json", ".tres", ".tscn",
                                       ".py", ".cfg", ".md")):
                     continue
-                path = os.path.join(dirpath, name)
-                rel = os.path.relpath(path, ROOT).replace("\\", "/")
-                raw = open(path, "rb").read()
-                checked += 1
-                if any(m in raw for m in moji):
-                    fail("%s: double-encoded text (cp1252 round-trip damage)" % rel)
-                if raw[:3] == b"\xef\xbb\xbf":
-                    fail("%s: has a UTF-8 BOM" % rel)
-                if b"\r\n" in raw:
-                    fail("%s: has CRLF line endings" % rel)
-                try:
-                    raw.decode("utf-8")
-                except UnicodeDecodeError as e:
-                    fail("%s: not valid UTF-8 (%s)" % (rel, e))
+                paths.append(os.path.join(dirpath, name))
+    for path in paths:
+        rel = os.path.relpath(path, ROOT).replace("\\", "/")
+        raw = open(path, "rb").read()
+        checked += 1
+        if any(m in raw for m in moji):
+            fail("%s: double-encoded text (cp1252 round-trip damage)" % rel)
+        if raw[:3] == b"\xef\xbb\xbf":
+            fail("%s: has a UTF-8 BOM" % rel)
+        if b"\r\n" in raw:
+            fail("%s: has CRLF line endings" % rel)
+        try:
+            raw.decode("utf-8")
+        except UnicodeDecodeError as e:
+            fail("%s: not valid UTF-8 (%s)" % (rel, e))
     print("Encoding: %d text files checked.\n" % checked)
 
 

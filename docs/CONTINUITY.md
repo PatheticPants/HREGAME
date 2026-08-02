@@ -29,8 +29,8 @@ python tools/verify_content.py
 | suite | checks |
 |---|---|
 | rules | 107 |
-| presentation | 403 |
-| the day (full loop) | 121 |
+| presentation | 461 |
+| the day (full loop) | 138 |
 | content + encoding | PASS |
 
 And a fifth, which is the only one that answers a pacing question:
@@ -280,7 +280,8 @@ sheet's.
 
 **Never rewrite a source file with PowerShell `Set-Content` / `-replace`.** It
 round-trips through cp1252 and silently mangles every non-ASCII character — seven
-em dashes in `candle.gd` became `â€"` and the file still ran. Use the editor
+em dashes in `candle.gd` each became three bytes of Latin-1 gibberish (an
+a-circumflex, a euro sign and a quote) and the file still ran. Use the editor
 tooling. `tools/verify_content.py` checks every text file for this on every run;
 it also catches BOMs and CRLF.
 
@@ -603,6 +604,64 @@ context independently name the same defect, it is real. That is how the arrival
 path, the dead air between cases and the unreadable ring stand were all found.
 
 ---
+
+## What the owner found by PLAYING it, 2026-08-02 — six reports, six real defects
+
+That is the third session running in which the highest-value findings came from a
+human playing rather than from a reviewer reading. Every one was reproduced in
+pixels or in a number before anything was changed, and one of them was introduced
+by the previous commit.
+
+1. **The type was point-sampled at a fractional scale.** Viewport 1920x1080,
+   window 1600x900, `stretch/mode="canvas_items"` — the canvas is scaled by
+   0.8333, and `Desk._ready` sets `TEXTURE_FILTER_NEAREST`, which every child
+   inherits. Glyph atlases sampled NEAREST at 0.833 drop or double rows: stems
+   one pixel here and two there, baselines wobbling along a line. One line in
+   `Draggable._ready`, and it is safe there **only because every object that
+   draws an authored plate re-pins NEAREST on itself afterwards** — check that
+   list before touching it. **MSDF was tried first and does nothing:** that
+   project setting applies to a default theme font and everything here draws
+   through `ThemeDB.fallback_font`. Measured pixel for pixel; noted in
+   `project.godot`.
+
+2. **Headings ran across the gutter onto the facing page.** `Ink.heading()` took
+   a `width` and used it for the rule underneath and nothing else; the heading
+   went through `Ink.line()`, whose width defaults to -1, and `draw_string` with
+   -1 neither wraps nor clips. **Every fit assertion in this suite measured
+   HEIGHT** — a whole axis was unguarded, which is why the leaf-fit test that
+   caught four vertical overflows walked past four horizontal ones. Headings and
+   generated single lines are SET TO FIT now (`Ink.fitted_size`, `Ink.line_fit`),
+   and the band a heading reserves stays the size it asked for: `page_bottom()`
+   and `content_bottom()` are hand-mirrored against these draws, so a heading
+   that shrank *and moved what was under it* would invalidate every vertical
+   check in the file.
+
+3. **The ring stand was eating its own words.** One loop drawing recess-then-word
+   buried each word under the next socket, and at `SLOT_GAP` 92 there were twelve
+   units of clear wood for 21 units of type anyway. Two passes, gap 104.
+
+4. **A ring put back quickly floated off the block** — 81 units off, measured
+   against the unfixed code. `DragSolver._step_free` keeps a released body's
+   velocity and only bleeds it. `home_position` had existed since the first
+   commit and was read by nothing but the tests. It seats into its **own** hollow
+   only, with a catch smaller than half the slot gap; a ring genuinely left
+   elsewhere still stays there, and that is asserted.
+
+5. **The opening asked for fourteen things at once.** Not too little explanation
+   — SIMULTANEITY: six sentences on the memorandum, five on the practice slip,
+   three paragraphs on the leaf, none saying which to do first.
+   `SessionController.PRACTICE_STEPS` is the fix and is where that prose lives
+   now; the JSON holds only its first frame.
+
+6. **There was no music.** `tools/make_music.py` and `_drive_music`. The rule is
+   that **the melody plays while the candle is being spent and at no other
+   time** — the same rule as the flame. Placeholder; the file names are the whole
+   contract for replacing it.
+
+**And I mangled two docs with PowerShell while writing this up**, exactly as the
+trap below says, and `verify_content.py` did not catch it because it does not
+scan `.md`. `git checkout` and redo with the editor tooling. The rule is not
+"be careful with `-replace`", it is **do not use it on a file at all**.
 
 ## Four things the 2026-08-01 pass found, all of which were invisible to every suite
 
