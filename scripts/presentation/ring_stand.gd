@@ -49,6 +49,13 @@ const SEAT_CATCH := 46.0
 var slot_words: Array[String] = ["CONFIRMO", "NEGO", "REFERO"]
 var light_position := Vector2(0, -400)
 var light_level := 0.5
+## Both of these were missing, and the desk was not setting them because they did
+## not exist. The block therefore never breathed with the flame — the one object
+## on the desk that names the three irreversible choices sat perfectly steady
+## while every other surface flickered — and after the candle died it went on
+## warming its oak toward brown in a cold grey room.
+var light_strength := 1.0
+var ambient_daylight := false
 
 ## Which hollow is empty because the player is holding that ring. -1 for none.
 ## A ring in the hand is a ring whose word you can no longer read off the block,
@@ -75,10 +82,18 @@ func _draw() -> void:
 	var w := 138.0
 	var h := SLOT_GAP * 3.0 + 26.0
 	var r := Rect2(-w * 0.5, -h * 0.5, w, h)
-	var lit := clampf(light_level, 0.0, 1.0)
+	# Flicker reaches the block now. It is one multiply and it is the difference
+	# between a prop and a thing standing in the same room as the flame.
+	var lit := clampf(light_level * clampf(light_strength, 0.7, 1.1), 0.0, 1.0)
 	var toward := (light_position - global_position).normalized()
 
-	var oak := Color(0.29, 0.20, 0.13).lerp(Color(0.58, 0.40, 0.22), lit * 0.55)
+	# Warm oak under a flame, grey oak under a shutter. The cold morning is
+	# defined by having no fire in it, so the one surface that went on warming
+	# itself after the candle died read as still being lit by something.
+	var warm := Color(0.58, 0.40, 0.22)
+	var cold := Color(0.46, 0.45, 0.47)
+	var oak := Color(0.29, 0.20, 0.13).lerp(cold if ambient_daylight else warm,
+		lit * 0.55)
 
 	# Body of the block, with the grain running along it.
 	draw_rect(Rect2(r.position + Vector2(5, 7), r.size), Color(0, 0, 0, 0.30))

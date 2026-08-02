@@ -464,6 +464,15 @@ func lay_out_packet(documents: Array[DocumentData]) -> void:
 
 	_refresh_lens_subjects()
 	press.reset_for_new_case(current_charter)
+	# LIGHT THEM BEFORE THEY ARE EVER DRAWN.
+	#
+	# Draggable.light_level starts at 1.0 — fully lit — and _update_lighting runs
+	# from Desk._process. The session is a CHILD of the desk, so its _process runs
+	# after ours: a packet laid out on a knock is created after this frame's
+	# lighting pass and before this frame's draw, and every sheet in it renders
+	# once at full brightness in a room lit by one candle. One frame of white
+	# paper on every arrival, seven times a week.
+	_update_lighting()
 
 
 func _make_document_view(doc: DocumentData) -> Sheet:
@@ -495,6 +504,8 @@ func lay_out_day_documents(documents: Array[DocumentData]) -> void:
 		node.settle_immediately()
 		day_papers.append(node)
 		Audio.play(&"paper_drop", node.global_position, -5.0)
+	# Before the first draw; see the note at the end of lay_out_packet.
+	_update_lighting()
 
 
 ## SOMETHING ARRIVES THAT IS NOT A PETITIONER.
@@ -537,6 +548,10 @@ func deliver_day_document(doc: DocumentData) -> void:
 		_door.knock()
 	Audio.play(&"door_knock", node.global_position, -7.0)
 	Audio.play(&"paper_drop", node.global_position, -3.0)
+	# Before the first draw; see the note at the end of lay_out_packet. This one
+	# is the most visible of the three: a delivered slip slides in over the far
+	# edge of the desk, which is the darkest part of the room.
+	_update_lighting()
 
 
 ## Day 2's queue is furniture, not a menu. Each case is a physical slip at the
@@ -553,6 +568,8 @@ func show_docket_tray(day_cases: Array[CaseData]) -> void:
 		slip.bind(day_cases[i], i, DESK_RECT)
 		docket_slips.append(slip)
 	unlock_docket_tray()
+	# Before the first draw; see the note at the end of lay_out_packet.
+	_update_lighting()
 
 
 func hide_docket_tray() -> void:
@@ -1312,28 +1329,53 @@ func _update_lighting() -> void:
 	var flame := candle.flame_world()
 	var strength := candle.light_intensity()
 	var spent := candle.is_spent()
-	if spent:
-		# Daylight. One direction for the whole room, one strength for
-		# everything in it, and no flicker.
-		flame = global_position + WINDOW_DIRECTION.normalized() * WINDOW_DISTANCE
-		strength = 1.0
+	# THE DAY'S-END TURN USED TO POP.
+	#
+	# `spent` is a boolean and every per-object light value keyed straight off it,
+	# so on the single frame the wick died the whole desk's shading jumped: every
+	# light_level snapped from whatever the flame was delivering (up to ~0.95 for
+	# a sheet beside it) to a flat WINDOW_LEVEL of 0.30, and every light_position
+	# jumped from a point ON the desk to one 2600 units up and to the left, which
+	# swings every gradient, every specular and every engraved lip through most of
+	# a half-turn in one frame.
+	#
+	# Meanwhile the CanvasModulate behind it takes about two seconds to cross from
+	# night to morning. So the slow, deliberate, authored part of the transition
+	# was playing underneath an instantaneous snap of everything in front of it.
+	# `_morning_amount` already existed and already ramps over roughly four
+	# seconds; it was driving the shutter geometry and nothing else.
+	var window := global_position + WINDOW_DIRECTION.normalized() * WINDOW_DISTANCE
+	var morning := clampf(_morning_amount, 0.0, 1.0)
+	flame = flame.lerp(window, morning)
+	strength = lerpf(strength, 1.0, morning)
+	# The MODEL switch cannot be blended — an object either shades itself as a
+	# room lit by one warm point or as one lit by a cold sky — so it happens at
+	# the midpoint, which is where the two are least far apart.
+	var daylight := morning > 0.5
 	for i in surface.get_child_count():
 		var d := surface.get_child(i) as Draggable
 		if d == null or d == candle:
 			continue  # the candle does not stand in its own light
 		d.light_position = flame
 		d.light_strength = strength
-		d.ambient_daylight = spent
-		d.light_level = WINDOW_LEVEL if spent \
-			else candle.illumination_at(d.global_position)
+		d.ambient_daylight = daylight
+		d.light_level = lerpf(candle.illumination_at(d.global_position),
+			WINDOW_LEVEL, morning)
 	petitioner.light_position = flame
 	petitioner.light_strength = strength
-	petitioner.ambient_daylight = spent
-	petitioner.light_level = WINDOW_LEVEL if spent \
-		else candle.illumination_at(petitioner.global_position)
+	petitioner.ambient_daylight = daylight
+	petitioner.light_level = lerpf(
+		candle.illumination_at(petitioner.global_position), WINDOW_LEVEL, morning)
+	# THE BLOCK NEVER FLICKERED AND NEVER SAW THE MORNING. It took a position and
+	# a level and nothing else — no strength, so the one object naming the three
+	# irreversible choices sat perfectly steady while every other surface on the
+	# desk breathed with the flame; and no daylight flag, so after the candle died
+	# it went on lerping its oak toward a warm brown in a cold grey room.
 	ring_stand.light_position = flame
-	ring_stand.light_level = WINDOW_LEVEL if spent \
-		else candle.illumination_at(ring_stand.global_position)
+	ring_stand.light_strength = strength
+	ring_stand.ambient_daylight = daylight
+	ring_stand.light_level = lerpf(
+		candle.illumination_at(ring_stand.global_position), WINDOW_LEVEL, morning)
 	# Which hollow is empty because its ring is in the player's hand. The word is
 	# cut into the block, so lifting the ring is precisely when it stops being
 	# readable — and precisely when knowing what you have picked up matters most.
@@ -1346,9 +1388,9 @@ func _update_lighting() -> void:
 	if ledge != null:
 		ledge.light_position = flame
 		ledge.light_strength = strength
-		ledge.ambient_daylight = spent
-		ledge.light_level = WINDOW_LEVEL if spent \
-			else candle.illumination_at(ledge.global_position)
+		ledge.ambient_daylight = daylight
+		ledge.light_level = lerpf(
+			candle.illumination_at(ledge.global_position), WINDOW_LEVEL, morning)
 		ledge.queue_redraw()
 	# The door was the one large object in the room that took no light at all.
 	# Sampled at the middle of the leaf rather than at its origin, which is the
@@ -1357,9 +1399,9 @@ func _update_lighting() -> void:
 	if _door != null:
 		_door.light_position = flame
 		_door.light_strength = strength
-		_door.ambient_daylight = spent
-		_door.light_level = WINDOW_LEVEL if spent \
-			else candle.illumination_at(_door.centre_world())
+		_door.ambient_daylight = daylight
+		_door.light_level = lerpf(
+			candle.illumination_at(_door.centre_world()), WINDOW_LEVEL, morning)
 
 
 ## Exactly one object can be hovered — the same one _pick would grab — so the

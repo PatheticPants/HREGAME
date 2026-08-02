@@ -359,6 +359,47 @@ func unstow() -> void:
 	Audio.play(&"stow_out", global_position)
 
 
+## THE DESK SAMPLES EACH OBJECT'S LIGHT ONCE, AT ITS ORIGIN, AND SOME OBJECTS ARE
+## VERY LARGE.
+##
+## `Desk._update_lighting` writes one `light_level` per object taken at
+## `global_position`. That is right for a ring and wrong for anything the size of
+## the pool of light itself: an OPEN reference book is twice its closed width —
+## 640 units across — so the candle set down beside its left leaf lit the right
+## leaf exactly as brightly, and a 585-unit charter's wax sits up to 290 units
+## from the point its light was measured at.
+##
+## This lets any object ask what the flame actually delivers at a point it cares
+## about. The desk's single value stays what it is: the object's OWN light, used
+## for everything that does not need finer grain, and the correct answer once the
+## candle is out — by then it already holds the morning's flat level.
+var _flame_cache: Candle = null
+
+
+## Walk up for the desk rather than counting parents. Objects live three nodes
+## deep today (surface / work_plane / desk) and the projection work has already
+## moved that hierarchy once; a hardcoded chain of get_parent() calls is a silent
+## null the next time somebody inserts a layer.
+func flame() -> Candle:
+	if _flame_cache != null and is_instance_valid(_flame_cache):
+		return _flame_cache
+	var node := get_parent()
+	while node != null:
+		var desk_node := node as Desk
+		if desk_node != null:
+			_flame_cache = desk_node.candle
+			return _flame_cache
+		node = node.get_parent()
+	return null
+
+
+func illumination_at(world_point: Vector2) -> float:
+	var f := flame()
+	if f == null or f.is_spent():
+		return light_level
+	return f.illumination_at(world_point)
+
+
 ## Warm edge light while the cursor is over it.
 ##
 ## Drawn by a child node rather than by each subclass, because children draw

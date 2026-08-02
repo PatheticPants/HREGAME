@@ -241,7 +241,12 @@ func _process(delta: float) -> void:
 	var host := get_parent() as Draggable
 	if host != null:
 		light_position = host.light_position
-		light_level = host.light_level
+		# AT THE WAX, NOT AT THE MIDDLE OF THE PAGE. The sheet carries one light
+		# value sampled at its own origin; the wax is in the blank foot, which on
+		# a charter is most of 300 units away. See Sheet.illumination_at.
+		var sheet := host as Sheet
+		light_level = sheet.illumination_at(global_position) if sheet != null \
+			else host.light_level
 	# A critically damped viscous spring. Every drop pushes the rim outward, then
 	# surface tension settles it; a direct lerp made the pool inflate like a UI
 	# progress disc with no carried momentum.

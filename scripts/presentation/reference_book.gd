@@ -210,6 +210,25 @@ func _lit() -> float:
 	return Surface.lit(light_level, light_strength)
 
 
+## AND THE SAME, MEASURED AT ONE LEAF RATHER THAN AT THE SPINE.
+##
+## An open book is twice its closed width — 640 units for the Almanac, which is
+## more than a third of the reachable desk and comparable to the whole pool of
+## usable light. The desk hands every object ONE light value sampled at its
+## origin, so a candle set down beside the left leaf lit the right leaf exactly
+## as brightly, and the two largest silhouettes in the room reported the flame's
+## position by their highlight direction while flatly contradicting it with their
+## brightness.
+##
+## Reading by candlelight is the whole game. This is the object it matters most
+## on and it was the object least able to say so.
+func _leaf_lit(leaf: Rect2) -> float:
+	if light_level <= 0.0:
+		return 0.0
+	var at := to_global(leaf.get_center())
+	return Surface.lit(illumination_at(at), light_strength)
+
+
 ## Unit vector toward the flame in the book's own space, so a highlight sits on
 ## the side the light is actually on however the book has been dropped.
 func _toward_light() -> Vector2:
@@ -391,8 +410,15 @@ func _draw_open(r: Rect2, glow: float) -> void:
 	var right := Rect2(Vector2(r.position.x + pw + 3, r.position.y + 6),
 		Vector2(pw - 9, r.size.y - 12))
 
-	var leaf := data.page_color.lerp(Color(1.0, 0.87, 0.64), glow * 0.30)
+	# EACH LEAF TAKES THE LIGHT WHERE THAT LEAF IS. See _leaf_lit: an open book is
+	# 640 units across and the two halves were drawn at one brightness taken from
+	# the spine, so the candle beside one page lit the other page identically.
+	# Reading by candlelight is the whole game and this is the object it happens
+	# on. `glow` still drives the boards, the clasp and the specular, which are
+	# small enough that one sample at the spine is the right answer for them.
 	for pr in [left, right]:
+		var leaf := data.page_color.lerp(Color(1.0, 0.87, 0.64),
+			_leaf_lit(pr) * 0.30)
 		draw_rect(pr, leaf)
 		draw_rect(pr, leaf.darkened(0.20), false, 1.0)
 

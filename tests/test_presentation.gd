@@ -64,6 +64,7 @@ func _run() -> void:
 	await _test_a_delivered_slip_arrives(desk)
 	_test_dockets_fit(desk)
 	_test_reachability(desk)
+	_test_nothing_arrives_unlit(desk)
 	await _test_a_ring_put_back_stays_put(desk)
 	await _test_parchment_burns(desk)
 	await _test_seals_in_a_row(desk)
@@ -1199,9 +1200,53 @@ func _test_sweep_with_paper_in_hand(desk: Desk) -> void:
 	desk.candle.position = Vector2(-500.0, 100.0)
 	for _i in 6:
 		await get_tree().process_frame
+	# An earlier test brings the morning up, and the day's-end turn is a BLEND
+	# now rather than a switch, so light_position is somewhere between the flame
+	# and the window until _morning_amount finishes. Put the room back to night
+	# before asking where the light is.
+	desk._ambient_target = Desk.NIGHT_AMBIENT
+	desk._morning_amount = 0.0
+	for _i in 3:
+		await get_tree().process_frame
 	_is_true(desk.desk_note != null and desk.desk_note.light_position
 			.distance_to(desk.candle.flame_world()) < 4.0,
 		"and Desk._process survives to keep lighting the room")
+
+	# THE DAY'S-END TURN USED TO POP, AND NOTHING TESTED THAT IT DID NOT.
+	#
+	# Every per-object light value keyed straight off the boolean `is_spent`, so
+	# on the one frame the wick died every light_level snapped from whatever the
+	# flame was delivering to a flat WINDOW_LEVEL and every light_position jumped
+	# 2600 units to the shutter — swinging every gradient, specular and engraved
+	# lip through most of a half-turn in a single frame, underneath a
+	# CanvasModulate that takes two seconds to cross. The slow authored part of
+	# the transition was playing behind an instantaneous snap of everything in
+	# front of it.
+	var note := desk.desk_note
+	var night_level := note.light_level
+	var night_position := note.light_position
+	desk.begin_morning()
+	desk._morning_amount = 0.5
+	desk._update_lighting()
+	var half_position := note.light_position
+	_is_true(half_position.distance_to(night_position) > 4.0
+			and half_position.distance_to(desk.candle.flame_world()) > 4.0,
+		"halfway through the morning the light is between the two, not at either")
+	desk._morning_amount = 1.0
+	desk._update_lighting()
+	_is_true(absf(note.light_level - Desk.WINDOW_LEVEL) < 0.01,
+		"and it arrives at the shutter's flat level (%.3f)" % note.light_level)
+	_is_true(note.ambient_daylight,
+		"with every surface finally shading itself as a cold room")
+	# The block was the one object that never got either of these.
+	_is_true(desk.ring_stand.ambient_daylight
+			and absf(desk.ring_stand.light_level - Desk.WINDOW_LEVEL) < 0.01,
+		"including the ring stand, which used to stay warm in a grey room")
+	_is_true(night_level > Desk.WINDOW_LEVEL or night_level >= 0.0,
+		"night level recorded for comparison (%.3f)" % night_level)
+	desk._ambient_target = Desk.NIGHT_AMBIENT
+	desk._morning_amount = 0.0
+	desk._update_lighting()
 	desk.set_process(false)
 
 
@@ -1427,6 +1472,125 @@ func _test_parchment_burns(desk: Desk) -> void:
 			(paper as Sheet).burnable = was_burnable
 			(paper as Sheet).settle_immediately()
 	await get_tree().process_frame
+
+
+## NOTHING ARRIVES ON THIS DESK FULLY LIT.
+##
+## Draggable.light_level starts at 1.0 and Desk._update_lighting runs from
+## Desk._process. The session is a CHILD of the desk, so its _process runs
+## AFTER — which means a packet laid out on a knock is created after this
+## frame's lighting pass and before this frame's draw, and every sheet in it
+## renders once at full brightness in a room lit by a single candle. One frame
+## of white paper on every arrival, on every matter, in a game whose whole look
+## is one small pool of light.
+##
+## Four entry points create objects; all four light them before returning. This
+## checks the state those functions leave behind rather than trying to catch a
+## single frame, because a one-frame flash is exactly the thing a test that
+## waits cannot see.
+func _test_nothing_arrives_unlit(desk: Desk) -> void:
+	print("-- nothing arrives on the desk fully lit")
+	var candle := desk.candle
+	if candle == null:
+		return
+	var far := Vector2(-820.0, 380.0)
+	candle.solver.place(far, 0.0)
+	candle.position = far
+	desk._update_lighting()
+
+	desk.lay_out_packet(_lore_data.cases[0].documents)
+	var worst := 0.0
+	var named := ""
+	for paper in desk.case_papers:
+		var d := paper as Draggable
+		if d == null:
+			continue
+		var want := candle.illumination_at(d.global_position)
+		if absf(d.light_level - want) > worst:
+			worst = absf(d.light_level - want)
+			named = d.name
+	_is_true(worst < 0.01,
+		"a laid-out packet is lit before it is drawn (worst %.3f on %s)"
+		% [worst, named])
+	# The one that matters most: the candle is at the far corner, so a correctly
+	# lit sheet is DARK. An unlit one is 1.0 and unmistakable.
+	var lit_now := 0.0
+	for paper in desk.case_papers:
+		lit_now = maxf(lit_now, (paper as Draggable).light_level)
+	_is_true(lit_now < 0.9,
+		"and with the flame in the far corner it is dark, not white (%.3f)"
+		% lit_now)
+
+	desk.deliver_day_document(_lore_data.cases[0].documents[0])
+	var slip: Draggable = desk.day_papers[-1] if not desk.day_papers.is_empty() \
+		else null
+	_is_true(slip != null and absf(slip.light_level
+			- candle.illumination_at(slip.global_position)) < 0.01,
+		"a delivered slip arrives lit, and it arrives at the darkest edge")
+	if slip != null and is_instance_valid(slip):
+		desk.day_papers.erase(slip)
+		slip.queue_free()
+	desk.lay_out_packet(_lore_data.cases[0].documents)
+	_test_a_book_lights_leaf_by_leaf(desk)
+
+
+## AN OPEN BOOK IS 640 UNITS WIDE AND WAS LIT AT ONE POINT.
+##
+## `Desk._update_lighting` writes one light_level per object, taken at the
+## object's origin — right for a ring, and wrong for the two largest silhouettes
+## in the room. A candle set down beside the left leaf lit the right leaf exactly
+## as brightly, so the books reported the flame's position by their highlight
+## direction and flatly contradicted it with their brightness. Reading by
+## candlelight is the whole game.
+func _test_a_book_lights_leaf_by_leaf(desk: Desk) -> void:
+	var book: ReferenceBook = desk.books[0] if not desk.books.is_empty() else null
+	var candle := desk.candle
+	if book == null or candle == null:
+		return
+	var was_open := book.is_open
+	var here := book.position
+	var candle_home := candle.position
+	book.is_open = true
+	book._open_amount = 1.0
+	book.stowed = false
+	book.solver.place(Vector2(0.0, 60.0), 0.0)
+	book.position = Vector2(0.0, 60.0)
+
+	# The candle right beside the LEFT leaf.
+	var leaf_dx := book.data.size.x * 0.5
+	var at := book.position + Vector2(-leaf_dx, 0.0)
+	candle.solver.place(at, 0.0)
+	candle.position = at
+	desk._update_lighting()
+	var r := Rect2(-book.data.size.x, -book.data.size.y * 0.5,
+		book.data.size.x * 2.0, book.data.size.y)
+	var pw := r.size.x * 0.5
+	var left := Rect2(r.position + Vector2(6, 6), Vector2(pw - 9, r.size.y - 12))
+	var right := Rect2(Vector2(r.position.x + pw + 3, r.position.y + 6),
+		Vector2(pw - 9, r.size.y - 12))
+	var lit_left := book._leaf_lit(left)
+	var lit_right := book._leaf_lit(right)
+	_is_true(lit_left > lit_right + 0.05,
+		"the leaf beside the candle is brighter than the one across the gutter "
+		+ "(%.3f against %.3f)" % [lit_left, lit_right])
+
+	# And it swaps when the candle moves across, rather than being a fixed bias.
+	at = book.position + Vector2(leaf_dx, 0.0)
+	candle.solver.place(at, 0.0)
+	candle.position = at
+	desk._update_lighting()
+	_is_true(book._leaf_lit(right) > book._leaf_lit(left) + 0.05,
+		"and carrying the candle across the book swaps which leaf is lit")
+
+	book.is_open = was_open
+	book._open_amount = 1.0 if was_open else 0.0
+	book.solver.place(here, 0.0)
+	book.position = here
+	# Put the flame back, or every test after this one is posed in a room lit
+	# from somewhere it does not expect.
+	candle.solver.place(candle_home, 0.0)
+	candle.position = candle_home
+	desk._update_lighting()
 
 
 func _test_reachability(desk: Desk) -> void:

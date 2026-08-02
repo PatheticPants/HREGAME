@@ -642,6 +642,64 @@ are real work and saying so is more use than a half-built version.
    file is closed either way" — a player who confirmed the forgery is handed the
    evidence of it back with nothing to do about it, and a candle.
 
+## THE LIGHTING BUGS, 2026-08-02 — five found, four fixed, one reverted
+
+The model here is a HYBRID and every one of these lived in the seam: real
+`PointLight2D`s and occluders do the room, while each object *also* shades itself
+by hand from a single `light_level` the desk writes once per frame. Both halves
+are good. What goes wrong is one of them not being told something.
+
+**Where to look first, next time.** `Desk._update_lighting` walks
+`surface.get_child_count()` and then names five more objects individually. Any
+object that is not a `surface` child and is not on that list gets nothing, and
+any light field an object does not DECLARE cannot be set even if the desk tries.
+
+1. **Everything arrived fully lit for one frame.** `Draggable.light_level`
+   starts at 1.0 and `_update_lighting` runs from `Desk._process` — but the
+   session is a CHILD of the desk, so its `_process` runs *after*. A packet laid
+   out on a knock was created after that frame's lighting pass and before that
+   frame's draw. Measured against the unfixed code with the flame in the far
+   corner: `light_level` 1.000 where it should be 0.030. One frame of white paper
+   on every arrival, in a game whose whole look is one small pool of light. All
+   four object-creating entry points now light before returning.
+
+2. **The day's-end turn popped.** Every per-object value keyed off the boolean
+   `is_spent`, so on one frame every `light_level` snapped to `WINDOW_LEVEL` and
+   every `light_position` jumped 2600 units to the shutter — swinging every
+   gradient, specular and engraved lip through most of a half-turn — underneath a
+   `CanvasModulate` that takes two seconds to cross. `_morning_amount` already
+   existed and already ramped; it was driving the shutter geometry and nothing
+   else. Position, level and strength blend along it now. The MODEL switch
+   (`ambient_daylight`) cannot blend and flips at the midpoint, where the two are
+   least far apart.
+
+3. **The ring stand never flickered and never saw the morning.** It did not
+   declare `light_strength` or `ambient_daylight`, so the desk could not set
+   them: the one object naming the three irreversible choices sat perfectly still
+   while every other surface breathed, and went on warming its oak toward brown
+   in a cold grey room.
+
+4. **The struck seal was lit from the middle of the page.** `WaxPool` is a child
+   of the sheet, not of `surface`, so it inherited the sheet's single value —
+   sampled at the sheet's origin, up to 290 units from the blank foot the wax
+   sits in. `Draggable.illumination_at` is the general fix and is now available
+   to anything that is bigger than the point it was measured at.
+
+5. **An open book is 640 units wide and was lit at one point.** The candle beside
+   the left leaf lit the right leaf identically, so the two largest silhouettes
+   in the room reported the flame's position by their highlight direction and
+   contradicted it with their brightness. Measured after: 0.751 against 0.119,
+   and it swaps when the candle is carried across.
+
+**AND ONE REVERTED, WHICH IS THE USEFUL ONE.** The same per-band sampling was
+applied to `Sheet._draw_light_gradient` and it MOVED NOTHING — four thirds of the
+charter and the memorandum changed by 0.0 to 0.2 out of means of 22 to 44. A
+430-unit sheet is small enough that inverse-square falloff across it is nearly
+linear, so the fixed ramp was already right; books break the approximation
+because they are 640 wide and hinged around a gutter. The falloff you can see
+across a sheet in a capture comes from the actual `PointLight2D` and is correct.
+Do not do it again.
+
 ## THE MAGNIFIER IS GLITCHY. DIAGNOSED 2026-08-02, NOT FIXED.
 
 Reported, with permission to write it down rather than fix it. Three specific

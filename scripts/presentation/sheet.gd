@@ -209,6 +209,20 @@ func _draw_light_gradient(r: Rect2, toward: Vector2, near_col: Color,
 	# Project the page corners onto the light direction so the bands always run
 	# along it, whichever way the sheet has been dropped.
 	var horizontal := absf(toward.x) >= absf(toward.y)
+	# TRIED AND REVERTED, 2026-08-02: sampling illumination_at per band instead of
+	# ramping between two colours derived from the sheet's single light value.
+	# It is the same fix that genuinely mattered on the reference books, and on a
+	# sheet it MOVES NOTHING — measured on shot_01, the four thirds of the charter
+	# and the memorandum changed by between 0.0 and 0.2 out of means of 22 to 44.
+	#
+	# The reason is that a 430-unit sheet is small enough that inverse-square
+	# falloff across it is very close to linear, so the fixed ramp was already
+	# right. The books are 640 units open and sit either side of a gutter, which
+	# is where the approximation breaks.
+	#
+	# Do not do it again. The falloff you can see across a sheet in a capture is
+	# coming from the actual PointLight2D and is correct; this band is a warm tint
+	# on top of it and one sample is enough for that job.
 	for i in BANDS:
 		var t := (float(i) + 0.5) / float(BANDS)
 		# t == 0 is the near edge, so flip when the flame is the other way.
@@ -436,6 +450,13 @@ func _tick_burning(delta: float) -> void:
 ## the sheet somewhere near it. Sampling each patch at its own position costs one
 ## distance per erasure per frame and makes the gesture what it says it is: you
 ## pass the parchment across the flame and the marks come up as they cross it.
+## THE STRUCK SEAL WAS LIT FROM THE MIDDLE OF THE PAGE. WaxPool is a CHILD of the
+## sheet rather than of `surface`, so the desk never lit it directly and it
+## inherited the sheet's single value wholesale — sampled at the sheet's origin,
+## which on a 585-unit charter is up to 290 units from the blank foot the wax
+## sits in. The most inspected object in the game rendered dark while sitting
+## directly beside the flame. Draggable.illumination_at is the general fix; this
+## comment is here because this is where the symptom was.
 func _patch_light(patch_centre_local: Vector2) -> float:
 	if not is_held:
 		return 0.0
@@ -445,24 +466,10 @@ func _patch_light(patch_centre_local: Vector2) -> float:
 	return flame.illumination_at(to_global(patch_centre_local))
 
 
-var _flame_cache: Candle = null
-
-
-## Walk up for the desk rather than counting parents. A sheet lives three nodes
-## deep today (surface / work_plane / desk) and the projection work has already
-## moved that hierarchy once; a hardcoded chain of get_parent() calls is a silent
-## null the next time somebody inserts a layer.
+## Moved up to Draggable, where every object can use it. This alias keeps the
+## sheet's own call sites reading the way they did.
 func _flame() -> Candle:
-	if _flame_cache != null and is_instance_valid(_flame_cache):
-		return _flame_cache
-	var node := get_parent()
-	while node != null:
-		var desk_node := node as Desk
-		if desk_node != null:
-			_flame_cache = desk_node.candle
-			return _flame_cache
-		node = node.get_parent()
-	return null
+	return flame()
 
 
 func _tick_backlight(delta: float) -> void:
