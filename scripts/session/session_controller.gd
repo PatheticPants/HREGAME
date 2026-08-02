@@ -114,6 +114,9 @@ func bind(d: Desk) -> void:
 
 
 func begin() -> void:
+	# Every stem starts here, silent, so the four voices are sample-locked for
+	# the rest of the session. See Audio.music_prime.
+	Audio.music_prime()
 	# The book already has entries in it when you sit down. Somebody had this
 	# desk before you.
 	for seed_entry in Lore.data.register_seed:

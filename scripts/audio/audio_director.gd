@@ -224,12 +224,47 @@ func music_silent() -> void:
 	music({})
 
 
+## Start every stem at once, silent.
+##
+## THE LAYERS ARE INDEPENDENT LOOPS AND THEY ONLY STAY IN TUNE IF THEY START
+## TOGETHER. set_loop creates a stem's player the first time it is asked for
+## above zero, so the bed began at dawn and the melody began whenever the player
+## first touched a packet — which put the tune's first bar against whatever bar
+## of the bass happened to be passing, and then held that offset for the rest of
+## the session. All three share one chord progression precisely so they can be
+## crossfaded against each other; an offset makes that worthless.
+##
+## Called once, before anything is heard. Everything after it is volume.
+func music_prime() -> void:
+	for stem in MUSIC_STEMS:
+		if _loops.has(stem):
+			continue
+		var stream = _streams.get(stem, null)
+		if stream == null:
+			continue
+		var p := AudioStreamPlayer.new()
+		p.bus = "Master"
+		p.stream = stream
+		p.volume_db = -60.0
+		add_child(p)
+		p.play()
+		_loops[stem] = p
+		_loop_targets[stem] = 0.0
+
+
 ## What the mix is currently asking of one stem, 0..1. The TARGET rather than the
 ## ramped volume, because the ramp is a fade and a test that watched it would be
 ## asserting on how long a crossfade takes rather than on what the score is
 ## saying.
 func music_level(stem: StringName) -> float:
 	return float(_loop_targets.get(stem, 0.0))
+
+
+## Is this stem's voice actually playing, whatever its volume? The four are only
+## in tune with each other while all four are running from the same instant.
+func is_music_running(stem: StringName) -> bool:
+	var p: AudioStreamPlayer = _loops.get(stem, null)
+	return p != null and is_instance_valid(p) and p.playing
 
 
 # --------------------------------------------------------------------- niceties

@@ -79,9 +79,15 @@ def step(degrees, octave=0):
     return D3 * (2.0 ** (octave + o)) * (2.0 ** (table[d] / 12.0))
 
 
-BEAT = 2.5          # seconds a note lasts. Slow on purpose; see the header.
-BARS = 8            # phrase length. 8 * 2 * BEAT = 40 s of loop.
-BAR_NOTES = 2
+# A NOTE EVERY 1.5 SECONDS, NOT EVERY 2.5.
+#
+# The first version was so slow it was not a tune, it was a drone with events in
+# it -- reported as wanting something more melodic. 1.5 s is still far slower
+# than anything with a pulse (the player is reading and a beat competes with
+# reading) but it is fast enough that a phrase HANGS TOGETHER: at 2.5 s the ear
+# has forgotten the first note before the fourth arrives, and a melody you cannot
+# hold in your head is a sequence of pitches.
+BEAT = 1.5
 
 
 # --------------------------------------------------------------- primitives
@@ -109,6 +115,29 @@ def lowpass(buf, cutoff):
     for x in buf:
         y += a * (x - y)
         out.append(y)
+    return out
+
+
+def plucked(dur, freq, seed=0):
+    """A soft attack transient, layered under the bow.
+
+    A note that only swells has no moment of arrival, and a tune made entirely of
+    swells is a fog. This is the finger leaving the string: a fast decay with the
+    upper partials strongest at the front, which is what gives a phrase its
+    rhythm without giving it a beat.
+    """
+    n = int(dur * SAMPLE_RATE)
+    r = random.Random(seed if seed else int(freq * 7))
+    out = [0.0] * n
+    for p in range(1, 7):
+        amp = 1.0 / (p ** 1.5)
+        phase = r.uniform(0.0, math.tau)
+        w = math.tau * freq * p / SAMPLE_RATE
+        # Higher partials die first, exactly as a plucked string does.
+        decay = 2.6 + p * 2.2
+        for i in range(n):
+            t = i / SAMPLE_RATE
+            out[i] += amp * math.exp(-decay * t) * math.sin(phase + w * i)
     return out
 
 
@@ -195,86 +224,156 @@ def write(name, buf):
 
 # ------------------------------------------------------------------- stems
 
-def line(notes, octave=0, dur=BEAT, partials=6, tilt=1.0, vib=0.16):
-    """A melodic line. `None` is a rest, which the mode needs as much as a note."""
+def line(notes, octave=0, dur=BEAT, partials=6, tilt=1.0, vib=0.16, pluck=0.0):
+    """A melodic line. `None` is a rest, which the mode needs as much as a note.
+
+    A note may be a bare degree or a (degree, beats) pair -- a tune whose notes
+    are all the same length is a scale exercise, and the long note at the end of
+    a phrase is most of what makes it sound like a phrase.
+    """
     out = []
     for i, d in enumerate(notes):
+        beats = 1.0
+        if isinstance(d, tuple):
+            d, beats = d
+        span = dur * beats
         if d is None:
-            out.extend(silence(dur))
+            out.extend(silence(span))
             continue
-        out.extend(swell(bowed(dur, step(d, octave), partials, vib, tilt,
-                               seed=1000 + i)))
+        f = step(d, octave)
+        note = swell(bowed(span, f, partials, vib, tilt, seed=1000 + i),
+                     0.22, 0.30)
+        if pluck > 0.0:
+            note = mix(note, gain(plucked(span, f, seed=2000 + i), pluck))
+        out.extend(note)
     return out
 
 
-def music_bed():
-    """The room. An open fifth, breathing, with no tune in it whatever.
+# THE TUNE.
+#
+# D Dorian, and it is written to be HELD IN THE HEAD rather than merely to be in
+# the right mode. Four phrases in an AABA shape, which is the oldest way there is
+# of making thirty seconds feel like a piece rather than a loop:
+#
+#   A  climbs stepwise off the tonic and falls back, unresolved. Twice, so the
+#      ear has it before anything happens to it.
+#   B  goes up to the sixth -- the note that makes this Dorian rather than minor,
+#      the one that refuses to be sad -- holds it, and comes down the long way.
+#   A' the same opening, and this time it lands on the tonic and stays there.
+#
+# The rests are load-bearing. A tune with no gaps in it cannot be under anything.
+PHRASE_A = [0, 2, 3, (4, 2), 3, 2, (1, 2), None,
+            2, 3, 4, (5, 2), 4, 3, (2, 3), None]
 
-    D and A only -- no third, so it commits to neither major nor minor and can
-    sit under any of the other three layers without arguing with them.
+PHRASE_B = [4, 5, (6, 3), 5, 4, (5, 2), None,
+            3, 4, (3, 2), 1, 2, (1, 3), None]
+
+PHRASE_A2 = [0, 2, 3, (4, 2), 3, 2, (1, 2), None,
+             2, 1, 2, 3, (2, 2), 1, (0, 4), None]
+
+MELODY = PHRASE_A + PHRASE_A + PHRASE_B + PHRASE_A2
+
+# A bass that MOVES. The first version held one drone under everything, which is
+# correct for a room and wrong for a tune: a melody over a static fifth has no
+# harmony, so nothing it does can feel like an arrival. This walks under the
+# phrases and lands on the tonic exactly where the melody does.
+#
+# THE BEAT COUNTS MUST MATCH THE MELODY'S, PHRASE FOR PHRASE. The four stems play
+# as independent looping voices, so a bass one beat longer than the tune drifts
+# against it a little further round every loop, and by the third pass the melody
+# is arriving on the wrong chord. `main()` asserts the totals agree rather than
+# leaving it to whoever edits a phrase next.
+#
+#   A  21 beats -> 7 + 7 + 7
+#   B  20        -> 7 + 7 + 6
+#   A2 22        -> 7 + 7 + 8, the last one held under the final cadence
+BASS = ([(0, 7), (4, 7), (0, 7)]
+        + [(0, 7), (4, 7), (0, 7)]
+        + [(3, 7), (4, 7), (5, 6)]
+        + [(0, 7), (4, 7), (0, 8)])
+
+
+def melody_seconds():
+    total = 0.0
+    for d in MELODY:
+        total += BEAT * (d[1] if isinstance(d, tuple) else 1.0)
+    return total
+
+
+def music_bed():
+    """The room, under everything -- and now it MOVES.
+
+    It was one held fifth for forty seconds, which is a room and not a bed: the
+    melody above it had no harmony to arrive on, so nothing the tune did could
+    feel like an arrival. It walks the same four-chord ground the tune is written
+    over and lands on the tonic exactly where the tune does.
     """
-    total = BARS * BAR_NOTES * BEAT
-    low = bowed(total, step(0, -1), partials=5, vibrato=0.05, tilt=1.25, seed=7)
-    fifth = bowed(total, step(4, -1), partials=4, vibrato=0.05, tilt=1.35, seed=8)
-    bed = mix(gain(low, 0.62), gain(fifth, 0.34))
-    # Very slow breathing, so a long drone does not become a dial tone.
+    low = line(BASS, octave=-1, partials=5, tilt=1.3, vib=0.04)
+    fifth = line([(d[0] + 4, d[1]) for d in BASS], octave=-1, partials=4,
+                 tilt=1.45, vib=0.04)
+    bed = mix(gain(low, 0.60), gain(fifth, 0.26))
+    # Very slow breathing, so a long line does not become a dial tone.
     out = []
     for i, x in enumerate(bed):
         t = i / SAMPLE_RATE
-        out.append(x * (0.80 + 0.20 * math.sin(math.tau * t / 19.0)))
+        out.append(x * (0.82 + 0.18 * math.sin(math.tau * t / 23.0)))
     return loop_seam(lowpass(out, 1500))
 
 
 def music_work():
-    """The melody, and it plays only while the candle is burning.
+    """The tune, and it plays only while the candle is burning.
 
-    Stepwise and narrow, because a leap draws attention and the player is
-    reading. It rises to the sixth once per phrase -- the note that makes the
-    mode Dorian -- and does not resolve, because the day does not either.
+    AABA over the walking bass, with a plucked attack under the bow so a phrase
+    has rhythm without having a beat, and a counter-line moving at half speed --
+    which is what stops a single voice sounding like a test tone, and what makes
+    the sixth in phrase B land as a colour rather than as a note.
     """
-    phrase = [4, 3, 4, 5, None, 4, 2, 3,
-              1, 2, 3, 5, 4, None, 2, 0]
-    voice = line(phrase, octave=0, partials=7, tilt=0.92, vib=0.22)
-    # A second voice a fifth below at half speed: organum, and it is what stops
-    # a single line sounding like a test tone.
-    under = line([4, None, 2, None, 0, None, 1, None],
-                 octave=-1, dur=BEAT * 2, partials=5, tilt=1.2, vib=0.08)
-    return loop_seam(mix(gain(lowpass(voice, 2600), 0.52),
-                         gain(lowpass(under, 1200), 0.30)))
+    voice = line(MELODY, octave=0, partials=7, tilt=0.90, vib=0.20, pluck=0.34)
+    under = line([(d[0] + 2, d[1] * 0.5) for d in BASS], octave=-1,
+                 dur=BEAT * 2, partials=5, tilt=1.2, vib=0.06)
+    return loop_seam(mix(gain(lowpass(voice, 3000), 0.50),
+                         gain(lowpass(under, 1100), 0.22)))
 
 
 def music_close():
-    """The same mode with the light going out of it.
+    """The same tune with the light going out of it.
 
-    Flatten the sixth and the tune stops being Dorian and becomes Aeolian: the
-    one note that refused to be sad gives up. Nothing else changes, which is why
-    it can crossfade under the working layer without a seam.
+    Same phrase, same bass, same length -- only the colour is taken out: the
+    voice loses its pluck and most of its top, and the pedal underneath is
+    flattened a quarter tone so it leans without ever resolving. Nothing about
+    the melody changes, which is exactly why it can crossfade under the working
+    layer with no seam. The player should not be able to say when it happened,
+    only that it has.
     """
-    phrase = [4, 3, 2, 3, None, 1, 2, 1,
-              0, None, 1, 0, None, None, 0, None]
-    voice = line(phrase, octave=0, partials=5, tilt=1.15, vib=0.10)
-    drone = bowed(BARS * BAR_NOTES * BEAT, step(0, -1) * (2 ** (-1 / 12.0)),
-                  partials=4, vibrato=0.03, tilt=1.4, seed=11)
-    return loop_seam(mix(gain(lowpass(voice, 1500), 0.40),
-                         gain(lowpass(drone, 700), 0.34)))
+    voice = line(MELODY, octave=0, partials=5, tilt=1.2, vib=0.08, pluck=0.06)
+    pedal = []
+    for i, d in enumerate(BASS):
+        f = step(d[0], -1) * (2 ** (-0.5 / 12.0))
+        pedal.extend(swell(bowed(BEAT * d[1], f, partials=4, vibrato=0.02,
+                                 tilt=1.45, seed=500 + i), 0.4, 0.5))
+    return loop_seam(mix(gain(lowpass(voice, 1400), 0.34),
+                         gain(lowpass(pedal, 700), 0.36)))
 
 
 def music_cold():
-    """The ledger, after the flame. Bare fifths and no drone under them.
+    """The ledger, after the flame. The tune's bones and nothing else.
 
-    The warmth is what has been taken away, so this layer is defined by what it
-    does not have: no low D holding the room together, and no melody at all.
+    Bare fifths on the cadence notes of the phrase, with no bass under them and
+    no melody over them. It is the same piece with the warmth removed, so it
+    reads as an ending rather than as a different track starting.
     """
     out = []
-    for i, d in enumerate([0, 4, 3, 0, None, 4, 2, None]):
-        if d is None:
-            out.extend(silence(BEAT * 2))
+    for i, d in enumerate([(0, 4), (4, 4), (3, 4), (0, 6), (None, 2),
+                           (4, 4), (3, 4), (0, 8), (None, 2)]):
+        if d[0] is None:
+            out.extend(silence(BEAT * d[1]))
             continue
-        a = bowed(BEAT * 2, step(d, 0), partials=3, vibrato=0.03, tilt=1.5,
+        span = BEAT * d[1]
+        a = bowed(span, step(d[0], 0), partials=3, vibrato=0.02, tilt=1.5,
                   seed=300 + i)
-        b = bowed(BEAT * 2, step(d + 4, 0), partials=3, vibrato=0.03, tilt=1.6,
+        b = bowed(span, step(d[0] + 4, 0), partials=3, vibrato=0.02, tilt=1.6,
                   seed=400 + i)
-        out.extend(swell(mix(gain(a, 0.5), gain(b, 0.3)), 0.5, 0.6))
+        out.extend(swell(mix(gain(a, 0.5), gain(b, 0.28)), 0.42, 0.5))
     return loop_seam(lowpass(out, 2200), 1.2)
 
 
@@ -286,7 +385,28 @@ STEMS = {
 }
 
 
+def beats(notes):
+    total = 0.0
+    for d in notes:
+        total += d[1] if isinstance(d, tuple) else 1.0
+    return total
+
+
 def main():
+    # THE VOICES ARE INDEPENDENT LOOPS AND MUST BE THE SAME LENGTH.
+    #
+    # AudioDirector plays all four continuously and only fades their volumes, so
+    # they stay sample-locked from the moment they start -- but only if they are
+    # the same number of beats. A bass one beat longer than the tune drifts a
+    # little further every loop until the melody is arriving on the wrong chord,
+    # and nothing about that failure looks like a bug in a diff. It is not
+    # theoretical: the first version of this file had a 128-beat bass under an
+    # 84-beat tune, which left the melody silent for the last quarter of every
+    # pass.
+    if beats(MELODY) != beats(BASS):
+        raise SystemExit(
+            "melody is %g beats and the bass is %g: they will drift apart"
+            % (beats(MELODY), beats(BASS)))
     print("Writing the score to %s" % os.path.normpath(OUT_DIR))
     for name in sorted(STEMS):
         write(name, STEMS[name]())

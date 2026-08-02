@@ -176,6 +176,13 @@ func _the_music_is_the_clock() -> void:
 	await _step(0.2)
 	_is_true(Audio.music_level(&"music_bed") > 0.5,
 		"the room is under everything from the moment it exists")
+	# ALL FOUR VOICES ARE ALREADY RUNNING, SILENTLY. They share one chord
+	# progression so they can be crossfaded against each other, and that is worth
+	# nothing unless they started together — a stem created on first use begins at
+	# whatever bar happens to be passing and holds that offset all session.
+	for stem: StringName in Audio.MUSIC_STEMS:
+		_is_true(Audio.is_music_running(stem),
+			"%s is running from the first frame, at whatever volume" % stem)
 	_is_true(Audio.music_level(&"music_work") <= 0.001,
 		"but listening to a petitioner is free, and silent of melody")
 
