@@ -19,9 +19,11 @@ func _draw_face(r: Rect2) -> void:
 	at.y += Ink.heading(self, at, letter.title, 16, Ink.CHANCERY, width)
 	at.y += 8
 	if not letter.sender.is_empty():
-		at.y += Ink.line(self, at, "From:  " + letter.sender, 10, Ink.FADED)
+		at.y += Ink.line_fit(self, at, "From:  " + letter.sender, 10, Ink.FADED,
+			width)
 	if not letter.recipient.is_empty():
-		at.y += Ink.line(self, at, "To:  " + letter.recipient, 10, Ink.FADED)
+		at.y += Ink.line_fit(self, at, "To:  " + letter.recipient, 10, Ink.FADED,
+			width)
 	at.y += 8
 	at.y += Ink.block(self, at, letter.body, 12, Ink.CHANCERY, width)
 	at.y += 10

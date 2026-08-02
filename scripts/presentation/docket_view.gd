@@ -65,9 +65,9 @@ func _draw_face(r: Rect2) -> void:
 	Ink.rule(self, at, w, Ink.FADED * Color(1, 1, 1, 0.5))
 	at.y += 7.0
 
-	at.y += Ink.line(self, at, d.petitioner_name, 16, Ink.CHANCERY)
+	at.y += Ink.line_fit(self, at, d.petitioner_name, 16, Ink.CHANCERY, w)
 	if not d.petitioner_style.is_empty():
-		at.y += Ink.line(self, at, d.petitioner_style, 12, Ink.FADED)
+		at.y += Ink.line_fit(self, at, d.petitioner_style, 12, Ink.FADED, w)
 	at.y += 7.0
 
 	at.y += Ink.block(self, at, d.claim_summary, 13, Ink.CHANCERY, w)

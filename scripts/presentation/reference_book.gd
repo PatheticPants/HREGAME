@@ -696,7 +696,7 @@ func _draw_page(r: Rect2, index: int) -> void:
 func _draw_matrix_plate(at: Vector2, w: float, page: BookPage) -> float:
 	var m := Lore.matrix(page.matrix_id)
 	if m == null:
-		return Ink.line(self, at, "[ die not recorded ]", 11, Ink.RUBRIC)
+		return Ink.line_fit(self, at, "[ die not recorded ]", 11, Ink.RUBRIC, w)
 	var y := 0.0
 	var r := minf(w * 0.30, 54.0)
 	var centre := at + Vector2(w * 0.5, r + 4.0)
@@ -711,19 +711,19 @@ func _draw_matrix_plate(at: Vector2, w: float, page: BookPage) -> float:
 	Heraldry.draw_device_incuse(self, m.device, centre, r * 0.55, m.wax_color, 0.8)
 	y += r * 2.0 + 12.0
 
-	y += Ink.line(self, at + Vector2(0, y), m.owner_name, 12, Ink.CHANCERY)
+	y += Ink.line_fit(self, at + Vector2(0, y), m.owner_name, 12, Ink.CHANCERY, w)
 	var p := Lore.polity(m.polity_id)
 	if p != null:
-		y += Ink.line(self, at + Vector2(0, y), p.name, 10, Ink.FADED)
+		y += Ink.line_fit(self, at + Vector2(0, y), p.name, 10, Ink.FADED, w)
 	y += 4.0
 	y += Ink.label(self, at + Vector2(0, y), "legend", 8, Ink.FADED)
 	y += Ink.block(self, at + Vector2(0, y), m.legend, 11, Ink.CHANCERY, w)
 	y += 3.0
-	y += Ink.line(self, at + Vector2(0, y),
+	y += Ink.line_fit(self, at + Vector2(0, y),
 		"%s · %s" % [String(m.shape), Heraldry.display_name(m.device)],
-		10, Ink.FADED)
-	y += Ink.line(self, at + Vector2(0, y), m.life_text(), 11,
-		Ink.RUBRIC if m.broken_year >= 0 else Ink.CHANCERY)
+		10, Ink.FADED, w)
+	y += Ink.line_fit(self, at + Vector2(0, y), m.life_text(), 11,
+		Ink.RUBRIC if m.broken_year >= 0 else Ink.CHANCERY, w)
 	y += 4.0
 	if not m.note.is_empty():
 		y += Ink.block(self, at + Vector2(0, y), m.note, 10, Ink.FADED, w)
@@ -740,7 +740,7 @@ func _draw_matrix_plate(at: Vector2, w: float, page: BookPage) -> float:
 func _draw_obit_roll(at: Vector2, w: float, page: BookPage) -> float:
 	var roll := Lore.obit_roll(page.roll_id)
 	if roll == null:
-		return Ink.line(self, at, "[ no roll returned ]", 11, Ink.RUBRIC)
+		return Ink.line_fit(self, at, "[ no roll returned ]", 11, Ink.RUBRIC, w)
 	var y := 0.0
 
 	# The reckoning and the edge of the roll's knowledge belong at the HEAD of a
@@ -751,14 +751,14 @@ func _draw_obit_roll(at: Vector2, w: float, page: BookPage) -> float:
 		# from election like the rest of the Church, and a clerk who reduces its
 		# obits as an imperial notary would gets a number three years wrong —
 		# which is only fair because this line is here.
-		y += Ink.line(self, at + Vector2(0, y),
-			"reckoned " + Lex.dating_name(roll.reckoning), 10, Ink.RUBRIC)
+		y += Ink.block(self, at + Vector2(0, y),
+			"reckoned " + Lex.dating_name(roll.reckoning), 10, Ink.RUBRIC, w)
 		var reign := Lore.data.reign(roll.written_up_to_emperor)
 		if reign != null:
-			y += Ink.line(self, at + Vector2(0, y),
+			y += Ink.block(self, at + Vector2(0, y),
 				"written up to the %s year of %s"
 				% [Lex.ordinal(roll.written_up_to_regnal_year),
-					reign.full_name()], 11, Ink.RUBRIC)
+					reign.full_name()], 11, Ink.RUBRIC, w)
 		y += 4.0
 		Ink.rule(self, at + Vector2(0, y), w, Ink.FADED * Color(1, 1, 1, 0.5))
 		y += 6.0
@@ -770,13 +770,13 @@ func _draw_obit_roll(at: Vector2, w: float, page: BookPage) -> float:
 	var last := mini(roll.entries.size(), page.entry_from + page.entry_count)
 	for i in range(page.entry_from, last):
 		var o := roll.entries[i]
-		y += Ink.line(self, at + Vector2(0, y), o.display(), 11, Ink.CHANCERY)
+		y += Ink.line_fit(self, at + Vector2(0, y), o.display(), 11, Ink.CHANCERY, w)
 		var r := Lore.data.reign(o.died_emperor)
 		# Regnal form, like every other date in the game, so establishing when a
 		# man died still costs a trip to the Almanac. Printing the absolute year
 		# here would hand the player the one piece of arithmetic this is for.
-		y += Ink.line(self, at + Vector2(0, y), "  " + o.obit_line(
-			r.full_name() if r != null else String(o.died_emperor)), 10, Ink.FADED)
+		y += Ink.line_fit(self, at + Vector2(0, y), "  " + o.obit_line(
+			r.full_name() if r != null else String(o.died_emperor)), 10, Ink.FADED, w)
 		if not o.note.is_empty():
 			y += Ink.block(self, at + Vector2(0, y), "  " + o.note, 9,
 				Ink.FADED, w)
@@ -794,8 +794,8 @@ func _draw_silences(at: Vector2, w: float) -> float:
 	var y := 0.0
 	for house in n.silences:
 		var p := Lore.polity(house)
-		y += Ink.line(self, at + Vector2(0, y),
-			p.name if p != null else String(house), 11, Ink.CHANCERY)
+		y += Ink.line_fit(self, at + Vector2(0, y),
+			p.name if p != null else String(house), 11, Ink.CHANCERY, w)
 		y += Ink.block(self, at + Vector2(0, y), "  " + String(n.silences[house]),
 			10, Ink.FADED, w)
 		y += 6.0
@@ -804,14 +804,14 @@ func _draw_silences(at: Vector2, w: float) -> float:
 
 func _draw_reign_table(at: Vector2, w: float) -> float:
 	var y := 0.0
-	y += Ink.line(self, at + Vector2(0, y), "chosen   acceded  crowned  ended",
-		9, Ink.FADED)
+	y += Ink.line_fit(self, at + Vector2(0, y), "chosen   acceded  crowned  ended",
+		9, Ink.FADED, w)
 	y += 3.0
 	Ink.rule(self, at + Vector2(0, y), w, Ink.FADED * Color(1, 1, 1, 0.5))
 	y += 5.0
 	for id in Lore.data.reigns:
 		var reign: Reign = Lore.data.reigns[id]
-		y += Ink.line(self, at + Vector2(0, y), reign.full_name(), 11, Ink.CHANCERY)
+		y += Ink.line_fit(self, at + Vector2(0, y), reign.full_name(), 11, Ink.CHANCERY, w)
 		var ended := str(reign.end_year) if reign.end_year >= 0 else "reigns"
 		var row := "  %s     %s     %s     %s" % [
 			str(reign.election_year).rpad(7),
@@ -819,9 +819,9 @@ func _draw_reign_table(at: Vector2, w: float) -> float:
 			str(reign.coronation_year).rpad(7),
 			ended,
 		]
-		y += Ink.line(self, at + Vector2(0, y), row, 10, Ink.CHANCERY)
+		y += Ink.line_fit(self, at + Vector2(0, y), row, 10, Ink.CHANCERY, w)
 		if not reign.epithet.is_empty():
-			y += Ink.line(self, at + Vector2(0, y), "  " + reign.epithet, 9, Ink.FADED)
+			y += Ink.line_fit(self, at + Vector2(0, y), "  " + reign.epithet, 9, Ink.FADED, w)
 		y += 5.0
 	return y
 
@@ -838,8 +838,8 @@ func _draw_style_table(at: Vector2, w: float) -> float:
 		["Some chanceries", "count from CORONATION"],
 	]
 	for row in rows:
-		y += Ink.line(self, at + Vector2(0, y), row[0], 11, Ink.CHANCERY)
-		y += Ink.line(self, at + Vector2(0, y), "    " + row[1], 10, Ink.RUBRIC)
+		y += Ink.line_fit(self, at + Vector2(0, y), row[0], 11, Ink.CHANCERY, w)
+		y += Ink.line_fit(self, at + Vector2(0, y), "    " + row[1], 10, Ink.RUBRIC, w)
 		y += 3.0
 	y += 6.0
 	Ink.rule(self, at + Vector2(0, y), w, Ink.FADED * Color(1, 1, 1, 0.5))
@@ -885,19 +885,19 @@ func _draw_polity_plate(at: Vector2, w: float, page: BookPage) -> float:
 	Heraldry.draw_device(self, p.device, centre, r * 0.72, p.ink())
 	y += r * 2.4 + 8.0
 
-	y += Ink.line(self, at + Vector2(0, y), p.name, 12, Ink.CHANCERY)
+	y += Ink.line_fit(self, at + Vector2(0, y), p.name, 12, Ink.CHANCERY, w)
 	y += 4.0
-	y += Ink.line(self, at + Vector2(0, y), "Succession: " + p.succession, 10,
-		Ink.CHANCERY)
-	y += Ink.line(self, at + Vector2(0, y),
-		"Dates " + Lex.dating_name(p.dating_style), 10, Ink.RUBRIC)
+	y += Ink.block(self, at + Vector2(0, y), "Succession: " + p.succession, 10,
+		Ink.CHANCERY, w)
+	y += Ink.line_fit(self, at + Vector2(0, y),
+		"Dates " + Lex.dating_name(p.dating_style), 10, Ink.RUBRIC, w)
 	if not p.seals_used:
-		y += Ink.line(self, at + Vector2(0, y), "Uses no seal.", 10, Ink.RUBRIC)
+		y += Ink.block(self, at + Vector2(0, y), "Uses no seal.", 10, Ink.RUBRIC, w)
 	elif p.matrix_dies_with_holder:
-		y += Ink.line(self, at + Vector2(0, y),
-			"Matrix broken at the holder's death.", 10, Ink.CHANCERY)
+		y += Ink.block(self, at + Vector2(0, y),
+			"Matrix broken at the holder's death.", 10, Ink.CHANCERY, w)
 	else:
-		y += Ink.line(self, at + Vector2(0, y),
-			"Seal of the office; the die outlives the man.", 10, Ink.CHANCERY)
+		y += Ink.block(self, at + Vector2(0, y),
+			"Seal of the office; the die outlives the man.", 10, Ink.CHANCERY, w)
 	y += 5.0
 	return y

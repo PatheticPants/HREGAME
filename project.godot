@@ -34,12 +34,6 @@ window/size/window_height_override=900
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
-; NOTE, so nobody spends the afternoon on it again: setting
-; gui/theme/default_font_multichannel_signed_distance_field here does NOTHING.
-; It applies to a default theme font, and this project draws every glyph through
-; ThemeDB.fallback_font, which ignores it — measured, pixel for pixel, on a
-; re-capture. The type fix is a per-node texture filter; see Draggable._ready.
-
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

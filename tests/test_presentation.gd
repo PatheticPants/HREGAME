@@ -557,6 +557,56 @@ func _test_nothing_runs_across_the_gutter(desk: Desk) -> void:
 	_is_true(longest.is_empty(),
 		"and no generated line on a leaf is wider than the leaf%s"
 		% ("" if longest.is_empty() else ": \"%s\"" % longest))
+	_test_no_unbounded_text_draws()
+
+
+## MEASURING THE STRINGS I HAPPENED TO THINK OF DID NOT WORK, TWICE.
+##
+## The first pass fixed headings and subheadings and then measured owner_name,
+## legend, life_text, polity name and obit display against the column. All
+## passed. The owner then sent a photograph of "Succession: Agnatic. No woman
+## inherits, and no claim passes through one." running straight across the
+## gutter onto the facing page — a string composed at the draw site out of a
+## literal and a data field, which no list of fields I could write would ever
+## have contained.
+##
+## So this asserts on the CODE rather than on the data. `Ink.line()` defaults to
+## width -1, and `draw_string` at -1 neither wraps nor clips nor ellipsises; any
+## bare call in a surface that flows authored text is an overflow waiting for
+## somebody to write a longer sentence. The width-aware forms — `Ink.block`
+## wraps, `Ink.line_fit` sets smaller — cannot do it at all.
+##
+## A grep is a blunt instrument and that is the point: it holds for strings that
+## do not exist yet.
+func _test_no_unbounded_text_draws() -> void:
+	print("-- no text surface draws a line it has not measured")
+	var guarded := [
+		"res://scripts/presentation/reference_book.gd",
+		"res://scripts/presentation/docket_view.gd",
+		"res://scripts/presentation/docket_slip.gd",
+		"res://scripts/presentation/letter_view.gd",
+	]
+	for path: String in guarded:
+		var f := FileAccess.open(path, FileAccess.READ)
+		if f == null:
+			_fail("cannot open %s to check it" % path)
+			continue
+		var text := f.get_as_text()
+		f.close()
+		var bare := 0
+		var line_no := 0
+		for source_line in text.split("\n"):
+			line_no += 1
+			var trimmed: String = source_line.strip_edges()
+			if trimmed.begins_with("#") or trimmed.begins_with("##"):
+				continue
+			if not trimmed.contains("Ink.line(self"):
+				continue
+			bare += 1
+			_fail("%s:%d draws text with no width: %s"
+				% [path.get_file(), line_no, trimmed])
+		if bare == 0:
+			checks += 1
 
 
 ## WHAT FACES WHAT IS CONTENT, AND IT BREAKS SILENTLY.

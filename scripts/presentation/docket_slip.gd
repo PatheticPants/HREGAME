@@ -47,9 +47,13 @@ func _draw() -> void:
 	at.y += Ink.label(self, at, "PASSAGE DOCKET  %02d" % (slot_index + 1),
 		8, Ink.FADED)
 	at.y += 2
-	at.y += Ink.line(self, at, case_data.title, 13, Ink.CHANCERY)
+	# The claim block below starts at x+135, so a long title set at full size runs
+	# under it and then off the slip. Both of these sit above it vertically, so
+	# the width is the slip less its two margins.
+	var text_w := SIZE.x - 28.0
+	at.y += Ink.line_fit(self, at, case_data.title, 13, Ink.CHANCERY, text_w)
 	var petitioner_name := case_data.petitioner.name if case_data.petitioner else ""
-	Ink.line(self, at, petitioner_name, 9, Ink.FADED)
+	Ink.line_fit(self, at, petitioner_name, 9, Ink.FADED, text_w)
 	if docket != null:
 		var claim := docket.claim_summary
 		if claim.length() > 72:
