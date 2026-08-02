@@ -443,6 +443,9 @@ func lay_out_packet(documents: Array[DocumentData]) -> void:
 		surface.add_child(node)
 		node.bind(doc, DESK_RECT)
 		Audio.play(&"paper_drop", node.global_position, -5.0)
+		node.scorched.connect(_on_paper_scorched)
+		node.caught_fire.connect(_on_paper_caught_fire)
+		node.burnt_away.connect(_on_paper_burnt_away)
 		case_papers.append(node)
 		if doc is CharterData:
 			current_charter = node as CharterView
@@ -653,6 +656,54 @@ func _check_backlight() -> void:
 	_backlit_reported = true
 	SessionLog.act(&"hold_to_flame", {}, candle)
 	investigation_performed.emit(&"hold_to_light")
+
+
+# ---------------------------------------------------------------------- fire
+
+## A document has taken a mark from the flame.
+##
+## Three beats rather than one, because the middle one is the whole design: a
+## brush against the wick leaves a brown bloom and the document survives, and
+## that is where most players will stop. The office notices all three, and it
+## notices the difference.
+signal paper_scorched(what: Sheet)
+signal paper_burnt(what: Sheet)
+
+
+func _on_paper_scorched(what: Sheet) -> void:
+	SessionLog.act(&"scorched", {"what": SessionLog.describe(what)}, candle)
+	investigation_performed.emit(&"scorch")
+	paper_scorched.emit(what)
+
+
+func _on_paper_caught_fire(what: Sheet) -> void:
+	SessionLog.act(&"caught_fire", {"what": SessionLog.describe(what)}, candle)
+	investigation_performed.emit(&"burning")
+
+
+## The sheet is gone. It is removed from the desk entirely — not hidden, because
+## a hidden Sheet keeps its hit rectangle and Draggable.contains_point has been
+## fixed once already for exactly that (the invisible Ledger swallowing clicks).
+func _on_paper_burnt_away(what: Sheet) -> void:
+	SessionLog.act(&"burnt_away", {"what": SessionLog.describe(what)}, candle)
+	paper_burnt.emit(what)
+	if _held == what:
+		_held = null
+	case_papers.erase(what)
+	day_papers.erase(what)
+	if current_charter == what:
+		current_charter = null
+	# Any wax hanging off it goes with it; a pendant seal whose cord burnt is not
+	# still floating over the blotter.
+	for i in range(case_papers.size() - 1, -1, -1):
+		var tag := case_papers[i] as SealTag
+		if tag != null and tag.charter == what:
+			case_papers.remove_at(i)
+			tag.queue_free()
+	if is_instance_valid(what):
+		what.queue_free()
+	_refresh_lens_subjects()
+	press.reset_for_new_case(current_charter)
 
 
 ## The petitioner gathers the papers up and takes them away. Implemented by

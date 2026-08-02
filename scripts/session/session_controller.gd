@@ -63,6 +63,10 @@ var unheard: Array[String] = []
 ## ruling. A different and worse thing than never being called, and the ledger
 ## says so — this is the one the notary has to think about on the way home.
 var unfinished := ""
+## And a third and worse thing again: the instrument did not survive the hearing.
+## The candle is the only object in the room that can destroy evidence, and it is
+## the only irreversible act here the player is not asked to choose.
+var unfinished_burnt := false
 ## True when the unfinished instrument was left by a messenger who had already
 ## gone. The ledger must not claim that person stood waiting for the wick.
 var unfinished_unattended := false
@@ -103,6 +107,7 @@ func bind(d: Desk) -> void:
 	d.press.impression_finished.connect(_on_impression_finished)
 	d.investigation_performed.connect(_on_investigation_performed)
 	d.case_work_engaged.connect(_on_case_work_engaged)
+	d.paper_burnt.connect(_on_paper_burnt)
 	d.docket_selected.connect(_on_docket_selected)
 	d.ledger.next_day_requested.connect(_on_next_day_requested)
 	d.lens.dropped.connect(_on_practice_lens_dropped)
@@ -158,6 +163,13 @@ const PRACTICE_STEPS := [
 		"say": "Hold it in front of the candle flame, and watch the year.",
 		"done": "Somebody had been at that year with a knife. You will see it "
 			+ "again this week, on a leaf that binds somebody.",
+	},
+	{
+		"key": &"scorch",
+		"say": "Now put it in the flame and take it straight out again.",
+		"done": "A mark, and nothing worse. Leave one there and it catches, and "
+			+ "then it is gone and so is whatever was written on it. The office "
+			+ "keeps no copies.",
 	},
 	{
 		"key": &"poured",
@@ -280,6 +292,7 @@ func _begin_day(which: int) -> void:
 	unheard.clear()
 	unfinished = ""
 	unfinished_unattended = false
+	unfinished_burnt = false
 	_current = null
 	_adjudication = null
 	index = -1
@@ -674,6 +687,55 @@ func _start_case(next: CaseData) -> void:
 		"last": remaining_cases.is_empty(),
 	})
 	_enter(Stage.KNOCK)
+
+
+## THE INSTRUMENT BURNT AND THERE IS NOTHING LEFT TO RULE ON.
+##
+## A charter that goes into the flame and stays there cannot be sealed —
+## PressController has no sheet — so without this the matter simply never ends
+## and the day runs on until the candle drowns. That is not a consequence, it is
+## a hang wearing a consequence's coat.
+##
+## So the hearing ends where it stands. The petitioner is in the room and watches
+## it happen, which is the whole reason this is worth having: every other
+## irreversible act in this game is one the player chose from three rings, and
+## this is one they did with their hands by accident.
+##
+## Only the CHARTER ends a hearing. Burning the docket loses the claim summary
+## and is survivable; burning a delivered letter loses a letter. Those are
+## losses, not endings, and the player should be allowed to make them.
+func _on_paper_burnt(what: Sheet) -> void:
+	# THE DOORKEEPER HAS A STACK OF THESE.
+	#
+	# The practice leaf is the one document in the game a player is invited to
+	# experiment on, and the step immediately before this one tells them to put
+	# it in the flame — so a player who holds it there a second too long, which
+	# is the entire lesson, would otherwise be left at a desk with no leaf, no
+	# petitioner and a list asking them to seal something that no longer exists.
+	# A discarded office leaf is by definition not scarce.
+	if stage == Stage.PRACTICE or stage == Stage.PRACTICE_REVIEW:
+		if what.data != null and what.data.id == &"practice_leaf":
+			_log(&"practice_leaf_replaced", {})
+			desk.lay_out_packet(Lore.data.practice_documents)
+			desk.press.reset_for_new_case(desk.current_charter)
+			desk.press.enabled = true
+			_practice_write_card()
+		return
+	if stage not in [Stage.ENTERING, Stage.SPEAKING, Stage.WORKING]:
+		return
+	if _current == null or not (what is CharterView):
+		return
+	_log(&"instrument_destroyed", {"case": String(_current.id)})
+	unfinished = _current.petitioner.name
+	unfinished_unattended = not _current.petitioner_waits
+	unfinished_burnt = true
+	desk.press.enabled = false
+	if _current.petitioner_waits:
+		desk.petitioner.say(
+			"That was the only one. That was the only one I had.",
+			_current.petitioner.name)
+	_current = null
+	_enter(Stage.REACTING)
 
 
 func _on_docket_selected(case_id: StringName) -> void:
@@ -1092,12 +1154,18 @@ func _ledger_unheard() -> Array[Dictionary]:
 	# An unattended delivery cannot be described as a person left standing.
 	if not unfinished.is_empty():
 		out.append(Ledger.heading(
-			"Delivered, not ruled" if unfinished_unattended \
+			"Destroyed at this desk" if unfinished_burnt \
+			else "Delivered, not ruled" if unfinished_unattended \
 			else "Heard, not ruled", 13))
 		out.append(Ledger.text(unfinished, 10, Ink.FADED))
 		out.append(Ledger.gap(4))
 		out.append(Ledger.rubric("Ruled:  —", 12))
-		if unfinished_unattended:
+		if unfinished_burnt:
+			out.append(Ledger.text(
+				"The instrument went into the candle and did not come out of it. "
+				+ "There is no copy. The office cannot refuse what it cannot "
+				+ "read, and cannot admit it either.", 10, Ink.RUBRIC, 10.0))
+		elif unfinished_unattended:
 			out.append(Ledger.text(
 				"Left in the notary's hands until the wick went. Returned "
 				+ "through the passage.", 10, Ink.CHANCERY, 10.0))

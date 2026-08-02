@@ -119,6 +119,10 @@ func _practice_asks_for_one_thing_at_a_time() -> void:
 	seen.append(card.docket_data().claim_summary)
 	_is_true(seen[-1] != seen[-2], "the flame moves it on")
 
+	desk.investigation_performed.emit(&"scorch")
+	seen.append(card.docket_data().claim_summary)
+	_is_true(seen[-1] != seen[-2], "and touching the flame moves it on again")
+
 	desk.press.pour_began.emit()
 	seen.append(card.docket_data().claim_summary)
 	_is_true(seen[-1] != seen[-2], "pouring moves it on")

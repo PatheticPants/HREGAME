@@ -65,6 +65,7 @@ func _run() -> void:
 	_test_dockets_fit(desk)
 	_test_reachability(desk)
 	await _test_a_ring_put_back_stays_put(desk)
+	await _test_parchment_burns(desk)
 	await _test_seals_in_a_row(desk)
 	await _test_view_transition(main, desk)
 	await _test_candle_light(desk)
@@ -1327,6 +1328,105 @@ func _test_a_ring_put_back_stays_put(desk: Desk) -> void:
 		"a ring left out on the desk stays where it was left")
 	ring.solver.place(home, ring.solver.rest_angle)
 	ring.position = home
+
+
+## PARCHMENT BURNS, AND THE FIRST STAGE OF IT IS SURVIVABLE.
+##
+## Three things have to hold together or the verb is either a trap or a nothing:
+## reading a sheet by the flame must NOT ignite it (that gesture is used on every
+## matter), touching the flame must leave a mark and let go, and holding it there
+## must take the sheet. Asserted through Sheet's real proximity test against the
+## real candle rather than by poking `burn`, because the thing most likely to be
+## wrong is the distance at which it triggers.
+##
+## Also: the held sheet must draw ABOVE the candle. It did not, for the life of
+## the project — the candle carries z_index 1 and a sheet carried none — so the
+## one gesture this whole feature is about put the paper behind the flame.
+func _test_parchment_burns(desk: Desk) -> void:
+	print("-- parchment takes a mark from the flame, and then takes fire")
+	var sheet := desk.current_charter
+	var candle := desk.candle
+	if sheet == null or candle == null:
+		_fail("no charter or no candle to burn it with")
+		return
+	var home := sheet.position
+	var was_burnable := sheet.burnable
+
+	sheet.is_held = true
+	await get_tree().process_frame
+	_is_true(sheet.z_index > candle.z_index,
+		"a sheet in the hand draws above the flame (%d against %d)"
+		% [sheet.z_index, candle.z_index])
+
+	# READING DOES NOT IGNITE, AND THIS IS THE ASSERTION THAT MATTERS MOST.
+	#
+	# Reading a charter by the flame means holding the charter OVER the flame, so
+	# the wick is inside the sheet's rectangle for the whole gesture. The first
+	# implementation ignited on proximity and therefore set fire to the page every
+	# time anybody looked through it — caught here, at burn 0.256, before it ever
+	# reached a player. It is the edge that catches.
+	var flame_local := desk.surface.to_local(candle.flame_world())
+	sheet.solver.place(flame_local, 0.0)
+	sheet.position = flame_local
+	desk._update_lighting()
+	for i in 40:
+		await get_tree().process_frame
+	_is_true(sheet.burn <= 0.0,
+		"the wick under the middle of a page is reading by it, not burning it "
+		+ "(burn %.3f)" % sheet.burn)
+
+	# CONTACT. A corner in the fire: offset the sheet so its rim sits on the wick.
+	var edge_offset := Vector2(sheet.rect().size.x * 0.5 - 6.0, 0.0)
+	sheet.solver.place(flame_local + edge_offset, 0.0)
+	sheet.position = flame_local + edge_offset
+	desk._update_lighting()
+	for i in 8:
+		await get_tree().process_frame
+	_is_true(sheet.burn > 0.0, "and putting an EDGE of it in the flame marks it")
+	_is_true(not sheet.alight,
+		"but a brief touch has not set it going (burn %.3f)" % sheet.burn)
+	_is_true(absf(sheet.burn_origin.x - sheet.rect().position.x) < 2.0,
+		"and the mark is at the rim that met the flame, not at a fixed point")
+
+	# TAKE IT AWAY. The mark stays; the fire does not start.
+	sheet.solver.place(home, 0.0)
+	sheet.position = home
+	desk._update_lighting()
+	var kept := sheet.burn
+	for i in 30:
+		await get_tree().process_frame
+	_is_true(is_equal_approx(sheet.burn, kept),
+		"pulling it out stops the burn and keeps the mark (%.3f)" % sheet.burn)
+	_is_true(is_instance_valid(sheet) and not sheet.is_consumed(),
+		"and the document survives")
+
+	# LEAVE IT THERE. Past the catch point it no longer needs the candle.
+	# An array rather than a bool: GDScript lambdas capture by VALUE, so
+	# `burnt = true` inside the callable assigns to a copy and the outer variable
+	# never changes. This assertion failed against a sheet that had demonstrably
+	# burnt, which is a slow way to learn it.
+	var burnt := [false]
+	sheet.burnt_away.connect(func(_s: Sheet) -> void: burnt[0] = true)
+	sheet.solver.place(flame_local + edge_offset, 0.0)
+	sheet.position = flame_local + edge_offset
+	desk._update_lighting()
+	for i in 260:
+		if not is_instance_valid(sheet):
+			break
+		await get_tree().process_frame
+	_is_true(burnt[0], "and left in the flame it is destroyed")
+	_is_true(not is_instance_valid(sheet) or sheet.is_queued_for_deletion(),
+		"the sheet is taken off the desk rather than left invisible with a hit box")
+	_is_true(desk.current_charter == null,
+		"and the desk knows the instrument is gone")
+
+	# Put the case back for everything after this.
+	desk.lay_out_packet(_lore_data.cases[0].documents)
+	for paper in desk.case_papers:
+		if paper is Sheet:
+			(paper as Sheet).burnable = was_burnable
+			(paper as Sheet).settle_immediately()
+	await get_tree().process_frame
 
 
 func _test_reachability(desk: Desk) -> void:

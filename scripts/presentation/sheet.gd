@@ -71,6 +71,20 @@ func _near_edge_bounds(doc: DocumentData, desk_bounds: Rect2) -> Rect2:
 func _process(delta: float) -> void:
 	super._process(delta)
 	_tick_backlight(delta)
+	_tick_burning(delta)
+	# A SHEET IN THE HAND RISES ABOVE THE FLAME.
+	#
+	# The candle carries z_index 1 so that a sheet cannot slide across a lit wick
+	# and look like a glowing patch of desk — right for a sheet lying on the
+	# table, and wrong for one you are holding, which was therefore drawn BEHIND
+	# the candle every time it was brought to the light. Reported plainly: "the
+	# paper is always below the flame". Every other object you can pick up
+	# already does this — the ring takes 3, the spoon 4 — and the sheet, the one
+	# thing the gesture is actually about, took none.
+	#
+	# 2 rather than 1: equal z falls back to child order, and the candle is built
+	# before any packet, so a tie would still have put the flame on top.
+	z_index = 2 if is_held else 0
 	if _arrival_t >= 1.0:
 		return
 	_arrival_t = minf(1.0, _arrival_t + delta / 0.62)
@@ -122,10 +136,19 @@ func _draw() -> void:
 	if data == null:
 		return
 	var r := rect()
+	if is_consumed():
+		# Nothing is left to draw. The desk removes the object a beat later; this
+		# is the frame in between.
+		return
 	draw_soft_shadow(r)
 	_draw_body(r)
 	_draw_face(r)
 	_draw_erasures(r)
+	# The fire goes OVER the writing, because that is the point of it — a charred
+	# charter has lost the words under the char and no amount of light brings
+	# them back. Above _draw_face for the same reason the shade is: a new
+	# document type cannot forget to do it.
+	_draw_burn(r)
 	# Last, over everything the subclass drew. A page out of the candle's reach
 	# loses its writing before it loses its shape, and a new document type cannot
 	# forget to do this because it happens above _draw_face rather than inside it.
@@ -245,9 +268,163 @@ const BACKLIT_LEVEL := 0.45
 
 var _backlit := 0.0
 
+## PARCHMENT BURNS.
+##
+## Reported as wanted, and it is the right verb for this game: the candle was
+## already light, a clock and an instrument, and it becomes the one thing on the
+## desk that can destroy evidence. Nothing else here is irreversible except the
+## wax, and the wax is a decision you are asked to make. This is one you are not.
+##
+## THE GESTURE HAS THREE STAGES AND THE FIRST TWO ARE SURVIVABLE.
+##
+##   scorch   a brown bloom at the point of contact. Permanent, ugly, harmless.
+##            Take the sheet away here and you have marked a document and
+##            learned what the flame does.
+##   catch    a black char with a live orange edge that keeps spreading for a
+##            moment after you pull away, because paper does. Now the sheet
+##            carries visible damage over its own writing.
+##   gone     the sheet is destroyed.
+##
+## The burn starts AT THE FLAME rather than at any authored point: the ignition
+## position is recorded in the sheet's own space the first time the flame gets
+## close enough, so a charter lit at its foot burns from its foot and one lit at
+## the corner burns from the corner.
+##
+## IT IS THE EDGE THAT CATCHES, NOT THE MIDDLE, AND THAT IS THE WHOLE SAFETY
+## MARGIN OF THE READING VERB.
+##
+## Distance alone cannot separate the two gestures, and assuming it could was the
+## first thing the test caught: reading a charter by the flame means putting the
+## charter over the flame, so the wick is INSIDE the sheet's rectangle for the
+## entire reading. Any rule of the form "near the wick ignites" sets fire to the
+## page every time somebody looks through it.
+##
+## Paper does not work that way either. A sheet held flat above a candle is
+## backlit and gets warm; a sheet whose EDGE is put into the flame catches. So
+## ignition asks how far the wick is from the boundary of the sheet — deep inside
+## is reading, at the rim is burning — which is both the physical truth and a
+## gesture a player can aim: put a corner of it in the fire.
+const EDGE_BITE := 30.0
+## And it still has to be a live flame close enough to do anything.
+const IGNITE_LEVEL := 0.62
+## Seconds in the flame before a scorch becomes a fire that carries on by itself.
+const CATCH_AT := 0.34
+## And how long the whole sheet takes after that. Long enough to be a mistake you
+## can watch happening and still fail to stop.
+const CONSUMED_AT := 2.6
+
+signal scorched(sheet: Sheet)
+signal caught_fire(sheet: Sheet)
+signal burnt_away(sheet: Sheet)
+
+## 0 clean, rising through scorch and char to 1, at which the sheet is gone.
+var burn := 0.0
+## Where the flame first touched, in local space. Meaningless while burn == 0.
+var burn_origin := Vector2.ZERO
+## True once the fire no longer needs the candle. Paper does not stop because you
+## moved it.
+var alight := false
+## Some sheets must not burn: the practice leaf is the one thing a player is
+## invited to experiment on, and destroying it before the first knock would end
+## the tutorial with nothing on the desk.
+var burnable := true
+
+var _burn_reported := 0
+
 
 func is_backlit() -> bool:
 	return _backlit > 0.55
+
+
+func is_scorched() -> bool:
+	return burn > 0.0
+
+
+func is_consumed() -> bool:
+	return burn >= 1.0
+
+
+## How far the char has spread from the ignition point, in local units. Grows
+## faster than linearly so the first moment is slow and the end is not.
+func burn_radius() -> float:
+	var r := rect()
+	var reach := maxf(r.size.x, r.size.y) * 1.15
+	return ease(clampf((burn - _scorch_share()) / maxf(0.001,
+		1.0 - _scorch_share()), 0.0, 1.0), 0.72) * reach
+
+
+## What fraction of `burn` is the survivable brown bloom.
+func _scorch_share() -> float:
+	return CATCH_AT / CONSUMED_AT
+
+
+## The point on the rim of `r` closest to a point already inside it.
+static func _nearest_rim(r: Rect2, p: Vector2) -> Vector2:
+	var left := p.x - r.position.x
+	var right := r.end.x - p.x
+	var top := p.y - r.position.y
+	var bottom := r.end.y - p.y
+	var least := minf(minf(left, right), minf(top, bottom))
+	if is_equal_approx(least, left):
+		return Vector2(r.position.x, p.y)
+	if is_equal_approx(least, right):
+		return Vector2(r.end.x, p.y)
+	if is_equal_approx(least, top):
+		return Vector2(p.x, r.position.y)
+	return Vector2(p.x, r.end.y)
+
+
+func _tick_burning(delta: float) -> void:
+	if not burnable or burn >= 1.0:
+		return
+	var in_flame := false
+	if is_held:
+		var flame := _flame()
+		if flame != null and not flame.is_spent():
+			var local_flame := to_local(flame.flame_world())
+			var r := rect()
+			# The point of the sheet nearest the wick — on the rim when the wick
+			# is outside, and the wick itself when it is under the page.
+			var nearest := Vector2(
+				clampf(local_flame.x, r.position.x, r.end.x),
+				clampf(local_flame.y, r.position.y, r.end.y))
+			var to_edge := 0.0
+			if r.has_point(local_flame):
+				# Inside: how far from the nearest rim. Deep inside is reading.
+				to_edge = minf(
+					minf(local_flame.x - r.position.x, r.end.x - local_flame.x),
+					minf(local_flame.y - r.position.y, r.end.y - local_flame.y))
+				# Burn from the rim it is nearest to, so the char eats inward from
+				# the edge the player put in the fire.
+				nearest = _nearest_rim(r, local_flame)
+			else:
+				to_edge = local_flame.distance_to(nearest)
+			if to_edge <= EDGE_BITE \
+					and flame.illumination_at(to_global(nearest)) >= IGNITE_LEVEL:
+				in_flame = true
+				if burn <= 0.0:
+					burn_origin = nearest
+	if not in_flame and not alight:
+		return
+	burn = minf(1.0, burn + delta / CONSUMED_AT)
+	if burn >= _scorch_share():
+		alight = true
+	queue_redraw()
+
+	# Each threshold announced once. The desk turns these into a case beat and
+	# the session into a consequence; the sheet itself knows nothing about either.
+	if _burn_reported < 1 and burn > 0.0:
+		_burn_reported = 1
+		Audio.play(&"wax_sizzle", global_position, -4.0)
+		scorched.emit(self)
+	if _burn_reported < 2 and alight:
+		_burn_reported = 2
+		Audio.play(&"candle_catch", global_position, 2.0)
+		caught_fire.emit(self)
+	if _burn_reported < 3 and burn >= 1.0:
+		_burn_reported = 3
+		Audio.play(&"candle_out", global_position)
+		burnt_away.emit(self)
 
 
 ## EACH PATCH LIGHTS ON ITS OWN.
@@ -402,5 +579,57 @@ func _draw_whole_skin(r: Rect2) -> void:
 
 
 ## Overridden by each document type.
+## Scorch, char and ember, drawn from the point the flame actually touched.
+##
+## Concentric rings rather than a texture: the burn has to start anywhere on any
+## sheet at any size, and a ring set is the one shape that is correct wherever it
+## is centred and however far it has spread. Drawn coarsely on purpose — a soft
+## airbrushed gradient would read as a lighting effect, and this is damage.
+func _draw_burn(r: Rect2) -> void:
+	if burn <= 0.0:
+		return
+	# THE SURVIVABLE STAGE. A brown bloom, and nothing else, so a player who
+	# brushed the flame and pulled away gets a mark on the document and keeps the
+	# document. Reported as wanted in exactly those terms.
+	var bloom := clampf(burn / _scorch_share(), 0.0, 1.0)
+	var scorch_r := 9.0 + bloom * 26.0
+	for i in 4:
+		var t := float(i) / 4.0
+		draw_circle(burn_origin, scorch_r * (1.0 - t * 0.55),
+			Color(0.32, 0.20, 0.10, 0.10 + 0.16 * bloom))
+
+	var eaten := burn_radius()
+	if eaten <= 1.0:
+		return
+
+	# THE CHAR. Solid, ragged, and it takes the writing with it. Clipped to the
+	# sheet by drawing the rings and then re-cutting the rectangle's outside,
+	# which costs nothing and keeps the hole inside the parchment.
+	var seed_rng := RandomNumberGenerator.new()
+	seed_rng.seed = _grain_seed
+	var points := PackedVector2Array()
+	const SPOKES := 30
+	for i in SPOKES:
+		var a := TAU * float(i) / float(SPOKES)
+		# A fixed per-sheet wobble, so the edge is irregular but does not crawl
+		# between frames the way a fresh random would.
+		var wobble := 0.78 + seed_rng.randf() * 0.44
+		points.append(burn_origin + Vector2.from_angle(a) * eaten * wobble)
+	draw_colored_polygon(points, Color(0.07, 0.05, 0.04, 0.93))
+
+	# The live edge. Only while the fire is still going, and brightest where the
+	# char is youngest.
+	if alight and burn < 1.0:
+		var ember := Color(1.0, 0.46, 0.10,
+			0.55 + 0.35 * sin(Time.get_ticks_msec() * 0.011))
+		for i in SPOKES:
+			var a := TAU * float(i) / float(SPOKES)
+			var wob := 0.78 + seed_rng.randf() * 0.44
+			var at := burn_origin + Vector2.from_angle(a) * eaten * wob
+			if not r.grow(2.0).has_point(at):
+				continue
+			draw_circle(at, 2.6, ember)
+
+
 func _draw_face(_r: Rect2) -> void:
 	pass
