@@ -64,6 +64,7 @@ func _run() -> void:
 	await _test_a_delivered_slip_arrives(desk)
 	_test_dockets_fit(desk)
 	_test_reachability(desk)
+	await _test_the_glass_does_not_flicker(desk)
 	_test_nothing_arrives_unlit(desk)
 	await _test_a_ring_put_back_stays_put(desk)
 	await _test_parchment_burns(desk)
@@ -976,6 +977,175 @@ func _test_surface_helper(desk: Desk) -> void:
 		"tint() warms toward the flame")
 	_is_true(far_flame.v < slate.v,
 		"tint() darkens away from it, rather than merely failing to warm")
+
+
+## THE GLASS WAS GLITCHY, AND EVERY CAUSE WAS A HARD EDGE WITH A HAND ON IT.
+##
+## `_find_subject` answers yes or no across three boundaries — a reach radius, a
+## containment test and a burial test — and `_settle` across a fourth, a speed.
+## A held object is driven by a spring attached to a human hand, so it does not
+## sit still on any of them; it crosses them, repeatedly. Each crossing used to
+## reassign `_focus` and slam `_focus_amount` to zero on the same line, and that
+## single frame does three things at once: the opaque field that hides the small
+## source glyphs vanishes, the screen magnification jumps from 0 back to generic,
+## and the authored plate disappears. Not a fade — a cut between two completely
+## different pictures, over and over, for as long as the hand shakes.
+##
+## Nothing here renders. All four tests drive the real _process at the real
+## thresholds and watch the numbers the aperture is drawn from, because a
+## flicker is a property of a SEQUENCE of frames and no still frame contains one.
+func _test_the_glass_does_not_flicker(desk: Desk) -> void:
+	print("-- the glass holds its subject through a shaking hand")
+	var lens := desk.lens
+	var seal: SealTag = null
+	for paper in desk.case_papers:
+		if paper is SealTag:
+			seal = paper as SealTag
+			break
+	if lens == null or seal == null:
+		_fail("no lens or no seal to inspect")
+		return
+	var lens_home := lens.position
+	lens.subjects = [seal]
+
+	# Park the glass exactly on the seal and let it resolve.
+	var on := desk.surface.to_local(seal.detail_centre())
+	lens.solver.place(on, 0.0)
+	lens.position = on
+	for i in 40:
+		await get_tree().process_frame
+	_is_true(lens._focus == seal and lens._focus_amount > 0.9,
+		"the glass resolves on a seal it is sitting on (%.2f)"
+		% lens._focus_amount)
+
+	# FIND THE EDGE THAT ACTUALLY BINDS rather than assuming it. The first version
+	# of this test tremored across `reach` — 98.6 units from detail_centre — and
+	# reported the image torn down at every single sample, because for a pendant
+	# seal forty units across `reach` is NEVER the constraint. The containment
+	# test is, and it was the one with no tolerance on it at all.
+	var edge := 0.0
+	for probe in 200:
+		var at := on + Vector2(float(probe), 0.0)
+		lens.solver.place(at, 0.0)
+		lens.position = at
+		lens._want = seal
+		if lens._lens_gap(seal) > Lens.CONTACT_SLOP:
+			edge = float(probe)
+			break
+	_is_true(edge > 0.0, "the seal has a findable rim (%d units out)" % int(edge))
+
+	# 1. TREMOR ACROSS IT. Five units either way, every other frame, which is what
+	#    a hand on a spring does.
+	lens.solver.place(on, 0.0)
+	lens.position = on
+	for i in 30:
+		await get_tree().process_frame
+	var worst := 1.0
+	for i in 60:
+		var at := on + Vector2(edge + (5.0 if (i % 2) == 0 else -5.0), 0.0)
+		lens.solver.place(at, 0.0)
+		lens.position = at
+		await get_tree().process_frame
+		worst = minf(worst, lens._focus_amount)
+	_is_true(worst > 0.5,
+		"a tremor across the rim does not tear the image down (worst %.2f)"
+		% worst)
+
+	# 2. AND IT DOES NOT STROBE. The tear-down above is one frame; this is the
+	#    SWING across the whole tremor, which is what the eye actually reports as
+	#    flickering. Against the unfixed code the aperture alternates between the
+	#    enlarged plate and the magnified screen copy every other frame.
+	var amt_lo := 1.0
+	var amt_hi := 0.0
+	for i in 60:
+		var at := on + Vector2(edge + (5.0 if (i % 2) == 0 else -5.0), 0.0)
+		lens.solver.place(at, 0.0)
+		lens.position = at
+		await get_tree().process_frame
+		amt_lo = minf(amt_lo, lens._focus_amount)
+		amt_hi = maxf(amt_hi, lens._focus_amount)
+	_is_true(amt_hi - amt_lo < 0.15,
+		"and the image does not strobe between the two pictures (%.2f..%.2f)"
+		% [amt_lo, amt_hi])
+
+	# 3. BUT IT STILL LETS GO when the glass is genuinely carried off. Sticky is
+	#    not the same as stuck, and a lens that never releases is a worse bug
+	#    than one that flickers.
+	var away := on + Vector2(edge + Lens.HOLD_SLOP + 60.0, 0.0)
+	lens.solver.place(away, 0.0)
+	lens.position = away
+	for i in 60:
+		await get_tree().process_frame
+	_is_true(lens._focus_amount < 0.05 and lens._want == null,
+		"and carrying the glass clear of the seal does release it (%.2f)"
+		% lens._focus_amount)
+
+	# 3. THE SETTLE THRESHOLD, which is the same defect one level down: _settle
+	#    IS the generic magnification, and it keyed off a single speed.
+	lens.solver.place(on, 0.0)
+	lens.position = on
+	for i in 30:
+		await get_tree().process_frame
+	# The velocity has to be re-set every frame AND allowed for: Draggable._process
+	# advances the solver before the lens reads solver.speed(), and the free step
+	# decays velocity by about 6% at 60 Hz. 75 is read as roughly 70 — inside the
+	# new hold band of 45..95 and above the old single threshold of 60, which is
+	# what makes this discriminate rather than pass on both.
+	var settle_lo := 1.0
+	for i in 60:
+		lens.solver.velocity = Vector2(75.0, 0.0)
+		lens.solver.sleeping = false
+		await get_tree().process_frame
+		settle_lo = minf(settle_lo, lens._settle)
+	_is_true(settle_lo > 0.8,
+		"a hand drifting at the settle threshold does not swing the whole "
+		+ "screen image between magnifications (%.2f)" % settle_lo)
+
+	# 4. THE SOURCE IS HIDDEN EXACTLY AS FAST AS IT STOPS BEING MAGNIFIED.
+	#    The opaque field uses ease(_focus_amount, 0.55); the magnification used
+	#    the raw value, so for the whole of every fade the aperture showed a
+	#    partly-magnified copy of the source under a partly-opaque cover under the
+	#    enlarged plate — the same words at two sizes, which is the exact defect
+	#    the field exists to prevent.
+	lens.solver.velocity = Vector2.ZERO
+	var mismatch := 0.0
+	for step in 11:
+		lens._focus_amount = float(step) / 10.0
+		var field_opacity: float = ease(lens._focus_amount, 0.55)
+		var generic: float = lerpf(0.16, 1.0, lens._settle)
+		var passed_through: float = lens.optical_magnification() / maxf(0.001, generic)
+		mismatch = maxf(mismatch, absf((1.0 - field_opacity) - passed_through))
+	_is_true(mismatch < 0.02,
+		"the field's opacity and the magnification it hides move together "
+		+ "(worst gap %.3f)" % mismatch)
+
+	# 5. AND THE SUBJECT CAN BE DESTROYED WHILE THE GLASS IS ON IT.
+	#
+	# `_focus` outlives `_want` now so the image fades rather than cuts — which
+	# means it can hold a reference to something freed mid-fade. Parchment burns,
+	# a packet is swept when the candle drowns, a pendant tag goes with its sheet.
+	# A freed Object is NOT null in GDScript, so every `_focus != null` guard
+	# passes and the next get_instance_id() faults. This is a risk the crossfade
+	# introduced; it did not exist while the reference was replaced every frame.
+	lens.solver.place(on, 0.0)
+	lens.position = on
+	for i in 30:
+		await get_tree().process_frame
+	_is_true(lens._focus == seal, "the glass is on the seal again")
+	desk.case_papers.erase(seal)
+	seal.queue_free()
+	await get_tree().process_frame
+	for i in 20:
+		await get_tree().process_frame
+	_is_true(lens._focus == null and lens._want == null,
+		"and a subject destroyed under the glass is let go of, not faulted on")
+
+	lens.solver.place(lens_home, 0.0)
+	lens.position = lens_home
+	lens._focus_amount = 0.0
+	desk.lay_out_packet(_lore_data.cases[0].documents)
+	desk._refresh_lens_subjects()
+	await get_tree().process_frame
 
 
 func _test_visual_invariants(desk: Desk) -> void:

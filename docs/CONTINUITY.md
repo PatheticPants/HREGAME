@@ -29,7 +29,7 @@ python tools/verify_content.py
 | suite | checks |
 |---|---|
 | rules | 107 |
-| presentation | 461 |
+| presentation | 494 |
 | the day (full loop) | 138 |
 | content + encoding | PASS |
 
@@ -700,45 +700,59 @@ because they are 640 wide and hinged around a gutter. The falloff you can see
 across a sheet in a capture comes from the actual `PointLight2D` and is correct.
 Do not do it again.
 
-## THE MAGNIFIER IS GLITCHY. DIAGNOSED 2026-08-02, NOT FIXED.
+## THE MAGNIFIER. FIXED 2026-08-02, AND THE DIAGNOSIS WAS HALF WRONG.
 
-Reported, with permission to write it down rather than fix it. Three specific
-causes, all in `lens.gd`, all confirmed by reading it. None is the shader.
+Every cause was **a hard yes/no edge with a human hand on it.** `_find_subject`
+answers across three boundaries — a reach radius, a containment test and a burial
+test — and `_settle` across a fourth, a speed. A held object is driven by a spring
+attached to a hand, so it does not sit still on any of them: it crosses them,
+repeatedly, and each crossing used to reassign `_focus` and slam `_focus_amount`
+to 0.0 on the same line. That single frame does three things at once — the opaque
+field that hides the small source glyphs vanishes, the screen magnification jumps
+from 0 back to generic, and the authored plate disappears. A cut between two
+completely different pictures, over and over, for as long as the hand shakes.
 
-1. **Two range tests with two different anchors, and they disagree.**
-   `_find_subject` requires the subject's `detail_centre()` to be within
-   `RADIUS * 0.85` (98.6) of the lens centre, AND `_subject_contains_lens` to be
-   true, which requires the lens's own CENTRE to be inside the subject's hit
-   rectangle. For a charter those two anchors are hundreds of units apart — the
-   closing formula is at the foot, the rectangle is the whole sheet — so there
-   is a band where the glass is visibly over the writing and focuses, another
-   where it is visibly over the writing and does not, and the player cannot see
-   which is which. That is most of the "fiddly" feel.
+**The fixes.**
 
-2. **Changing subject resets the focus to zero.** `_process` does
-   `if found != _focus: _focus_amount = 0.0`. Sweeping the glass across a desk
-   with several inspectable things restarts the fade every time the winner
-   changes, so the image pumps instead of resolving. There is no hysteresis and
-   no preference for the subject it already had.
+- `_focus` (what the aperture is SHOWING) is now separate from `_want` (what the
+  glass is over). They disagree during a crossfade and `_focus` only changes when
+  there is nothing on screen to change. One fade instead of a cut.
+- A null result must persist for `SUBJECT_GRACE` before the subject is dropped,
+  so a one-frame dropout at a rim does not tear the image down. `_lost_for`
+  resets on any non-null frame, which is exactly what makes an alternating
+  tremor hold and a genuine departure release.
+- The containment test returns a DISTANCE (`_lens_gap`) rather than a boolean,
+  because a distance can carry hysteresis and a boolean cannot. Acquire within
+  `CONTACT_SLOP`, release only past `CONTACT_SLOP + HOLD_SLOP`.
+- `_settle` gets two thresholds, 45 to enter and 95 to leave. It IS the generic
+  magnification, so a hand hovering near the old single 60 swung the entire
+  screen image between 0.16x and 1x.
+- `optical_magnification()` is locked to the same `ease(_focus_amount, 0.55)` the
+  opaque field uses. It used the raw value while the field used the eased one, so
+  for the whole of every fade the aperture showed a partly-magnified copy of the
+  source under a partly-opaque cover under the enlarged plate — the same words at
+  two sizes, which is the exact defect the field was added to prevent, surviving
+  in the transition it had only ever been measured at the endpoints of.
 
-3. **And the pump is amplified, not damped, by the magnification curve.**
-   `optical_magnification()` is `lerp(generic, 0.0, _focus_amount)` — the
-   generic screen-magnification is driven to ZERO as authored detail resolves.
-   So an oscillating `_focus_amount` does not merely fade a detail plate in and
-   out, it swings the whole aperture between 0.16–1.0 generic magnification and
-   none. Two systems that should be independent are wired in opposition.
+**WHERE THE OLD DIAGNOSIS WAS WRONG, which is the useful part.** It said the two
+range tests "disagree over most of a charter" and to fix the others first. In
+fact `reach` (98.6 units from `detail_centre`) is almost never the binding
+constraint — for a pendant seal forty units across, containment binds first, and
+containment was the test with no tolerance at all. The first attempt put the
+hysteresis on `reach` and the new assertion reported the image torn down at every
+single sample. **Find which test actually binds before adding tolerance to one.**
 
-   `_settle` has the same shape of problem one level down: it keys off
-   `solver.speed() < 60.0` with no hysteresis, and the solver does not settle to
-   exactly zero, so a glass the player thinks is stationary can cross that line
-   repeatedly.
+It also called `optical_magnification`'s coupling to `_focus_amount` a bug of two
+systems "wired in opposition". It is not: authored detail REPLACES the screen
+copy rather than overlaying it, or the same sentence prints at two sizes. The
+coupling is correct and the curve was wrong.
 
-**If you fix this, fix 2 and 3 first and measure before touching 1.** They are
-cheap — a small preference for the incumbent subject, and a floor under the
-generic magnification so authored detail never drives it to zero — and they may
-account for the whole complaint on their own. 1 is a real design question (what
-should "the glass is over this" mean for an object whose interesting part is not
-its middle) and changing it will move which lookups are possible.
+**A risk the crossfade introduced, and the assertion that covers it.** `_focus`
+outliving `_want` means it can hold a reference to something freed mid-fade —
+parchment burns, packets are swept when the candle drowns, a pendant tag goes
+with its sheet. A freed Object is NOT null in GDScript, so every `_focus != null`
+guard passes and the next `get_instance_id()` faults. Cleared explicitly at the
+top of `_process`.
 
 ## What the owner found by PLAYING it, 2026-08-02 — six reports, six real defects
 

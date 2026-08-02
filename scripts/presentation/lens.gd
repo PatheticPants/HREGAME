@@ -34,9 +34,44 @@ signal focus_confirmed(subject: Node2D)
 ## Everything the glass might be held over. Set by the desk when it builds.
 var subjects: Array[Node2D] = []
 
+## WHAT IS BEING DRAWN, which is not always what is under the glass.
+##
+## These were one variable and that was the whole of the flicker. `_focus` was
+## reassigned the instant `_find_subject()` returned anything different — including
+## null for a single frame — and `_focus_amount` was slammed to 0.0 on the same
+## line. Every one of those frames does three things at once: the opaque field
+## that hides the small source glyphs vanishes, the screen magnification jumps
+## from 0 back up to its generic value, and the authored plate disappears. That is
+## not a fade, it is a cut between two completely different pictures, and at the
+## edge of any threshold it happens over and over.
+##
+## `_focus` is now what the aperture is SHOWING and is only ever changed when
+## nothing is on screen to change. `_want` is what the glass is over. When they
+## disagree the image fades out, swaps, and fades back in — one crossfade instead
+## of a cut.
 var _focus: Node2D = null
+var _want: Node2D = null
 var _focus_amount := 0.0
 var _focus_dwell := 0.0
+## How long `_find_subject` has been saying "nothing", so a one-frame dropout at
+## the rim of a threshold does not tear the image down. Losing the subject is a
+## real event; losing it for two frames while the hand shakes is not.
+var _lost_for := 0.0
+const SUBJECT_GRACE := 0.20
+## How far off a subject the glass may sit and still be considered over it, and
+## how much further it must be dragged before it lets go.
+##
+## THE HYSTERESIS HAS TO BE ON THE TEST THAT ACTUALLY BINDS, and the first
+## attempt put it on the wrong one. `reach` is 98.6 units from `detail_centre()`,
+## which for a pendant seal forty units across is never the constraint —
+## `_subject_contains_lens` is, and it had no tolerance at all: the lens's centre
+## was either inside the tag's rectangle or it was not, decided afresh every
+## frame, against a spring being driven by a human hand.
+##
+## Absolute rather than proportional, because the thing being resisted is hand
+## tremor and hand tremor is a number of pixels, not a fraction of a subject.
+const CONTACT_SLOP := 6.0
+const HOLD_SLOP := 22.0
 ## How settled the glass is, 0..1, from its own speed.
 ##
 ## This is deliberately independent of `_focus_amount`: the composited screen
@@ -97,25 +132,63 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
-	var found := _find_subject()
-	if found != _focus:
-		_focus = found
+	# A SUBJECT CAN BE DESTROYED WHILE THE GLASS IS STILL ON IT.
+	#
+	# `_focus` deliberately outlives `_want` now so the image can fade out rather
+	# than cut — which means it can be holding a reference to something that was
+	# freed during the fade. Parchment burns, a packet is swept when the candle
+	# drowns, and a pendant tag goes with the sheet it hung from. A freed Object
+	# is not null, so every guarded `_focus != null` below would pass and then
+	# get_instance_id() would fault.
+	if _focus != null and not is_instance_valid(_focus):
+		_focus = null
 		_focus_amount = 0.0
 		_focus_dwell = 0.0
-	# Fade the enlarged image in rather than snapping, so sweeping the glass
-	# across a crowded desk does not strobe. A moving glass resolves more slowly
-	# than one set down: the high-detail face is something the player focuses,
-	# not a decal that turns on at the edge of a hit radius.
+	if _want != null and not is_instance_valid(_want):
+		_want = null
+
+	var found := _find_subject()
+	# A MOMENTARY NOTHING IS NOT A CHANGE OF SUBJECT. Every threshold in
+	# _find_subject — the reach, the containment, the burial test — is a hard
+	# boundary that a shaking hand crosses back and forth, and each crossing used
+	# to tear the whole image down and rebuild it.
+	if found == null and _want != null:
+		_lost_for += delta
+		if _lost_for >= SUBJECT_GRACE:
+			_want = null
+	else:
+		_lost_for = 0.0
+		_want = found
+
 	var motion := solver.speed()
 	# HOW STILL THE GLASS IS, independent of whether there is anything authored
 	# under it. `_focus_amount` cannot do this job: it only rises when one of the
 	# two objects that implement the detail contract is in range, so keying the
 	# magnification to it would have left the glass weakest over everything else
-	# on the desk — which is the complaint.
-	_settle = move_toward(_settle, 1.0 if motion < 60.0 else 0.0, delta * 3.2)
+	# on the desk.
+	#
+	# TWO THRESHOLDS, NOT ONE. This was `motion < 60.0`, and DragSolver does not
+	# settle a held object to exactly zero — the spring is being driven by a hand.
+	# Sitting near 60 therefore drove _settle up and down, and _settle is the
+	# GENERIC MAGNIFICATION, so the entire screen image breathed in and out
+	# between 0.16x and 1x while the player held the glass still and looked at it.
+	var still := _settle > 0.5
+	var want_still := motion < (95.0 if still else 45.0)
+	_settle = move_toward(_settle, 1.0 if want_still else 0.0, delta * 3.2)
+
+	# Fade the enlarged image in rather than snapping, so sweeping the glass
+	# across a crowded desk does not strobe. A moving glass resolves more slowly
+	# than one set down: the high-detail face is something the player focuses,
+	# not a decal that turns on at the edge of a hit radius.
 	var focus_rate := 6.2 if motion < 90.0 else 2.8
-	_focus_amount = move_toward(_focus_amount, 1.0 if _focus != null else 0.0,
-		delta * focus_rate)
+	# THE CROSSFADE. Fade toward the subject we have, or away from one we are
+	# leaving; only swap when there is nothing on screen to swap.
+	var settling_on := _want if _want == _focus else null
+	_focus_amount = move_toward(_focus_amount,
+		1.0 if settling_on != null else 0.0, delta * focus_rate)
+	if _focus != _want and _focus_amount <= 0.001:
+		_focus = _want
+		_focus_dwell = 0.0
 	var lag_target := -solver.velocity.rotated(-global_rotation) * 0.014
 	if not is_held:
 		lag_target *= 0.28
@@ -185,7 +258,19 @@ func _process(delta: float) -> void:
 ## the aperture never prints the same sentence at two sizes.
 func optical_magnification() -> float:
 	var generic := lerpf(0.16, 1.0, _settle)
-	return lerpf(generic, 0.0, _focus_amount)
+	# LOCKED TO THE FIELD THAT HIDES IT, not to raw focus.
+	#
+	# The opaque field in _draw() uses `ease(_focus_amount, 0.55)` — an ease-OUT,
+	# so it is already 51% opaque at 30% focus — while this used the raw value and
+	# was still passing 70% of the screen image through. For the whole of every
+	# fade the aperture therefore showed a partly-magnified copy of the source
+	# UNDER a partly-opaque cover UNDER the enlarged plate: the same words at two
+	# sizes, which is the exact defect the field was added to prevent, surviving
+	# in the transition it was measured at the endpoints of.
+	#
+	# Same curve on both, so the source is hidden exactly as fast as it stops
+	# being magnified. If the field's curve changes, change it here too.
+	return lerpf(generic, 0.0, ease(clampf(_focus_amount, 0.0, 1.0), 0.55))
 
 
 ## A petitioner reacts to an inspection once, not every time the glass wobbles
@@ -194,6 +279,8 @@ func optical_magnification() -> float:
 func begin_case() -> void:
 	_reported.clear()
 	_focus = null
+	_want = null
+	_lost_for = 0.0
 	_focus_amount = 0.0
 	_focus_dwell = 0.0
 	_optical_lag = Vector2.ZERO
@@ -212,6 +299,14 @@ func begin_case() -> void:
 ## Two rules now, both borrowed from the desk's own hit test: the topmost
 ## candidate wins rather than the nearest, and a candidate covered at that point
 ## by something drawn above it is not a candidate at all.
+## AND IT IS STICKY, because every test below is a hard edge.
+##
+## `reach`, `_subject_contains_lens` and `_is_buried` are all yes/no answers with
+## a boundary, and a held object is being driven by a spring attached to a human
+## hand — so a glass the player believes is stationary crosses those boundaries
+## repeatedly. Each crossing used to change the answer, and changing the answer
+## used to tear the image down. The incumbent therefore keeps the glass out to a
+## wider radius than it took to win it, and wins ties.
 func _find_subject() -> Node2D:
 	var reach := RADIUS * 0.85
 	var best: Node2D = null
@@ -223,11 +318,16 @@ func _find_subject() -> Node2D:
 			continue
 		if not s.has_method("has_detail") or not s.call("has_detail"):
 			continue
+		var incumbent := s == _want
 		var centre: Vector2 = s.call("detail_centre") if s.has_method("detail_centre") \
 			else s.global_position
+		# Coarse gate: authored detail is only worth resolving if the mark itself
+		# is somewhere near the glass.
 		if centre.distance_to(global_position) >= reach:
 			continue
-		if not _subject_contains_lens(s):
+		# Fine gate, and the one that actually decides. Sticky, so the glass has
+		# to be carried clear of a subject rather than merely tremble off it.
+		if _lens_gap(s) > CONTACT_SLOP + (HOLD_SLOP if incumbent else 0.0):
 			continue
 		if _is_buried(s):
 			continue
@@ -235,7 +335,11 @@ func _find_subject() -> Node2D:
 		# in the tree. Nearest is the wrong question when two things overlap —
 		# what the player can SEE is the one on top.
 		var order := s.z_index * 100000 + _draw_index(s)
-		if order >= best_order:
+		# A tie goes to whatever the glass is already reading. Two subjects at the
+		# same z whose child indices swap when either is picked up would otherwise
+		# hand the aperture back and forth for as long as they overlap.
+		if order > best_order or (order == best_order and incumbent) \
+				or (best == null):
 			best_order = order
 			best = s
 	return best
@@ -245,14 +349,31 @@ func _find_subject() -> Node2D:
 ## The centre-distance test alone let a charter formula beside an open book
 ## replace the book leaf the aperture was actually covering.
 func _subject_contains_lens(subject: Node2D) -> bool:
-	var draggable := subject as Draggable
-	if draggable != null:
-		return draggable.contains_point(global_position)
+	return _lens_gap(subject) <= CONTACT_SLOP
+
+
+## HOW FAR THE GLASS IS FROM BEING OVER THIS THING, in units, zero when it is.
+##
+## The containment test used to be a bare yes/no — `contains_point` for a
+## Draggable, a radius for a pool — decided afresh every frame against a spring
+## driven by a human hand. A distance can carry hysteresis; a boolean cannot,
+## which is why this exists.
+func _lens_gap(subject: Node2D) -> float:
 	var pool := subject as WaxPool
 	if pool != null:
-		return pool.detail_centre().distance_to(global_position) \
-			<= pool.radius + APERTURE_RADIUS * 0.20
-	return false
+		return maxf(0.0, pool.detail_centre().distance_to(global_position)
+			- pool.radius - APERTURE_RADIUS * 0.20)
+	var draggable := subject as Draggable
+	if draggable == null:
+		return 1e9
+	if draggable.contains_point(global_position):
+		return 0.0
+	# Outside: the distance to its hit rectangle, in the subject's own frame so a
+	# tilted charter measures along the page rather than along the desk.
+	var local := draggable.to_local(global_position)
+	var half := draggable.hit_size * 0.5
+	return Vector2(maxf(0.0, absf(local.x) - half.x),
+		maxf(0.0, absf(local.y) - half.y)).length()
 
 
 ## Where this node falls in the order things are painted in. Siblings of the
