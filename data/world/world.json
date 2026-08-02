@@ -49,9 +49,10 @@
       "_exit_note": "THE ONLY EXIT FROM THE TUTORIAL WAS IN THE DOORKEEPER'S HAND, AND THAT IS THE ONE REGISTER THIS GAME TRAINS YOU TO DISCOUNT.\n\nSessionController.PRACTICE_REVIEW ends on inspect_impression followed by the lens being released, and nothing else ends it. The sentence that said so lived in doorkeeper_note — the slanted brown hand, measured at 0.211 Michelson contrast against 0.557 for the upright one, whose own header in docket_view.gd says it 'is never authoritative', and out of which the candle rule was deliberately moved for exactly that reason. Five case dockets teach the player to skim it before they ever meet a case. A player who missed one faint sentence sat at a desk with no petitioners and no way forward, permanently, with no menu to quit to.\n\nThe instruction is now in claim_summary, in the upright authoritative hand, in the order the hands perform it. The doorkeeper keeps only what he is for: how many are waiting and what he thinks of them. SessionController._tick_practice_review is the second half of the fix — the door opens itself eventually, so no single sentence is load-bearing for whether the game continues at all.",
       "petitioner_name": "PRACTICE",
       "petitioner_style": "discarded office leaf; no party is bound",
-      "claim_summary": "Read the memorandum. Hold the leaf up to the flame and see what the knife took out. Then melt, pour, choose a ring, and hold until the wax gives.\n\nLast, put the glass over the mark you have made and read it. The door opens when you have.",
+      "claim_summary": "Pick the leaf up. Everything on this desk is a thing you can take hold of.",
       "received_note": "",
-      "doorkeeper_note": "Four in the passage already, and two have brought their own chairs."
+      "doorkeeper_note": "Four in the passage already, and two have brought their own chairs.",
+      "_stepped_note": "THIS SLIP IS WRITTEN BY SessionController._practice_write_card, AND WHATEVER IS HERE IS ONLY ITS FIRST FRAME.\n\nIt used to carry five instructions at once, beside a memorandum carrying six and a practice leaf carrying three: fourteen teachable things in three walls of text at the opening frame, none of them saying which to do first. Reported from play as 'there is really no tutorial, I don't know how to do anything off the bat, and the game gives you so many objects at the start that it is hard to know where to start.'\n\nThe steps and their prose live in SessionController.PRACTICE_STEPS. Edit them there; editing claim_summary here changes only what is on the slip for the half second before the first step is written."
     },
     {
       "kind": "charter",
@@ -68,7 +69,7 @@
       ],
       "start_angle_deg": -2.0,
       "takes_seal": true,
-      "body_text": "THIS LEAF TRANSFERS NOTHING.\n\nStrike one complete office device below. Feel the resistance before the wax yields. Once it gives, the judgment cannot be changed; continue to hold for a clean device, then lift without dragging.\n\nSomebody has been at the year on this leaf with a knife. Pick the sheet up and hold it in front of the flame before you seal it, so that you know what that looks like the first time it matters.",
+      "body_text": "THIS LEAF TRANSFERS NOTHING.\n\nIt binds no party, and no office will read it. Practise on it.",
       "date_emperor": "kunrad_iv",
       "date_regnal_year": 7,
       "drawn_by_polity": "aachen_verd",
@@ -91,7 +92,8 @@
           "dispositive": true,
           "note": ""
         }
-      ]
+      ],
+      "_body_note": "CUT WHEN THE PRACTICE SLIP BECAME STEPPED. What went: 'Strike one complete office device below. Feel the resistance before the wax yields...' and the whole paragraph about the knife and the flame. Both were INSTRUCTIONS printed on a document, and both are now said one at a time by the slip at the moment they are wanted -- and the knife paragraph was worse than redundant, because it announced the answer to the step that exists to let the player find it.\n\nWhat is left is what a discarded office leaf would actually say, and it must keep saying it: the player is about to seal this thing, and the one fact they need is that it does not count."
     }
   ],
   "_reigns_note": "election_year is when he was chosen King of the Romans, in his predecessor's lifetime. accession_year is when the predecessor died. coronation_year is the imperial crown at Rome. The gaps between these three are what make a regnal date ambiguous, and they are the engine of every date puzzle in the game.",

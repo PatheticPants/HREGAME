@@ -98,6 +98,8 @@ var _looked_up_for_case := false
 
 func bind(d: Desk) -> void:
 	desk = d
+	d.press.pour_began.connect(_on_practice_poured)
+	d.press.gave_way.connect(_on_practice_gave_way)
 	d.press.impression_finished.connect(_on_impression_finished)
 	d.investigation_performed.connect(_on_investigation_performed)
 	d.case_work_engaged.connect(_on_case_work_engaged)
@@ -124,13 +126,129 @@ func begin() -> void:
 	_begin_practice()
 
 
+## THE OPENING HANDED THE PLAYER FOURTEEN INSTRUCTIONS AND NO ORDER TO DO THEM
+## IN.
+##
+## Reported from play: "there is really no tutorial, I don't know how to do
+## anything off the bat, and the game gives you so many objects at the start that
+## it is hard to know where to start." Counted, at the first frame: the
+## memorandum carries six sentences naming the glass, the closing formula, the
+## Almanac, the tablet, the stylus, the Kalendar, the spoon, the pour, the ring
+## and the candle rule; the practice slip carried five more; the practice leaf's
+## body carried three paragraphs. Fourteen teachable things in three walls of
+## text, all present simultaneously, none of them saying which to do first.
+##
+## The slip says ONE thing now, and says the next one when that thing is done.
+## It is the same object in the same place — a list the doorkeeper wrote at the
+## door and is working through — so this is not a tutorial overlay and there is
+## still no HUD anywhere in the game. What it replaces is not instruction, it is
+## SIMULTANEITY.
+##
+## Every step completes on a signal the desk already emitted for its own reasons;
+## nothing here reaches into the desk to ask what the player is doing.
+const PRACTICE_STEPS := [
+	{
+		"key": &"touch",
+		"say": "Pick the leaf up. Everything on this desk is a thing you can "
+			+ "take hold of.",
+		"done": "You have the leaf.",
+	},
+	{
+		"key": &"hold_to_light",
+		"say": "Hold it in front of the candle flame, and watch the year.",
+		"done": "Somebody had been at that year with a knife. You will see it "
+			+ "again this week, on a leaf that binds somebody.",
+	},
+	{
+		"key": &"poured",
+		"say": "Hold the brass spoon over the flame until the cake runs. Lift "
+			+ "it clear, carry it to the foot of the leaf, and hold it still.",
+		"done": "Wax on the leaf.",
+	},
+	{
+		"key": &"gave_way",
+		"say": "Take one ring from the block and hold it on the wax. It will "
+			+ "resist, and then it will give. Keep holding.",
+		"done": "That is a judgment. There is never a second impression.",
+	},
+	{
+		"key": &"inspect_impression",
+		"say": "Put the glass over the mark you have made, and read it.",
+		"done": "",
+	},
+]
+
+const PRACTICE_FINISHED := "That is the whole of it. Put the glass down."
+
+var _practice_step := 0
+
+
 func _begin_practice() -> void:
 	if Lore.data.practice_documents.is_empty():
 		_begin_day(0)
 		return
 	desk.lay_out_packet(Lore.data.practice_documents)
 	desk.press.enabled = true
+	_practice_step = 0
 	_enter(Stage.PRACTICE)
+	_practice_write_card()
+
+
+## The slip the doorkeeper left, rewritten to whatever is next.
+func _practice_card() -> DocketView:
+	if desk == null:
+		return null
+	for paper in desk.case_papers:
+		if not is_instance_valid(paper) or not paper is DocketView:
+			continue
+		var view := paper as DocketView
+		if view.data != null and view.data.id == &"practice_instruction":
+			return view
+	return null
+
+
+func _practice_write_card() -> void:
+	var card := _practice_card()
+	if card == null:
+		return
+	var d := card.docket_data()
+	if d == null:
+		return
+	if _practice_step >= PRACTICE_STEPS.size():
+		d.claim_summary = PRACTICE_FINISHED
+		d.received_note = String(PRACTICE_STEPS[-1].get("done", ""))
+	else:
+		d.claim_summary = String(PRACTICE_STEPS[_practice_step]["say"])
+		d.received_note = String(PRACTICE_STEPS[_practice_step - 1].get("done", "")) \
+			if _practice_step > 0 else ""
+	card.queue_redraw()
+
+
+## Advance if — and only if — this is the step the player is actually on. Doing
+## something out of order is not punished and not counted: a player who reaches
+## for the spoon first simply gets no acknowledgement and the slip goes on asking
+## for the thing it asked for.
+func _practice_did(key: StringName) -> void:
+	# PRACTICE_REVIEW counts too: the press moves the stage on at the peel, so
+	# the last step — reading your own impression — necessarily happens after it.
+	if stage not in [Stage.PRACTICE, Stage.PRACTICE_REVIEW] \
+			or _practice_step >= PRACTICE_STEPS.size():
+		return
+	if PRACTICE_STEPS[_practice_step]["key"] != key:
+		return
+	_practice_step += 1
+	_log(&"practice_step", {"done": String(key), "next": _practice_step})
+	# The same quiet mark the rack uses when something lands where it belongs.
+	Audio.play(&"stamp_set", desk.global_position, -12.0)
+	_practice_write_card()
+
+
+func _on_practice_poured(_amount := 0.0) -> void:
+	_practice_did(&"poured")
+
+
+func _on_practice_gave_way() -> void:
+	_practice_did(&"gave_way")
 
 
 ## Assert, at startup, that every authored ground truth actually follows from the
@@ -254,6 +372,7 @@ func _begin_day(which: int) -> void:
 func _process(delta: float) -> void:
 	_timer += delta
 	_burn_the_day(delta)
+	_drive_music()
 	match stage:
 		Stage.PRACTICE_REVIEW: _tick_practice_review()
 		Stage.KNOCK: _tick_knock()
@@ -264,6 +383,48 @@ func _process(delta: float) -> void:
 		Stage.CLOSING: _tick_closing()
 		Stage.WORKING: _tick_working(delta)
 		_: pass
+
+
+## THE SCORE SAYS WHAT THE CLOCK IS DOING, AND NOTHING ELSE.
+##
+## The melody plays while — and only while — the candle is being spent. Not
+## while somebody is speaking, not between callers, not over the ledger. That is
+## the same rule the flame already follows (a still flame is a stopped clock),
+## and putting the music on it means the player hears their time being spent
+## before they have worked out that the flame does it too. It is also the only
+## honest use of music in a game whose whole pressure is a clock you may not put
+## a number on.
+##
+## Under it, the drone is the room and is present whenever the room is. Over it,
+## the closing layer fades in across the guttering threshold, so the light going
+## and the music going are one event rather than two. The cold layer belongs to
+## the ledger, after the flame, and is the only one with no drone beneath it —
+## what has been removed is the point of it.
+##
+## Recomputed every frame and pushed as a whole mix. Cheap, and it means no
+## transition anywhere in the session has to remember to update the music.
+func _drive_music() -> void:
+	var burning := _work_engaged and desk != null and desk.candle != null \
+		and not desk.candle.is_spent() \
+		and stage in [Stage.ENTERING, Stage.SPEAKING, Stage.WORKING]
+	var burn := desk.candle.burn if desk != null and desk.candle != null else 0.0
+	var spent := desk != null and desk.candle != null and desk.candle.is_spent()
+
+	if stage == Stage.OVER:
+		Audio.music_silent()
+		return
+	if stage == Stage.LEDGER or stage == Stage.CLOSING:
+		# The day is over and the flame is out. Bare fifths, no room under them.
+		Audio.music({&"music_cold": 1.0})
+		return
+
+	# How far past the guttering line the candle has got, 0..1.
+	var late := clampf(inverse_lerp(Candle.GUTTERING_FROM, 1.0, burn), 0.0, 1.0)
+	Audio.music({
+		&"music_bed": 0.0 if spent else 1.0,
+		&"music_work": (1.0 - late * 0.65) if burning else 0.0,
+		&"music_close": late if burning or late > 0.01 else 0.0,
+	})
 
 
 ## Somebody is standing three feet away watching you read. Long silences are the
@@ -326,6 +487,10 @@ func _tick_practice_review() -> void:
 		_practice_gave_up = true
 		desk.open_door()
 		Audio.play(&"door_open")
+		# And the slip stops asking for something the player has not managed, or
+		# the open door and the instruction contradict each other.
+		_practice_step = PRACTICE_STEPS.size()
+		_practice_write_card()
 		_log(&"practice_door_forced", {"after_seconds": snappedf(_timer, 0.1)})
 		return
 	if _practice_gave_up and _timer > PRACTICE_PATIENCE + PRACTICE_GRACE:
@@ -672,7 +837,11 @@ func _on_investigation_performed(beat: StringName) -> void:
 	# Practice is complete only when the player has actually read their own
 	# impression through the glass. A timer made the written instruction a race:
 	# a cold player could reach for the lens and watch the leaf disappear.
+	if stage == Stage.PRACTICE:
+		_practice_did(beat)
+		return
 	if stage == Stage.PRACTICE_REVIEW and beat == &"inspect_impression":
+		_practice_did(beat)
 		if not _practice_inspected:
 			_practice_inspected = true
 			# The door is the in-world acknowledgment: the player has read the
@@ -727,6 +896,12 @@ func _finish_practice() -> void:
 ## arrival dialogue is no longer free research time, and an authored interjection
 ## no longer changes whether the flame burns.
 func _on_case_work_engaged(who: Draggable) -> void:
+	# The first step is "pick something up", and it is first because a cold
+	# player's real question is not which object but whether the objects move at
+	# all. Anything counts.
+	if stage == Stage.PRACTICE:
+		_practice_did(&"touch")
+		return
 	if _current == null:
 		return
 	if stage not in [Stage.ENTERING, Stage.SPEAKING, Stage.WORKING]:
