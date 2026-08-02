@@ -548,14 +548,30 @@ static func _validate(lore: LoreData) -> void:
 			if not lore.polities.has(seal.claims_polity):
 				lore.errors.append("case '%s': seal '%s' names unknown polity '%s'"
 					% [c.id, seal.id, seal.claims_polity])
-			var owner_known := false
-			for matrix in lore.matrices:
-				if matrix.owner_name.to_lower() == seal.claims_owner.to_lower():
-					owner_known = true
-					break
-			if not owner_known:
-				lore.errors.append("case '%s': seal '%s' claims unknown owner '%s'"
-					% [c.id, seal.id, seal.claims_owner])
+			# A HOUSE THAT KEEPS NO SEALS CAN NEVER HAVE A MATRIX, AND THAT IS
+			# THE PUZZLE RATHER THAN A TYPO.
+			#
+			# This check made SealCheck's `seal_where_none_used` unauthorable: the
+			# Wends keep no dies, so wax claiming them has no owner in the Book of
+			# Matrices by definition, and the loader refused the case outright.
+			# An authored FATAL that the content validator forbids you from
+			# triggering is a rule that cannot exist. tools/verify_content.py had
+			# it right — it prints a note and carries on.
+			#
+			# Left strict for every polity that DOES seal, because there the check
+			# is earning its keep: SealCheck matches candidates on owner_name as a
+			# STRING, so a typo in claims_owner silently produces matrix_unknown
+			# and a case that convicts for the wrong reason.
+			var claimed_polity: Polity = lore.polities.get(seal.claims_polity)
+			if claimed_polity == null or claimed_polity.seals_used:
+				var owner_known := false
+				for matrix in lore.matrices:
+					if matrix.owner_name.to_lower() == seal.claims_owner.to_lower():
+						owner_known = true
+						break
+				if not owner_known:
+					lore.errors.append("case '%s': seal '%s' claims unknown owner '%s'"
+						% [c.id, seal.id, seal.claims_owner])
 
 	for day in lore.days:
 		if day.id == &"":

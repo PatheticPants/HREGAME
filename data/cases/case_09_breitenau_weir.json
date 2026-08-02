@@ -1,10 +1,10 @@
 {
   "id": "case_09_breitenau_weir",
   "title": "The Weir at Breitenau",
-  "_design": "THE SEALS IN A ROW. Five named parties consent; their five tags and the Chancery's authenticating tag make six. Count first, then compare each impression with the Book of Matrices. Every die is live in 1221 and every impression answers. This is a clean CONFIRM and introduces no new Check. Portrait reuse is deliberate scaffold.",
-  "correct_verdict": "CONFIRM",
-  "correct_reason": "nothing_against",
-  "correct_reason_text": "Five consenting parties and one authenticating Chancery seal are present. All six answer to live dies.",
+  "_design": "THE SEALS IN A ROW, AND ONE OF THEM SHOULD NOT EXIST.\n\nSix pendant tags: five consenting parties and the Chancery's authenticating seal. Five of the six answer to live dies in 1221 and are entirely in order. The sixth belongs to the Wends of the Nether March, and the Wends keep no seals at all.\n\nWHY THIS CASE WAS REWRITTEN. It shipped as six identical lookups producing six identical nulls — verify_content.py printed it as `clean:seal_sound` x6 plus `clean:date_sound`, the least varied matter in the build, and its own _design note admitted it 'introduces no new Check'. It was also the most mechanical labour in the game: six lens trips against every other matter's one, performed in silence because petitioner_waits is false. Six of the same question is not difficulty.\n\nWHAT IT FIRES. SealCheck's `seal_where_none_used` — a FATAL that has existed since the check was written and has never once fired in play. Its own comment calls it 'a rule made entirely of absence, and the easiest one in the game to walk straight past', and the Book of Matrices devotes a whole page to it: 'There is no die of the Nether March in this book because there is no die of the Nether March... Wax on a Wendish instrument was put there by somebody who knew that we would want to see wax.' A player who has read that page has the answer; a player who looks up each seal in turn will find five that answer and one the book does not hold. The check tests seals_used BEFORE looking for a matrix, so the finding is 'this house does not seal' and never 'no such die', which is the difference between the rule and a filing error.\n\nWHY THE COUNT STILL MATTERS. It matters more. Counting five names against six tags was previously a question that resolved to nothing. Now the question is not how many but whose, and the party list is where you find it — the Wendish reach is named among the consenting parties in the ordinary way, because nothing about a Wendish community consenting to a common work is irregular. Only the wax is.\n\nAND IT IS NOT A TRAP ABOUT SUSPICION. The five real seals are genuinely clean and the erasure-free parchment is genuinely clean; there is nothing here for the flame or the Almanac. The instrument is false in exactly one particular and the case says so plainly once the right page is open.\n\nPortrait reuse is deliberate scaffold.",
+  "correct_verdict": "DENY",
+  "correct_reason": "seal_where_none_used",
+  "correct_reason_text": "Five of the six tags answer to live dies. The sixth claims the Wends of the Nether March, who keep no matrices and witness by oath before named men. Wax on a Wendish instrument was put there by somebody who wanted it to look like ours.",
   "petitioner_waits": false,
   "petitioner": {
     "id": "bertold_leyser",
@@ -67,7 +67,7 @@
         "The Abbey of Saint Wend's-in-the-Wood",
         "The Cathedral Chapter of Saint Wend",
         "Berthold, Duke of Ostmark",
-        "Ulrich, Count of Hallenstein"
+        "The elders of the Wendish reach below the weir"
       ],
       "seal": {
         "id": "seal_breitenau_chancery",
@@ -131,13 +131,14 @@
           "note": ""
         },
         {
-          "id": "seal_breitenau_hallenstein",
-          "claims_owner": "Ulrich, Count of Hallenstein",
-          "claims_polity": "hallenstein",
-          "device": "wolf_head",
-          "legend": "VLRICVS COMES DE HALLENSTEIN",
+          "_note": "THE ONE THAT SHOULD NOT BE HERE. nether_march has seals_used false in world.json, so SealCheck returns seal_where_none_used before it ever goes looking for a matrix — the finding is 'this house does not seal', not 'no such die', and that distinction is the whole rule. It is deliberately the least remarkable-looking tag on the cord: ordinary wear, a plausible legend, a device that appears on the polity's own plate in the Book of Matrices. Nothing about it looks wrong. It is wrong because of a fact about the Nether March that lives on one page of one book.",
+          "id": "seal_breitenau_wendish",
+          "claims_owner": "The elders of the Wendish reach",
+          "claims_polity": "nether_march",
+          "device": "knot_ring",
+          "legend": "SIGILLVM SENIORVM DE VADO INFERIORI",
           "shape": "round",
-          "wax_color": "#3a3540",
+          "wax_color": "#a5762e",
           "wear": 0.05,
           "shape_seed": 9106,
           "note": ""
@@ -145,47 +146,41 @@
       ]
     }
   ],
+  "_lines_note": "Only `arrival` can ever be spoken. petitioner_waits is false, and SessionController._on_investigation_performed gates _speak_beat on petitioner_waits — so an unattended packet has nobody in the room to notice what the glass is doing. The two investigation beats this case used to carry were dead content, and one of them ('All six were struck before the packet left the press') asserted in the game's own voice a thing that is no longer true. Both are gone. The information that survives is on the docket, where it can actually be read.",
   "lines": [
     {
       "beat": "arrival",
-      "text": "My masters send their common act. Five parties made one agreement; the Chancery put it into one packet."
-    },
-    {
-      "beat": "inspect_seal",
-      "text": "There should be five for consent and one for the office."
-    },
-    {
-      "beat": "consult_matrix_book",
-      "text": "All six were struck before the packet left the press."
+      "text": "My masters send their common act. Five parties made one agreement; the Chancery put it into one packet. I am to leave it and not to wait."
     }
   ],
   "outcomes": [
     {
-      "verdict": "CONFIRM",
+      "verdict": "DENY",
       "favor": {
-        "imperial": 1
+        "imperial": 1,
+        "custom": -1
       },
-      "reaction": "Good. The masons can open the race.",
-      "register_note": "Common consent for the Breitenau weir. Six live seals present. Confirmed.",
-      "aftermath": "The five parties rebuilt the weir under the admitted consent."
+      "reaction": "",
+      "register_note": "Common consent for the Breitenau weir. Five tags answer to live dies. The sixth claims the Wendish reach, which keeps no matrices. Refused on the wax.",
+      "aftermath": "The Chancery wrote to the works at Breitenau asking who had supplied the sixth seal, and was told that the elders had been asked for one and had sent a man to Marchfeld to have something made, since the office would not take an oath. The works are stopped. Nobody has been accused of anything, and the elders have not been written to, on the grounds that there is nobody there to write to."
     },
     {
-      "verdict": "DENY",
+      "verdict": "CONFIRM",
       "favor": {
         "imperial": -2
       },
-      "reaction": "Then six offices carried wax here for nothing.",
-      "register_note": "Common consent for the Breitenau weir refused.",
-      "aftermath": "The race remained shut while five parties disputed the refusal."
+      "reaction": "",
+      "register_note": "Common consent for the Breitenau weir. Six seals present. Confirmed.",
+      "aftermath": "The race was opened in the spring. In the autumn the Duke's men came to the Wendish reach with the admitted instrument and read out the water shares from it, and the elders said that they had agreed to no such division and had set no seal to anything, because they do not. The instrument this desk admitted is the only document in the matter, and it says otherwise."
     },
     {
       "verdict": "REFER",
       "favor": {
         "imperial": -1
       },
-      "reaction": "The Chancery has authenticated it already.",
-      "register_note": "Common consent for the Breitenau weir sent upward.",
-      "aftermath": "The packet returned to the same office whose seal already hung from it."
+      "reaction": "",
+      "register_note": "Common consent for the Breitenau weir. One tag not answered for. Sent upward.",
+      "aftermath": "The Vice-Chancellor's office returned it in eleven days with a note observing that the Book of Matrices is kept at the third desk and not at his. The works are stopped and the question is exactly where it was."
     }
   ]
 }

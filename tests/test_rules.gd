@@ -177,14 +177,38 @@ func _test_seals_in_a_row(lore: LoreData) -> void:
 		"the charter names five consenting parties")
 	_is_true(ch.attached_seals().size() == 6,
 		"five consent tags plus the Chancery tag make six")
+
+	# SIX OF THE SAME QUESTION IS NOT DIFFICULTY.
+	#
+	# This matter shipped as six identical lookups producing six identical
+	# nulls — the least varied thing in the build, and the most mechanical: six
+	# lens trips against every other matter's one, performed in silence because
+	# nobody stays to watch. The old assertions here guarded exactly that, which
+	# is why they are gone.
+	#
+	# Five tags still answer. The sixth claims a house that keeps no dies at
+	# all, which fires SealCheck's `seal_where_none_used` — a FATAL authored
+	# with the check itself, described in its own comment as "the easiest one in
+	# the game to walk straight past", given a whole page of the Book of
+	# Matrices, and never once reached by shipped content until now.
 	var decision := Adjudicator.adjudicate_case(c, lore, null)
 	var sound := 0
 	for finding in decision.findings:
 		if finding.code == &"seal_sound":
 			sound += 1
-	_is_true(sound == 6, "all six tags answer through the existing SealCheck")
-	_eq(decision.verdict, Lex.Verdict.CONFIRM,
-		"the counted and checked row is clean rather than a planted forgery")
+	_is_true(sound == 5, "five of the six tags answer to live dies")
+	_is_true(decision.codes().has(&"seal_where_none_used"),
+		"and the sixth is wax from a house that keeps no wax")
+	_eq(decision.verdict, Lex.Verdict.DENY,
+		"so the counted row is refused on the one tag that should not exist")
+
+	# IT MUST BE THAT RULE AND NOT THE FILING ONE. SealCheck tests seals_used
+	# before it goes looking for a matrix, so the finding is "this house does not
+	# seal" rather than "no such die". If that order is ever reversed the case
+	# still denies and still passes every other assertion here, while teaching
+	# the player something the Book of Matrices does not say.
+	_is_true(not decision.codes().has(&"matrix_unknown"),
+		"and refused as a house that does not seal, not as a die nobody filed")
 
 
 ## Written where the screenshots go: gitignored, regenerated on every run, and
