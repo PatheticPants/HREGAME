@@ -477,6 +477,53 @@ func _test_every_leaf_fits(desk: Desk) -> void:
 		"there are authored leaves to check (%d)" % checked)
 	_is_true(rolls == 3,
 		"and all three leaves of the one retained roll are among them (%d)" % rolls)
+	_test_facing_pages(desk)
+
+
+## WHAT FACES WHAT IS CONTENT, AND IT BREAKS SILENTLY.
+##
+## ReferenceBook pairs pages as (spread*2, spread*2+1), so a book's comparisons
+## are decided by the PARITY of every leaf above them. thurn_dietrich_i and
+## thurn_dietrich_ii sat at pages 5 and 6 and therefore fell on different
+## spreads — the two dies of one man, same house, same lion, differing by nine
+## letters of legend and a pair of years, and the player could not see them at
+## once. Two shipped matters turn on telling them apart: case_02 is the first
+## die, dead since 1207, on a charter of 1213; case_04 is the second, alive in
+## 1210, and otherwise entirely clean. That was a memory test manufactured by
+## pagination rather than by the puzzle, and the same book already faced the
+## abbey's crook against the chapter's keys on purpose one section later.
+##
+## Nothing catches this: every leaf still fits, every page still renders, every
+## other test passes. Insert or delete one leaf anywhere above and it silently
+## comes back — which is exactly what fixing the Thurn pair did to Saint Wend
+## until a second leaf restored the parity.
+func _test_facing_pages(desk: Desk) -> void:
+	var pairs := {
+		&"matrix_book": [
+			["thurn_dietrich_i", "thurn_dietrich_ii",
+				"the two dies of one man face each other"],
+			["wend_abbey", "wend_chapter",
+				"and the crook faces the keys"],
+		],
+	}
+	for book in desk.books:
+		if book.data == null or not pairs.has(book.data.id):
+			continue
+		for pair: Array in pairs[book.data.id]:
+			var a := -1
+			var b := -1
+			for i in book.data.pages.size():
+				var m := String(book.data.pages[i].matrix_id)
+				if m == pair[0]:
+					a = i
+				elif m == pair[1]:
+					b = i
+			if a < 0 or b < 0:
+				_fail("%s: %s or %s is no longer in the book"
+					% [book.data.id, pair[0], pair[1]])
+				continue
+			_is_true(a / 2 == b / 2 and absi(a - b) == 1,
+				"%s (pages %d and %d)" % [pair[2], a, b])
 
 
 ## A TURNING LEAF IS WIDEST LYING FLAT AND INVISIBLE EDGE-ON.

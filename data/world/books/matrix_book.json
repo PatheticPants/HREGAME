@@ -44,6 +44,13 @@
       "polity_id": "thurn"
     },
     {
+      "_pagination_note": "THIS LEAF EXISTS TO MOVE A PAGE, AND THE PAGE IT MOVES IS THE MOST IMPORTANT COMPARISON IN THE BOOK.\n\nReferenceBook pairs pages as (spread*2, spread*2+1). Before this leaf, thurn_dietrich_i was page 5 and thurn_dietrich_ii was page 6 — so they fell on spreads 2 and 3 and COULD NOT BE SEEN IN ONE OPENING. Two cases turn on telling them apart: case_02 is the first die, dead since 1207, on a charter of 1213; case_04 is the second, alive in 1210, and is otherwise clean. Both are the same man, the same house and the same lion, and the difference is nine letters of legend and a pair of years — which was a memory test created by pagination rather than by the puzzle.\n\nThe book already proves it knows better one section later: wend_abbey and wend_chapter share spread 5 on purpose, and the second of them carries the marginalia that frames them as a pair. This does for Thurn what that already does for Saint Wend.\n\nAnything inserted or removed above page 5 breaks the pairing again, silently, with every test still passing. Recheck the whole array after touching it.",
+      "kind": "text",
+      "heading": "Where a man has had more than one die",
+      "body": "A die is cut for a man in a style, and when his style changes the die is cut again and the old one defaced. Both are his. Both are recorded here. Only one of them was on his belt on any given day.\n\nSo the question is never whose seal this is. It is which of his, and when.\n\nThe two that follow are the same man, the same house and the same lion. Read the legend letter by letter and then read the years.",
+      "marginalia": "The March is full of the old one, on parchment nobody disputes. That is the difficulty. — R.V."
+    },
+    {
       "kind": "matrix",
       "heading": "Dietrich of Thurn — the first die",
       "matrix_id": "thurn_dietrich_i"
@@ -53,6 +60,13 @@
       "heading": "Dietrich of Thurn — the second",
       "matrix_id": "thurn_dietrich_ii",
       "marginalia": "Two dies, one man, and the old one is on half the parchment in the March. Anybody wanting a Thurn seal has an impression to copy from and no die to copy it with. Check the year. Always check the year. — R.V."
+    },
+    {
+      "_pagination_note": "PARITY. ReferenceBook pairs (spread*2, spread*2+1), so inserting an ODD number of leaves above this point re-breaks every pairing below it — and the one below that matters is wend_abbey facing wend_chapter, which is the crook-versus-keys comparison case_03 turns on. Two leaves go in above; this is the second, and it is here rather than anywhere else because the section it closes is the one it is about.",
+      "kind": "text",
+      "heading": "When a die is broken",
+      "body": "A die outlives its holder nowhere in this Empire, and in the March it does not outlive him by an hour. What follows from that is the whole of the test: after the day a man dies there is no die of his anywhere, and wax bearing his mark on a later instrument was pressed by something that should not exist.\n\nThe year a die was broken is written on its plate here. The day its holder died is written in the Kalendar of the Dead, in whatever house returned it. Where both books speak, read both.",
+      "marginalia": "The chapel at Thurnstadt and this book put Dietrich in the same year. Two sources in this office agreeing without being made to; I have seen it once. — R.V."
     },
     {
       "kind": "plate",
